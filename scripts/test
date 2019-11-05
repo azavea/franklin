@@ -40,7 +40,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         if [[ $CI ]]; then
             pushd "${DIR}"
 
-            ./sbt "; scalafix --check; test"
+            ./sbt "; scalafix --check; test; docs/mdoc --check"
 
             popd
         else

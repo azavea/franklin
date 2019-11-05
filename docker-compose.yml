@@ -15,8 +15,6 @@ services:
 
   api:
     image: openjdk:11-jdk
-    command:
-      - "api/run"
     depends_on:
       database:
         condition: service_healthy

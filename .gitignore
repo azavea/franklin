@@ -118,3 +118,7 @@ scratch/
 stats.json
 app-lambda/opt/*
 /app-lambda/package.sh
+
+# js files from docusaurus
+node_modules/*
+website/build/*
