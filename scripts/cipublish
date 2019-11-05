@@ -27,7 +27,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
             login -u "${QUAY_USER}" -p "${QUAY_PASSWORD}" quay.io
 
         docker tag "franklin:${GIT_COMMIT}" \
-            "quay.io/raster-foundry/franklin:${GIT_COMMIT}"
-        docker push "quay.io/raster-foundry/franklin:${GIT_COMMIT}"
+            "quay.io/azavea/franklin:${GIT_COMMIT}"
+        docker push "quay.io/azavea/franklin:${GIT_COMMIT}"
     fi
 fi

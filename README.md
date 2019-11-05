@@ -10,13 +10,13 @@ To get started you need to have [`docker`](https://www.docker.com) installed on 
 
 _not_ _implemented_
 ```
-docker run quay.io/raster-foundry/franklin:latest server \
+docker run quay.io/azavea/franklin:latest server \
    --db-host <database-host> \
-   --db-password <password> \ 
+   --db-password <password> \
    --db-name <database-name>
 ```
 
-This will start a [server](http://localhost:9090) without data using a provided database. If migrations need to be run they will be run on server startup. 
+This will start a [server](http://localhost:9090) without data using a provided database. If migrations need to be run they will be run on server startup.
 
 ## Features Implemented
 
