@@ -1,0 +1,120 @@
+# Sass Cache
+.sass-cache
+
+# css map
+.css.map
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+
+# Ansible
+deployment/ansible/roles/azavea.*
+*.retry
+
+# Vagrant
+.vagrant
+
+# NodeJS / Browserify stuff
+node_modules/
+npm-debug.log
+
+# Emacs
+\#*#
+*~
+.#*
+TAGS
+
+# Vim
+.*.swp
+
+# MacOS
+.DS_Store
+
+# Scala
+*.class
+*.log
+
+# sbt specific
+.cache
+.coursier-cache
+.history
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+/project/.sbtboot
+/project/.boot/
+/project/.ivy/
+/.sbtopts
+
+# Molecule
+.molecule/
+*__pycache__*
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
+.ensime/*
+.ensime
+.metals/*
+.metals
+/.ivy2/*
+.sbt/
+metals.lock.db
+.metals/
+.bloop/
+
+/.env
+/.envrc
+
+.node_modules
+dist/
+.vscode
+
+/data
+.idea
+.ensime_cache
+/app-tasks/jars/rf-batch.jar
+/data
+
+.vscode
+
+# Patch files
+*.patch
+scratch/
+
+stats.json
+app-lambda/opt/*
+/app-lambda/package.sh

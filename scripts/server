@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+
+if [[ -n "${FRANKLIN_DEBUG}" ]]; then
+    set -x
+fi
+
+function usage() {
+    echo -n \
+         "Usage: $(basename "$0")
+
+Starts servers using docker-compose.
+"
+}
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ]
+then
+    case "${1}" in
+        --help)
+            usage
+            ;;
+        *)
+            echo "Starting API service"
+            docker-compose -f docker-compose.yml \
+                up api
+            ;;
+    esac
+fi

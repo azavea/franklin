@@ -1,0 +1,51 @@
+version: 2.0
+jobs:
+  build:
+    # CircleCI does not run workflows for tags unless you explicitly specify tag filters
+    filters:
+      tags:
+        only:
+          - /^(.*)$/
+
+    docker:
+      - image: circleci/openjdk:11-jdk
+
+      - image: quay.io/azavea/postgis:2.3-postgres9.6-slim
+        name: database.service.internal
+        environment:
+          - POSTGRES_USER=franklin
+          - POSTGRES_PASSWORD=franklin
+          - POSTGRES_DB=franklin
+
+    steps:
+      - checkout
+
+      # https://circleci.com/docs/2.0/building-docker-images/
+      - setup_remote_docker:
+          docker_layer_caching: false
+
+      - restore_cache:
+          keys:
+            - sbt-cache-{{ checksum "project/Dependencies.scala" }}
+
+      - run:
+          command: sbt test:compile
+          working_directory: ~/app-backend
+
+      - save_cache:
+          paths:
+            - ~/.ivy2/cache
+            - ~/.sbt
+            - ~/.cache/coursier
+          key: sbt-cache-{{ checksum "project/Dependencies.scala" }}
+
+      - run:
+          name: cibuild
+          command: ./scripts/cibuild
+
+      - run:
+          name: cipublish
+          command: |
+            if [[ "${CIRCLE_BRANCH}" =~ ^master|^release/.*$|^hotfix/.*$ ]]; then
+              ./scripts/cipublish
+            fi

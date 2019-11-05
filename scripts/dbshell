@@ -1,0 +1,25 @@
+#!/bin/bash
+set -eu
+
+DIR="$(dirname "$0")"
+
+function usage() {
+    echo -n \
+"Usage: $(basename "$0")
+Use Docker Compose to enter a psql shell on the local database container
+"
+}
+
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ]
+then
+    if [ "${1:-}" = "--help" ]
+    then
+        usage
+    else
+        docker-compose -f "${DIR}/../docker-compose.yml" \
+                       run --rm -e PGPASSWORD=franklin \
+                       database psql -U franklin -h database
+    fi
+    exit
+fi

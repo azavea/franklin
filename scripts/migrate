@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+
+if [[ -n "${FRANKLIN_DEBUG}" ]]; then
+    set -x
+fi
+
+function usage() {
+    echo -n \
+         "Usage: $(basename "$0") [flyway command]
+
+Runs api migrations via flywaydb CLI
+
+Available flyway commands are migrate|clean|info|validate|undo|baseline|repair
+
+"
+}
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ]
+then
+    case "${1}" in
+        --help)
+            usage
+            ;;
+        *)
+            docker-compose -f docker-compose.yml \
+                run --rm \
+                migrations "${1:-info}"
+            ;;
+    esac
+fi

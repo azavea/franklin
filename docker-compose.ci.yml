@@ -1,0 +1,13 @@
+version: '2.3'
+services:
+  api:
+    image: "franklin:${GIT_COMMIT}"
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+
+  shellcheck:
+    image: koalaman/shellcheck:stable
+    volumes:
+      - ./:/usr/local/src
+    working_dir: /usr/local/src

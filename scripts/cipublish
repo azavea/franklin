@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+if [[ -n "${FRANKLIN_DEBUG}" ]]; then
+    set -x
+fi
+
+function usage() {
+    echo -n \
+        "Usage: $(basename "$0")
+Publish container images to Quay.
+"
+}
+
+if [[ -n "${GIT_COMMIT}" ]]; then
+    GIT_COMMIT="${GIT_COMMIT:0:7}"
+else
+    GIT_COMMIT="$(git rev-parse --short HEAD)"
+fi
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    if [ "${1:-}" = "--help" ]; then
+        usage
+    else
+        docker \
+            login -u "${QUAY_USER}" -p "${QUAY_PASSWORD}" quay.io
+
+        docker tag "franklin:${GIT_COMMIT}" \
+            "quay.io/raster-foundry/franklin:${GIT_COMMIT}"
+        docker push "quay.io/raster-foundry/franklin:${GIT_COMMIT}"
+    fi
+fi
