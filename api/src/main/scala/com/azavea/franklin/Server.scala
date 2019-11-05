@@ -20,7 +20,7 @@ import org.flywaydb.core.Flyway
 
 object Server
     extends CommandIOApp(
-      name = "franklin",
+      name = "",
       header = "Your friendly OGC Features API and STAC Web Service",
       version = "0.0.x"
     ) {
@@ -70,7 +70,7 @@ object Server
   case class RunServer(port: Int)
 
   val runServerOpts: Opts[RunServer] =
-    Opts.subcommand("server", "Runs web wervice") {
+    Opts.subcommand("server", "Runs web service") {
       Opts
         .option[Int]("port", help = "Port to start web service on")
         .withDefault(9090)

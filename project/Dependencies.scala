@@ -4,7 +4,7 @@ import sbt._
 
 // Versions
 object Versions {
-  val Http4sVersion      = "0.21.0-M5"
+  val Http4sVersion      = "0.20.10"
   val Specs2Version      = "4.6.0"
   val GeotrellisServer   = "3.4.0-5-g92f0cf6-SNAPSHOT"
   val OpenTracingVersion = "0.1.0"
@@ -13,7 +13,7 @@ object Versions {
   val LogbackVersion     = "1.2.3"
   val Flyway             = "5.2.4"
   val ScapegoatVersion   = "1.3.8"
-  val CirceVersion       = "0.12.2"
+  val CirceVersion       = "0.11.1"
   val DoobieVersion      = "0.8.2"
   val TapirVersion       = "0.11.9"
 }
