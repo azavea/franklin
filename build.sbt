@@ -132,3 +132,16 @@ lazy val api = (project in file("api"))
   .settings({
     libraryDependencies ++= apiDependencies
   })
+
+//////////
+// DOCS //
+//////////
+lazy val docs = (project in file("api-docs"))
+  .dependsOn(api)
+  .enablePlugins(MdocPlugin)
+  .enablePlugins(MdocPlugin, DocusaurusPlugin)
+  .settings(
+    mdocVariables := Map(
+      "VERSION" -> version.value
+    )
+  )
