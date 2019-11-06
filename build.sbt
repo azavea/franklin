@@ -82,10 +82,12 @@ lazy val databaseDependencies = commonDependencies ++ Seq(
   Dependencies.doobie,
   Dependencies.doobieHikari,
   Dependencies.doobiePostgres,
+  Dependencies.doobiePostgresCirce,
   Dependencies.doobieSpecs2,
   Dependencies.doobieScalatest,
   Dependencies.doobieRefined,
-  Dependencies.flyway
+  Dependencies.flyway,
+  Dependencies.postgis
 )
 
 lazy val database = (project in file("database"))

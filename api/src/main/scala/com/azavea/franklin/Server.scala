@@ -1,7 +1,5 @@
 package com.azavea.franklin.api
 
-import com.azavea.franklin.api.endpoints.HelloEndpoints
-import com.azavea.franklin.api.services.HelloService
 import com.azavea.franklin.database.DatabaseConfig
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
@@ -14,8 +12,8 @@ import tapir.openapi.circe.yaml._
 import tapir.swagger.http4s.SwaggerHttp4s
 import cats.effect._
 import cats.implicits._
-import com.azavea.franklin.endpoints.LandingPageEndpoints
-import com.azavea.franklin.services.LandingPageService
+import com.azavea.franklin.endpoints.{CollectionItemEndpoints, LandingPageEndpoints}
+import com.azavea.franklin.services.{CollectionItemsService, LandingPageService}
 import com.monovore.decline._
 import org.flywaydb.core.Flyway
 
@@ -25,22 +23,20 @@ object Server extends IOApp {
     for {
       connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
       transactionEc <- ExecutionContexts.cachedThreadPool[IO]
-      _ <- HikariTransactor
+      xa <- HikariTransactor
         .fromHikariConfig[IO](
           DatabaseConfig.hikariConfig,
           connectionEc,
           transactionEc
         )
-      allEndpoints      = HelloEndpoints.endpoints ++ LandingPageEndpoints.endpoints
+      allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionItemEndpoints.endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes
-      helloRoutes       = new HelloService[IO].routes
       landingPageRoutes = new LandingPageService[IO].routes
+      collectionRoutes  = new CollectionItemsService[IO](xa).routes
       router = CORS(
         Router(
-          "/"     -> landingPageRoutes,
-          "/docs" -> docRoutes,
-          "/api"  -> helloRoutes
+          "/" -> (landingPageRoutes <+> collectionRoutes <+> docRoutes)
         )
       ).orNotFound
       server <- BlazeServerBuilder[IO]
