@@ -1,8 +1,6 @@
 package com.azavea.franklin.api
 
 import com.azavea.franklin.crawler.StacImport
-import com.azavea.franklin.api.endpoints.HelloEndpoints
-import com.azavea.franklin.api.services.HelloService
 import com.azavea.franklin.database.DatabaseConfig
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
@@ -79,7 +77,7 @@ $$$$
       }
       allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
-      docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes
+      docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes = new LandingPageService[IO].routes
       searchRoutes      = new SearchService[IO](xa).routes
       collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[IO](
