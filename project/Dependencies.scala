@@ -8,7 +8,7 @@ object Versions {
   val DeclineVersion   = "0.6.2"
   val emoji            = "1.2.1"
   val Specs2Version    = "4.6.0"
-  val GeotrellisServer = "3.4.0-6-343db94f-SNAPSHOT"
+  val GeotrellisServer = "3.4.0-10-gc407568-SNAPSHOT"
   val PureConfig       = "0.12.1"
   val Log4CatsVersion  = "0.3.0"
   val LogbackVersion   = "1.2.3"

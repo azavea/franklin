@@ -5,7 +5,7 @@ import com.azavea.franklin.database.StacItemDao
 import cats.{Applicative, MonadError}
 import doobie.ConnectionIO
 import doobie.implicits._
-import geotrellis.server.stac.{decoder => _, _}
+import geotrellis.server.stac._
 import io.circe.fs2._
 import io.circe.Json
 
@@ -62,7 +62,7 @@ class StacImport(val catalogRoot: String) {
       )
     }
 
-  private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("")
+  private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("/")
 
   private def makeAbsPath(from: String, relPath: String): String = {
     val prefix       = getPrefix(from)
@@ -70,7 +70,8 @@ class StacImport(val catalogRoot: String) {
     val relPathSplit = relPath.split("/")
     val up           = relPathSplit.filter(_ == "..").size
     // safe because String.split always returns an array with an element
-    (prefixSplit.dropRight(up) :+ relPathSplit.last).mkString("/")
+    (prefixSplit.dropRight(up) :+ (if (up > 0) relPathSplit.drop(up)
+                                   else relPathSplit.drop(1)).mkString("/")) mkString ("/")
   }
 
   def readFromS3(path: String): fs2.Stream[ConnectionIO, Json] = ???
