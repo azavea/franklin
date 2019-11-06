@@ -32,7 +32,10 @@ lazy val commonSettings = Seq(
     "locationtech-snapshots" at "https://repo.locationtech.org/content/groups/snapshots",
     Resolver.bintrayRepo("guizmaii", "maven"),
     Resolver.bintrayRepo("colisweb", "maven"),
-    "jitpack".at("https://jitpack.io")
+    "jitpack".at("https://jitpack.io"),
+    Resolver.file("local", file(Path.userHome.absolutePath + "/.ivy2/local"))(
+      Resolver.ivyStylePatterns
+    )
   ),
   addCompilerPlugin("org.spire-math" %% "kind-projector"     % "0.9.6"),
   addCompilerPlugin("com.olegpy"     %% "better-monadic-for" % "0.2.4"),
