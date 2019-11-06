@@ -39,7 +39,7 @@ class CollectionItemsService[F[_]: Sync](xa: Transactor[F])(implicit contextShif
     } yield {
       itemOption match {
         case Some(item) => Either.right(item.asJson)
-        case _          => Either.left(NF("Item $itemId in collection $collectionId not found"))
+        case _          => Either.left(NF(s"Item $itemId in collection $collectionId not found"))
       }
     }
   }

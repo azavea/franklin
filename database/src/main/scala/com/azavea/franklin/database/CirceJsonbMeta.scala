@@ -8,6 +8,7 @@ import cats.implicits._
 import geotrellis.server.stac.StacItem
 
 import scala.reflect.runtime.universe.TypeTag
+import geotrellis.server.stac.StacCollection
 
 object CirceJsonbMeta {
 
@@ -19,6 +20,6 @@ object CirceJsonbMeta {
 }
 
 trait CirceJsonbMeta {
-  implicit val stacItemMeta: Meta[StacItem] = CirceJsonbMeta[StacItem]
-
+  implicit val stacItemMeta: Meta[StacItem]             = CirceJsonbMeta[StacItem]
+  implicit val stacCollectionMeta: Meta[StacCollection] = CirceJsonbMeta[StacCollection]
 }
