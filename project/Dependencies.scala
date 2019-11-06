@@ -12,6 +12,7 @@ object Versions {
   val Log4CatsVersion  = "0.3.0"
   val LogbackVersion   = "1.2.3"
   val Flyway           = "5.2.4"
+  val Postgis          = "2.2.1"
   val ScapegoatVersion = "1.3.8"
   val CirceVersion     = "0.11.1"
   val DoobieVersion    = "0.7.1"
@@ -27,6 +28,7 @@ object Dependencies {
   val doobie                = "org.tpolecat"           %% "doobie-core"              % Versions.DoobieVersion
   val doobieHikari          = "org.tpolecat"           %% "doobie-hikari"            % Versions.DoobieVersion
   val doobiePostgres        = "org.tpolecat"           %% "doobie-postgres"          % Versions.DoobieVersion
+  val doobiePostgresCirce   = "org.tpolecat"           %% "doobie-postgres-circe"    % Versions.DoobieVersion
   val doobieSpecs2          = "org.tpolecat"           %% "doobie-specs2"            % Versions.DoobieVersion % "test"
   val doobieRefined         = "org.tpolecat"           %% "doobie-refined"           % Versions.DoobieVersion
   val doobieScalatest       = "org.tpolecat"           %% "doobie-scalatest"         % Versions.DoobieVersion % "test"
@@ -35,6 +37,7 @@ object Dependencies {
   val http4sServer          = "org.http4s"             %% "http4s-blaze-server"      % Versions.Http4sVersion
   val http4sDsl             = "org.http4s"             %% "http4s-dsl"               % Versions.Http4sVersion
   val log4cats              = "io.chrisdavenport"      %% "log4cats-slf4j"           % Versions.Log4CatsVersion
+  val postgis               = "net.postgis"            % "postgis-jdbc"              % Versions.Postgis
   val flyway                = "org.flywaydb"           % "flyway-core"               % Versions.Flyway
   val refined               = "eu.timepit"             %% "refined"                  % Versions.Refined
   val refinedCats           = "eu.timepit"             %% "refined-cats"             % Versions.Refined

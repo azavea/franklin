@@ -28,8 +28,8 @@ This will start a [server](http://localhost:9090) without data using a provided 
 - [ ] `GET /collections/{collectionId}`
 
 #### Data
-- [ ] `GET /collections/{collectionId}/items`
-- [ ] `GET /collections/{collectionId}/items/{featureId}`
+- [x] `GET /collections/{collectionId}/items`
+- [x] `GET /collections/{collectionId}/items/{featureId}`
 
 #### STAC
 - [ ] `GET /stac`
