@@ -56,10 +56,14 @@ lazy val datamodelSettings = commonSettings ++ Seq(
 
 lazy val datamodelDependencies = commonDependencies ++ Seq(
   Dependencies.circeCore,
+  Dependencies.tapir,
   Dependencies.circeGeneric,
+  Dependencies.circeRefined,
   Dependencies.http4s,
   Dependencies.http4sCirce,
-  Dependencies.geotrellisServer
+  Dependencies.geotrellisServer,
+  Dependencies.refined,
+  Dependencies.refinedCats
 )
 
 lazy val datamodel = (project in file("datamodel"))
@@ -80,11 +84,12 @@ lazy val databaseDependencies = commonDependencies ++ Seq(
   Dependencies.doobiePostgres,
   Dependencies.doobieSpecs2,
   Dependencies.doobieScalatest,
+  Dependencies.doobieRefined,
   Dependencies.flyway
 )
 
 lazy val database = (project in file("database"))
-  .dependsOn(rootRef, datamodel)
+  .dependsOn(datamodel)
   .settings(databaseSettings: _*)
   .settings({
     libraryDependencies ++= databaseDependencies
@@ -109,25 +114,23 @@ lazy val apiSettings = commonSettings ++ Seq(
 )
 
 lazy val apiDependencies = commonDependencies ++ databaseDependencies ++ Seq(
+  Dependencies.decline,
   Dependencies.http4s,
   Dependencies.http4sCirce,
   Dependencies.http4sDsl,
   Dependencies.http4sServer,
   Dependencies.tapir,
   Dependencies.log4cats,
-  Dependencies.openTracing,
   Dependencies.pureConfig,
   Dependencies.tapirCirce,
   Dependencies.tapirHttp4sServer,
   Dependencies.tapirOpenAPICirceYAML,
   Dependencies.tapirOpenAPIDocs,
-  Dependencies.tapirSwaggerUIHttp4s,
-  "com.monovore" %% "decline"        % "1.0.0",
-  "com.monovore" %% "decline-effect" % "1.0.0"
+  Dependencies.tapirSwaggerUIHttp4s
 )
 
 lazy val api = (project in file("api"))
-  .dependsOn(rootRef, datamodel, database)
+  .dependsOn(datamodel, database)
   .settings(apiSettings: _*)
   .settings({
     libraryDependencies ++= apiDependencies

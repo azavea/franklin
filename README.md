@@ -22,8 +22,8 @@ This will start a [server](http://localhost:9090) without data using a provided 
 
 ### STAC Core
 #### Capabilities
-- [ ] `GET /`
-- [ ] `GET /conformance`
+- [x] `GET /`
+- [x] `GET /conformance`
 - [ ] `GET /collections`
 - [ ] `GET /collections/{collectionId}`
 

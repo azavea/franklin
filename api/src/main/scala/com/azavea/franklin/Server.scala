@@ -14,32 +14,35 @@ import tapir.openapi.circe.yaml._
 import tapir.swagger.http4s.SwaggerHttp4s
 import cats.effect._
 import cats.implicits._
+import com.azavea.franklin.endpoints.LandingPageEndpoints
+import com.azavea.franklin.services.LandingPageService
 import com.monovore.decline._
-import com.monovore.decline.effect._
 import org.flywaydb.core.Flyway
 
-object Server
-    extends CommandIOApp(
-      name = "",
-      header = "Your friendly OGC Features API and STAC Web Service",
-      version = "0.0.x"
-    ) {
+object Server extends IOApp {
 
   def createServer(port: Int): Resource[IO, HTTP4sServer[IO]] =
     for {
-      connectionEc <- ExecutionContexts.fixedThreadPool[IO](2)
-      blocker      <- Blocker[IO]
+      connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
+      transactionEc <- ExecutionContexts.cachedThreadPool[IO]
       _ <- HikariTransactor
         .fromHikariConfig[IO](
           DatabaseConfig.hikariConfig,
           connectionEc,
-          blocker
+          transactionEc
         )
-      allEndpoints = HelloEndpoints.endpoints
-      docs         = allEndpoints.toOpenAPI("Franklin", "0.0.1")
-      docRoutes    = new SwaggerHttp4s(docs.toYaml).routes
-      helloRoutes  = new HelloService[IO].routes
-      router       = CORS(Router("/api" -> (helloRoutes <+> docRoutes))).orNotFound
+      allEndpoints      = HelloEndpoints.endpoints ++ LandingPageEndpoints.endpoints
+      docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
+      docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes
+      helloRoutes       = new HelloService[IO].routes
+      landingPageRoutes = new LandingPageService[IO].routes
+      router = CORS(
+        Router(
+          "/"     -> landingPageRoutes,
+          "/docs" -> docRoutes,
+          "/api"  -> helloRoutes
+        )
+      ).orNotFound
       server <- BlazeServerBuilder[IO]
         .bindHttp(port, "0.0.0.0")
         .withHttpApp(router)
@@ -77,9 +80,22 @@ object Server
         .map(RunServer)
     }
 
-  override def main: Opts[IO[ExitCode]] = (runServerOpts orElse runMigrationsOpts) map {
-    case RunServer(port) => createServer(port).use(_ => IO.never).as(ExitCode.Success)
-    case RunMigrations() => runMigrations
-  }
+  val applicationCommand: Command[Product] =
+    Command("", "Your Friendly Neighborhood OGC API - Features and STAC Web Service") {
+      runServerOpts orElse runMigrationsOpts
+    }
 
+  override def run(args: List[String]): IO[ExitCode] = {
+    applicationCommand.parse(args) map {
+      case RunServer(port) => createServer(port).use(_ => IO.never).as(ExitCode.Success)
+      case RunMigrations() => runMigrations
+    } match {
+      case Left(e) =>
+        IO {
+          println(e.toString())
+          ExitCode.Error
+        }
+      case Right(s) => s
+    }
+  }
 }
