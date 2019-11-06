@@ -24,8 +24,8 @@ This will start a [server](http://localhost:9090) without data using a provided 
 #### Capabilities
 - [x] `GET /`
 - [x] `GET /conformance`
-- [ ] `GET /collections`
-- [ ] `GET /collections/{collectionId}`
+- [x] `GET /collections`
+- [x] `GET /collections/{collectionId}`
 
 #### Data
 - [x] `GET /collections/{collectionId}/items`
