@@ -134,7 +134,7 @@ lazy val apiDependencies = commonDependencies ++ databaseDependencies ++ Seq(
 )
 
 lazy val api = (project in file("api"))
-  .dependsOn(datamodel, database)
+  .dependsOn(datamodel, database, crawler)
   .settings(apiSettings: _*)
   .settings({
     libraryDependencies ++= apiDependencies
@@ -151,4 +151,19 @@ lazy val docs = (project in file("api-docs"))
     mdocVariables := Map(
       "VERSION" -> version.value
     )
+  )
+
+/////////////
+// CRAWLER //
+/////////////
+
+lazy val crawlerDependencies = Seq(
+  Dependencies.circeFs2
+)
+
+lazy val crawler = project
+  .dependsOn(datamodel, database)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= crawlerDependencies
   )

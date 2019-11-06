@@ -16,6 +16,7 @@ object Versions {
   val Postgis          = "2.2.1"
   val ScapegoatVersion = "1.3.8"
   val CirceVersion     = "0.11.1"
+  val CirceFs2Version  = "0.11.0"
   val DoobieVersion    = "0.7.1"
   val Refined          = "0.9.3"
   val TapirVersion     = "0.10.1"
@@ -25,6 +26,7 @@ object Dependencies {
   val circeCore             = "io.circe"               %% "circe-core"               % Versions.CirceVersion
   val circeGeneric          = "io.circe"               %% "circe-generic"            % Versions.CirceVersion
   val circeRefined          = "io.circe"               %% "circe-refined"            % Versions.CirceVersion
+  val circeFs2              = "io.circe"               %% "circe-fs2"                % Versions.CirceFs2Version
   val decline               = "com.monovore"           %% "decline"                  % Versions.DeclineVersion
   val doobie                = "org.tpolecat"           %% "doobie-core"              % Versions.DoobieVersion
   val doobieHikari          = "org.tpolecat"           %% "doobie-hikari"            % Versions.DoobieVersion
