@@ -13,7 +13,7 @@ import tapir.swagger.http4s.SwaggerHttp4s
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.endpoints.{CollectionItemEndpoints, LandingPageEndpoints}
-import com.azavea.franklin.services.{CollectionItemsService, LandingPageService}
+import com.azavea.franklin.services.{CollectionItemsService, CollectionsService, LandingPageService}
 import com.monovore.decline._
 import org.flywaydb.core.Flyway
 
@@ -33,7 +33,9 @@ object Server extends IOApp {
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes
       landingPageRoutes = new LandingPageService[IO].routes
-      collectionRoutes  = new CollectionItemsService[IO](xa).routes
+      collectionRoutes = (new CollectionsService[IO](xa).routes) <+> (new CollectionItemsService[
+        IO
+      ](xa).routes)
       router = CORS(
         Router(
           "/"     -> (landingPageRoutes <+> collectionRoutes),
