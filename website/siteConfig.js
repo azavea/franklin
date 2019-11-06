@@ -10,7 +10,7 @@
 
 // List of projects/orgs using your project for the users page.
 const users = [
-    /* someday...
+  /* someday...
   {
     caption: 'User1',
     // You will need to prepend the image path with your baseUrl
@@ -23,39 +23,39 @@ const users = [
 ];
 
 const siteConfig = {
-  title: 'Franklin', // Title for your website.
-  tagline: 'A STAC and OGC API Features compliant web service',
-  url: 'https://your-docusaurus-test-site.com', // Your website URL
-  baseUrl: '/', // Base URL for your project */
+  title: "Franklin", // Title for your website.
+  tagline: "A STAC and OGC API Features compliant web service",
+  url: "https://azavea.github.io", // Your website URL
+  baseUrl: "/franklin/", // Base URL for your project */
   // For github.io type URLs, you would set the url and baseUrl like:
   //   url: 'https://facebook.github.io',
   //   baseUrl: '/test-site/',
 
   // Used for publishing and more
-  projectName: 'Franklin User Guide',
-  organizationName: 'Azavea',
+  projectName: "franklin",
+  organizationName: "azavea",
   // For top-level user or org sites, the organization is still the same.
   // e.g., for the https://JoelMarcey.github.io site, it would be set like...
   //   organizationName: 'JoelMarcey'
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    {doc: 'introduction', label: 'Docs'},
-    {doc: 'development', label: 'Development'},
+    { doc: "introduction", label: "Docs" },
+    { doc: "development", label: "Development" }
   ],
 
   // If you have users set above, you add it here:
   users,
 
   /* path to images for header/footer */
-  headerIcon: 'img/header.png',
-  footerIcon: 'img/footer.png',
-  favicon: 'img/favicon.ico',
+  headerIcon: "img/header.png",
+  footerIcon: "img/footer.png",
+  favicon: "img/favicon.ico",
 
   /* Colors for website */
   colors: {
-    primaryColor: '#847a61',
-    secondaryColor: '#5c5543',
+    primaryColor: "#847a61",
+    secondaryColor: "#5c5543"
   },
 
   /* Custom fonts for website */
@@ -77,20 +77,20 @@ const siteConfig = {
 
   highlight: {
     // Highlight.js theme to use for syntax highlighting in code blocks.
-    theme: 'default',
+    theme: "default"
   },
 
   // Add custom scripts here that would be placed in <script> tags.
-  scripts: ['https://buttons.github.io/buttons.js'],
+  scripts: ["https://buttons.github.io/buttons.js"],
 
   // On page navigation for the current documentation page.
-  onPageNav: 'separate',
+  onPageNav: "separate",
   // No .html extensions for paths.
   cleanUrl: true,
 
   // Open Graph and Twitter card images.
-  ogImage: 'img/undraw_online.svg',
-  twitterImage: 'img/undraw_tweetstorm.svg',
+  ogImage: "img/undraw_online.svg",
+  twitterImage: "img/undraw_tweetstorm.svg",
 
   // For sites with a sizable amount of content, set collapsible to true.
   // Expand/collapse the links and subcategories under categories.
@@ -104,9 +104,8 @@ const siteConfig = {
 
   // You may provide arbitrary config keys to be used as needed by your
   // template. For example, if you need your repo's URL...
-  repoUrl: 'https://github.com/azavea/franklin',
-  customDocsPath: 'api-docs/target/mdoc',
-
+  repoUrl: "https://github.com/azavea/franklin",
+  customDocsPath: "api-docs/target/mdoc"
 };
 
 module.exports = siteConfig;
