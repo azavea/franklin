@@ -89,7 +89,7 @@ lazy val databaseDependencies = commonDependencies ++ Seq(
 )
 
 lazy val database = (project in file("database"))
-  .dependsOn(rootRef, datamodel)
+  .dependsOn(datamodel)
   .settings(databaseSettings: _*)
   .settings({
     libraryDependencies ++= databaseDependencies
@@ -130,7 +130,7 @@ lazy val apiDependencies = commonDependencies ++ databaseDependencies ++ Seq(
 )
 
 lazy val api = (project in file("api"))
-  .dependsOn(rootRef, datamodel, database)
+  .dependsOn(datamodel, database)
   .settings(apiSettings: _*)
   .settings({
     libraryDependencies ++= apiDependencies
