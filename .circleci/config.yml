@@ -6,6 +6,9 @@ jobs:
       tags:
         only:
           - /^(.*)$/
+      branches:
+        ignore:
+          - gh-pages
 
     docker:
       - image: circleci/openjdk:11-jdk
