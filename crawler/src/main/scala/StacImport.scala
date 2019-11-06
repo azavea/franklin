@@ -1,11 +1,17 @@
 package com.azavea.franklin.crawler
 
+import com.azavea.franklin.database.StacItemDao
+
 import cats.{Applicative, MonadError}
 import doobie.ConnectionIO
 import doobie.implicits._
 import geotrellis.server.stac.{decoder => _, _}
 import io.circe.fs2._
 import io.circe.Json
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import java.nio.file.Path
 
 class StacImport(val catalogRoot: String) {
 
@@ -56,13 +62,6 @@ class StacImport(val catalogRoot: String) {
       )
     }
 
-  def insertItem(item: StacItem): ConnectionIO[Unit] =
-    Applicative[ConnectionIO].pure {
-      println(
-        s"Inserting item ${item.id}"
-      )
-    }
-
   private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("")
 
   private def makeAbsPath(from: String, relPath: String): String = {
@@ -74,8 +73,16 @@ class StacImport(val catalogRoot: String) {
     (prefixSplit.dropRight(up) :+ relPathSplit.last).mkString("/")
   }
 
-  def readFromS3(path: String): fs2.Stream[ConnectionIO, Json]        = ???
-  def readFromLocalPath(path: String): fs2.Stream[ConnectionIO, Json] = ???
+  def readFromS3(path: String): fs2.Stream[ConnectionIO, Json] = ???
+
+  def readFromLocalPath(path: String): fs2.Stream[ConnectionIO, Json] =
+    fs2.io.file
+      .readAll[ConnectionIO](
+        Path.of(path),
+        global,
+        256
+      )
+      .through(byteArrayParser[ConnectionIO])
 
   def readPath(path: String): fs2.Stream[ConnectionIO, Json] =
     if (path.startsWith("s3://")) {
@@ -147,6 +154,6 @@ class StacImport(val catalogRoot: String) {
       (collection, parent) <- readChildren(catalog)
       _                    <- fs2.Stream.eval { insertCollection(collection, parent, catalog) }
       item                 <- readItems(collection)
-      _                    <- fs2.Stream.eval { insertItem(item) }
+      _                    <- fs2.Stream.eval { StacItemDao.insertStacItem(item) }
     } yield ()
 }
