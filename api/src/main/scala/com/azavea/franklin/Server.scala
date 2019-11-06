@@ -36,8 +36,7 @@ object Server extends IOApp {
       collectionRoutes  = new CollectionItemsService[IO](xa).routes
       router = CORS(
         Router(
-          "/"     -> (landingPageRoutes <+> collectionRoutes),
-          "/docs" -> docRoutes
+          "/" -> (landingPageRoutes <+> collectionRoutes <+> docRoutes)
         )
       ).orNotFound
       server <- BlazeServerBuilder[IO]
