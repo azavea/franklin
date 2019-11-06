@@ -7,7 +7,7 @@ object Versions {
   val Http4sVersion    = "0.20.10"
   val DeclineVersion   = "0.6.2"
   val Specs2Version    = "4.6.0"
-  val GeotrellisServer = "3.4.0-5-g92f0cf6-SNAPSHOT"
+  val GeotrellisServer = "3.4.0-6-g7f8f646-SNAPSHOT"
   val PureConfig       = "0.12.1"
   val Log4CatsVersion  = "0.3.0"
   val LogbackVersion   = "1.2.3"

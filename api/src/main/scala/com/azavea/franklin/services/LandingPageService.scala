@@ -3,9 +3,13 @@ package com.azavea.franklin.services
 import cats._
 import cats.effect._
 import cats.implicits._
-import com.azavea.franklin.datamodel._
+import com.azavea.franklin.datamodel.{
+  Conformance => FranklinConformance,
+  Link,
+  NonEmptyString,
+  LandingPage
+}
 import com.azavea.franklin.endpoints.LandingPageEndpoints
-import geotrellis.server.stac.Self
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
@@ -25,25 +29,25 @@ class LandingPageService[F[_]: Sync](implicit contextShift: ContextShift[F]) ext
     ),
     Link(
       "http://localhost:9090/api/docs.yaml",
-      VendorLinkType("service-desc"),
-      Some(`application/json`),
-      Some("Franklin Powered Catalog")
+      ServiceDesc,
+      Some(VendorMediaType("application/vnd.oai.openapi+json;version=3.0")),
+      Some("Open API 3 Documentation")
     ),
     Link(
       "http://localhost:9090/conformance",
-      VendorLinkType("conformance"),
+      Conformance,
       Some(`application/json`),
-      Some("Franklin Powered Catalog")
+      None
     ),
     Link(
       "http://localhost:9090/collections",
-      VendorLinkType("data"),
+      Data,
       Some(`application/json`),
-      Some("Franklin Powered Catalog")
+      Some("Collections Listing")
     ),
     Link(
       "http://localhost:9090/search",
-      VendorLinkType("search"),
+      Data,
       Some(`application/geo+json`),
       Some("Franklin Powered Catalog")
     )
@@ -65,7 +69,7 @@ class LandingPageService[F[_]: Sync](implicit contextShift: ContextShift[F]) ext
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/geojson"
       )
-      Right(Conformance(uriList).asJson)
+      Right(FranklinConformance(uriList).asJson)
     }
   }
 
