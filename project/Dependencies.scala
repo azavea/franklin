@@ -11,7 +11,6 @@ object Versions {
   val Specs2Version    = "4.6.0"
   val DoobieVersion    = "0.7.1"
   val Flyway           = "5.2.4"
-  val Fs2AWSVersion    = "2.28.6"
   val GeotrellisServer = "3.4.0-8-g362e95f-SNAPSHOT"
   val Http4sVersion    = "0.20.10"
   val Log4CatsVersion  = "0.3.0"
@@ -39,7 +38,6 @@ object Dependencies {
   val emoji                 = "com.lightbend"          %% "emoji"                    % Versions.emoji
   val doobieSpecs2          = "org.tpolecat"           %% "doobie-specs2"            % Versions.DoobieVersion % "test"
   val flyway                = "org.flywaydb"           % "flyway-core"               % Versions.Flyway
-  val fs2AWS                = "io.github.dmateusp"     % "fs2-aws_2.12"              % Versions.Fs2AWSVersion
   val geotrellisServer      = "com.azavea.geotrellis"  %% "geotrellis-server-stac"   % Versions.GeotrellisServer
   val http4s                = "org.http4s"             %% "http4s-blaze-server"      % Versions.Http4sVersion
   val http4sCirce           = "org.http4s"             %% "http4s-circe"             % Versions.Http4sVersion
