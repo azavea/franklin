@@ -3,39 +3,17 @@
   "localized-strings": {
     "next": "Next",
     "previous": "Previous",
-    "tagline": "A STAC and OGC API Features compliant web service",
+    "tagline": "A STAC and OGC API Features Server",
     "docs": {
       "development": {
         "title": "development"
       },
-      "doc1": {
-        "title": "doc1"
-      },
-      "doc2": {
-        "title": "doc2"
-      },
-      "doc3": {
-        "title": "doc3"
-      },
-      "doc4": {
-        "title": "doc4"
-      },
-      "gettingstarted/introduction": {
-        "title": "gettingstarted/introduction"
-      },
-      "gettingstarted/quickstart": {
-        "title": "gettingstarted/quickstart"
-      },
       "introduction": {
         "title": "introduction"
-      },
-      "readme": {
-        "title": "readme"
       }
     },
     "links": {
-      "Docs": "Docs",
-      "Development": "Development"
+      "Getting Started": "Getting Started"
     },
     "categories": {
       "Docusaurus": "Docusaurus",

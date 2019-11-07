@@ -24,6 +24,7 @@ lazy val commonSettings = Seq(
   externalResolvers := Seq(
     DefaultMavenRepository,
     Resolver.sonatypeRepo("snapshots"),
+    Resolver.typesafeIvyRepo("releases"),
     // Required transitively
     Resolver.bintrayRepo("azavea", "maven"),
     Resolver.bintrayRepo("azavea", "geotrellis"),
@@ -56,6 +57,7 @@ lazy val datamodelSettings = commonSettings ++ Seq(
 
 lazy val datamodelDependencies = commonDependencies ++ Seq(
   Dependencies.circeCore,
+  Dependencies.emoji,
   Dependencies.tapir,
   Dependencies.circeGeneric,
   Dependencies.circeRefined,

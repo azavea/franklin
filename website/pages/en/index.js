@@ -36,10 +36,14 @@ class HomeSplash extends React.Component {
     );
 
     const ProjectTitle = () => (
-      <h2 className="projectTitle">
-        {siteConfig.title}
-        <small>{siteConfig.tagline}</small>
-      </h2>
+      <div>
+        <h2 className="projectTitle">
+          <small>{siteConfig.tagline}</small>
+        </h2>
+        <h3 className="projectTitleSmall">
+          From Static Data to a Dynamic API in Minutes
+        </h3>
+      </div>
     );
 
     const PromoSection = props => (
@@ -60,13 +64,13 @@ class HomeSplash extends React.Component {
 
     return (
       <SplashContainer>
-        <Logo img_src={`${baseUrl}img/undraw_monitor.svg`} />
         <div className="inner">
+          <img
+            src={`${baseUrl}img/franklin-logo-tagline@2x.png`}
+            alt="Azavea"
+            width="30%"
+          />
           <ProjectTitle siteConfig={siteConfig} />
-          <PromoSection>
-            <Button href={docUrl('introduction.html')}>Documentation</Button>
-            <Button href={docUrl('development.html')}>Development</Button>
-          </PromoSection>
         </div>
       </SplashContainer>
     );
@@ -84,7 +88,7 @@ class Index extends React.Component {
         id={props.id}
         background={props.background}>
         <GridBlock
-          align="center"
+          align="left"
           contents={props.children}
           layout={props.layout}
         />
@@ -95,8 +99,7 @@ class Index extends React.Component {
       <div
         className="productShowcaseSection paddingBottom"
         style={{textAlign: 'center'}}>
-        <h2>Feature Callout</h2>
-        <MarkdownBlock>These are features of this project</MarkdownBlock>
+        <h2></h2>
       </div>
     );
 
@@ -105,12 +108,12 @@ class Index extends React.Component {
         {[
           {
             content:
-              'To make your landing page more attractive, use illustrations! Check out ' +
-              '[**unDraw**](https://undraw.co/) which provides you with customizable illustrations which are free to use. ' +
-              'The illustrations you see on this page are from unDraw.',
-            image: `${baseUrl}img/undraw_code_review.svg`,
+              'Designed to be simple to use while easy to extend, you can choose how to get started. Use ' +
+              'our published `docker` images to get a server running and deployed quickly or hack on the ' +
+              '[source](https://github.com/azavea/franklin/) and use it directly in your own application.',
+            image: `${baseUrl}img/franklin-startup.png`,
             imageAlign: 'left',
-            title: 'Wonderful SVG Illustrations',
+            title: 'Create a Web Service with a Single Command',
           },
         ]}
       </Block>
@@ -121,10 +124,12 @@ class Index extends React.Component {
         {[
           {
             content:
-              'This is another description of how this project is useful',
-            image: `${baseUrl}img/undraw_note_list.svg`,
+              'Franklin is built on top of powerful libraries like [**GeoTrellis**]() and **PostGIS**. With these libraries your ' +
+              'catalogs and features can be exposed as vector and raster tile services. Combined with the API, Franklin allows you to build ' +
+              'quickly so you can spend more time on what\'s really important: the data',
+            image: `${baseUrl}img/annotation-tool.png`,
             imageAlign: 'right',
-            title: 'Description',
+            title: 'Visualize Your Catalog and Features',
           },
         ]}
       </Block>
@@ -135,10 +140,12 @@ class Index extends React.Component {
         {[
           {
             content:
-              'Each new Docusaurus project has **randomly-generated** theme colors.',
-            image: `${baseUrl}img/undraw_youtube_tutorial.svg`,
+              'Libraries like [**PyStac**](https://pystac.readthedocs.io/en/latest/) allow you to create and manipulate static STAC datasets. **Franklin** ' +
+              'complements these libraries by allowing you to create a dynamic STAC/OGC API Features web service from ' +
+              'these those static datasets.',
+            image: `${baseUrl}img/undraw_server_q2pb.svg`,
             imageAlign: 'right',
-            title: 'Randomly Generated Theme Colors',
+            title: 'Import Existing Static STAC Catalogs',
           },
         ]}
       </Block>
@@ -146,7 +153,7 @@ class Index extends React.Component {
 
 
     const Features = () => (
-      <Block layout="fourColumn">
+      <Block layout="twoColumn">
         {[
           {
             content: 'This is the content of my feature',
@@ -197,7 +204,6 @@ class Index extends React.Component {
       <div>
         <HomeSplash siteConfig={siteConfig} language={language} />
         <div className="mainContainer">
-          <Features />
           <FeatureCallout />
           <LearnHow />
           <TryOut />

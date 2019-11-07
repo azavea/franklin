@@ -4,7 +4,8 @@
       <pattern>[%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg %n</pattern>
     </encoder>
   </appender>
-  <root level="INFO">
+  <logger name="org.http4s" level="INFO"/>
+  <root level="WARN">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>

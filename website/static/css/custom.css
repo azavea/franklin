@@ -14,3 +14,45 @@
 
 @media only screen and (min-width: 1500px) {
 }
+
+p {
+    font-family: 'Roboto', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Roboto Condensed', sans-serif;
+}
+
+.lightBackground {
+    background: #B5E9D4;
+}
+
+.darkBackground {
+    background: #104E64;
+}
+
+.nav-footer {
+    background: #092c39;
+}
+
+.projectTitle > small {
+    font-size: 50%;
+}
+
+.projectTitleSmall {
+    font-size: 100%;
+}
+
+div .card {
+    width: 250px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    text-align: center;
+}
+
+.homeContainer {
+    margin-bottom: -150px;
+}
+
+.navigationSlider .slidingNav ul {
+    background: #104E64;
+}

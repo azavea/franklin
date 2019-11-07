@@ -46,10 +46,16 @@ class LandingPageService[F[_]: Sync](implicit contextShift: ContextShift[F]) ext
       Some("Collections Listing")
     ),
     Link(
-      "http://localhost:9090/search",
+      "http://localhost:9090/stac/search",
       Data,
       Some(`application/geo+json`),
-      Some("Franklin Powered Catalog")
+      Some("Franklin Powered STAC Search")
+    ),
+    Link(
+      "http://localhost:9090/stac/",
+      StacRoot,
+      Some(`application/json`),
+      Some("Root Catalog")
     )
   )
 

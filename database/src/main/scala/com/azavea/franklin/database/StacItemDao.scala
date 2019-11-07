@@ -1,5 +1,6 @@
 package com.azavea.franklin.database
 
+import com.azavea.franklin.datamodel.{NonEmptyString, SearchMetadata, StacSearch}
 import doobie._
 import doobie.implicits._
 import doobie.free.connection.ConnectionIO
@@ -20,6 +21,21 @@ object StacItemDao {
       collectionFilter(collectionId)
     )).query[StacItem]
       .to[List]
+  }
+
+  def getSearchResult(limit: Int, offset: Int): ConnectionIO[StacSearch] = {
+
+    for {
+      items   <- (selectF ++ fr"LIMIT $limit OFFSET $offset").query[StacItem].to[List]
+      matched <- fr"SELECT count(1) FROM collection_items".query[Int].unique
+    } yield {
+      val next =
+        if ((limit + offset) < matched) Some(NonEmptyString.unsafeFrom(s"${limit + offset}"))
+        else None
+      val metadata = SearchMetadata(next, items.length, limit, matched)
+      StacSearch(metadata, items)
+    }
+
   }
 
   def getCollectionItemUnique(
