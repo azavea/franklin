@@ -21,12 +21,13 @@ object StacCollectionDao {
     )).query[StacCollection].option
   }
 
-  def insertStacCollection(collection: StacCollection): ConnectionIO[StacCollection] = {
+  def insertStacCollection(collection: StacCollection,
+                           parentId: Option[String]): ConnectionIO[StacCollection] = {
 
     val insertFragment = fr"""
-      INSERT INTO collections (id, collection) 
+      INSERT INTO collections (id, parent, collection)
       VALUES
-      (${collection.id}, $collection)
+      (${collection.id}, $parentId, $collection)
       """
     insertFragment.update
       .withUniqueGeneratedKeys[StacCollection]("collection")

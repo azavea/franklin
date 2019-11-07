@@ -1,9 +1,9 @@
 package com.azavea.franklin.api
 
-import java.util.concurrent.Executors
-
+import com.azavea.franklin.crawler.StacImport
 import com.azavea.franklin.database.DatabaseConfig
 import doobie.hikari.HikariTransactor
+import doobie.implicits._
 import doobie.util.ExecutionContexts
 import org.http4s.implicits._
 import org.http4s.server.blaze._
@@ -31,12 +31,14 @@ import org.flywaydb.core.Flyway
 
 import scala.concurrent.ExecutionContext
 
+import java.util.concurrent.Executors
+
 object Server extends IOApp {
 
   val rasterIO: ContextShift[IO] = IO.contextShift(
     ExecutionContext.fromExecutor(
       Executors.newCachedThreadPool(
-        new ThreadFactoryBuilder().setNameFormat("frankil-api-%d").build()
+        new ThreadFactoryBuilder().setNameFormat("franklin-api-%d").build()
       )
     )
   )
@@ -45,19 +47,19 @@ object Server extends IOApp {
 
   val banner =
     """
-       
+
    $$$$$$$$$
-$$$$$$$$$$$$   ________                            __        __  __           
-$$$$$$$$$$$$  /        |                          /  |      /  |/  |          
-$$            $$$$$$$$/______   ______   _______  $$ |   __ $$ |$$/  _______  
- $$$$$$$$     $$ |__  /      \ /      \ /       \ $$ |  /  |$$ |/  |/       \ 
+$$$$$$$$$$$$   ________                            __        __  __
+$$$$$$$$$$$$  /        |                          /  |      /  |/  |
+$$            $$$$$$$$/______   ______   _______  $$ |   __ $$ |$$/  _______
+ $$$$$$$$     $$ |__  /      \ /      \ /       \ $$ |  /  |$$ |/  |/       \
 $$$$$$$$      $$    |/$$$$$$  |$$$$$$  |$$$$$$$  |$$ |_/$$/ $$ |$$ |$$$$$$$  |
 $$$$$$$       $$$$$/ $$ |  $$/ /    $$ |$$ |  $$ |$$   $$<  $$ |$$ |$$ |  $$ |
 $             $$ |   $$ |     /$$$$$$$ |$$ |  $$ |$$$$$$  \ $$ |$$ |$$ |  $$ |
 $$$$$$        $$ |   $$ |     $$    $$ |$$ |  $$ |$$ | $$  |$$ |$$ |$$ |  $$ |
-$$$$$         $$/    $$/       $$$$$$$/ $$/   $$/ $$/   $$/ $$/ $$/ $$/   $$/ 
+$$$$$         $$/    $$/       $$$$$$$/ $$/   $$/ $$/   $$/ $$/ $$/ $$/   $$/
 $$$$
-         
+
 """.split("\n").toList
 
   def createServer(port: Int): Resource[IO, HTTP4sServer[IO]] =
@@ -75,7 +77,7 @@ $$$$
       }
       allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
-      docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes
+      docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes = new LandingPageService[IO].routes
       searchRoutes      = new SearchService[IO](xa).routes
       collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[IO](
@@ -96,6 +98,19 @@ $$$$
     } yield {
       server
     }
+
+  case class RunImport(catalogRoot: String)
+
+  val runImportOpts: Opts[RunImport] = Opts.subcommand("import", "Import a STAC catalog") {
+    Opts
+      .option[String]("catalogRoot", "Root of STAC catalog to import")
+      .map(RunImport(_))
+  }
+
+  def runImport(stacCatalog: String): fs2.Stream[IO, Unit] = {
+    val xa = DatabaseConfig.nonHikariTransactor[IO](DatabaseConfig.jdbcDBName)
+    new StacImport(stacCatalog).run().transact(xa)
+  }
 
   case class RunMigrations()
 
@@ -130,17 +145,22 @@ $$$$
 
   val applicationCommand: Command[Product] =
     Command("", "Your Friendly Neighborhood OGC API - Features and STAC Web Service") {
-      runServerOpts orElse runMigrationsOpts
+      runServerOpts orElse runMigrationsOpts orElse runImportOpts
     }
 
   override def run(args: List[String]): IO[ExitCode] = {
     applicationCommand.parse(args) map {
       case RunServer(port) => createServer(port).use(_ => IO.never).as(ExitCode.Success)
       case RunMigrations() => runMigrations
+      case RunImport(catalogRoot) =>
+        runImport(catalogRoot).compile.drain map { _ =>
+          ExitCode.Success
+        }
     } match {
       case Left(e) =>
         IO {
           println(e.toString())
+        } map { _ =>
           ExitCode.Error
         }
       case Right(s) => s
