@@ -15,6 +15,7 @@ import tapir.swagger.http4s.SwaggerHttp4s
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.endpoints.{
+  CollectionEndpoints,
   CollectionItemEndpoints,
   LandingPageEndpoints,
   SearchEndpoints
@@ -75,7 +76,7 @@ $$$$
             transactionEc
           )
       }
-      allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
+      allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionEndpoints.endpoints ++ CollectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes = new LandingPageService[IO].routes
