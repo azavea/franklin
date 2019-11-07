@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/azavea/franklin/tree/master.svg?style=svg)](https://circleci.com/gh/azavea/franklin/tree/master)
+[![CircleCI](https://circleci.com/gh/azavea/franklin/tree/master.svg?style=svg)](https://circleci.com/gh/azavea/franklin/tree/master) [![Gitter chat](https://badges.gitter.im/azavea/franklin-stac.png)](https://gitter.im/franklin-stac/community) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 # franklin
 
@@ -32,9 +32,9 @@ This will start a [server](http://localhost:9090) without data using a provided 
 - [x] `GET /collections/{collectionId}/items/{featureId}`
 
 #### STAC
-- [ ] `GET /stac`
-- [ ] `GET /stac/search`
-- [ ] `POST /stac/search`
+- [x] `GET /stac`
+- [x] `GET /stac/search`
+- [x] `POST /stac/search`
 
 ### STAC Transaction
 - [ ] `POST /collections/{collectionId}/items`
