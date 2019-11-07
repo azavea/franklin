@@ -6,6 +6,7 @@ import sbt._
 object Versions {
   val Http4sVersion    = "0.20.10"
   val DeclineVersion   = "0.6.2"
+  val emoji            = "1.2.1"
   val Specs2Version    = "4.6.0"
   val GeotrellisServer = "3.4.0-6-g7f8f646-SNAPSHOT"
   val PureConfig       = "0.12.1"
@@ -32,6 +33,7 @@ object Dependencies {
   val doobieSpecs2          = "org.tpolecat"           %% "doobie-specs2"            % Versions.DoobieVersion % "test"
   val doobieRefined         = "org.tpolecat"           %% "doobie-refined"           % Versions.DoobieVersion
   val doobieScalatest       = "org.tpolecat"           %% "doobie-scalatest"         % Versions.DoobieVersion % "test"
+  val emoji                 = "com.lightbend"          %% "emoji"                    % Versions.emoji
   val http4s                = "org.http4s"             %% "http4s-blaze-server"      % Versions.Http4sVersion
   val http4sCirce           = "org.http4s"             %% "http4s-circe"             % Versions.Http4sVersion
   val http4sServer          = "org.http4s"             %% "http4s-blaze-server"      % Versions.Http4sVersion

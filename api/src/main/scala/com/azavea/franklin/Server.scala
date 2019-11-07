@@ -1,5 +1,7 @@
 package com.azavea.franklin.api
 
+import java.util.concurrent.Executors
+
 import com.azavea.franklin.database.DatabaseConfig
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
@@ -12,40 +14,88 @@ import tapir.openapi.circe.yaml._
 import tapir.swagger.http4s.SwaggerHttp4s
 import cats.effect._
 import cats.implicits._
-import com.azavea.franklin.endpoints.{CollectionItemEndpoints, LandingPageEndpoints}
-import com.azavea.franklin.services.{CollectionItemsService, CollectionsService, LandingPageService}
+import com.azavea.franklin.endpoints.{
+  CollectionItemEndpoints,
+  LandingPageEndpoints,
+  SearchEndpoints
+}
+import com.azavea.franklin.services.{
+  CollectionItemsService,
+  CollectionsService,
+  LandingPageService,
+  SearchService
+}
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.monovore.decline._
 import org.flywaydb.core.Flyway
 
+import scala.concurrent.ExecutionContext
+
 object Server extends IOApp {
+
+  val rasterIO: ContextShift[IO] = IO.contextShift(
+    ExecutionContext.fromExecutor(
+      Executors.newCachedThreadPool(
+        new ThreadFactoryBuilder().setNameFormat("frankil-api-%d").build()
+      )
+    )
+  )
+
+  override implicit val contextShift: ContextShift[IO] = rasterIO
+
+  val banner =
+    """
+       
+   $$$$$$$$$
+$$$$$$$$$$$$   ________                            __        __  __           
+$$$$$$$$$$$$  /        |                          /  |      /  |/  |          
+$$            $$$$$$$$/______   ______   _______  $$ |   __ $$ |$$/  _______  
+ $$$$$$$$     $$ |__  /      \ /      \ /       \ $$ |  /  |$$ |/  |/       \ 
+$$$$$$$$      $$    |/$$$$$$  |$$$$$$  |$$$$$$$  |$$ |_/$$/ $$ |$$ |$$$$$$$  |
+$$$$$$$       $$$$$/ $$ |  $$/ /    $$ |$$ |  $$ |$$   $$<  $$ |$$ |$$ |  $$ |
+$             $$ |   $$ |     /$$$$$$$ |$$ |  $$ |$$$$$$  \ $$ |$$ |$$ |  $$ |
+$$$$$$        $$ |   $$ |     $$    $$ |$$ |  $$ |$$ | $$  |$$ |$$ |$$ |  $$ |
+$$$$$         $$/    $$/       $$$$$$$/ $$/   $$/ $$/   $$/ $$/ $$/ $$/   $$/ 
+$$$$
+         
+""".split("\n").toList
 
   def createServer(port: Int): Resource[IO, HTTP4sServer[IO]] =
     for {
       connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
       transactionEc <- ExecutionContexts.cachedThreadPool[IO]
-      xa <- HikariTransactor
-        .fromHikariConfig[IO](
-          DatabaseConfig.hikariConfig,
-          connectionEc,
-          transactionEc
-        )
-      allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionItemEndpoints.endpoints
+
+      xa <- {
+        HikariTransactor
+          .fromHikariConfig[IO](
+            DatabaseConfig.hikariConfig,
+            connectionEc,
+            transactionEc
+          )
+      }
+      allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes
       landingPageRoutes = new LandingPageService[IO].routes
-      collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[
-        IO
-      ](xa).routes
+      searchRoutes      = new SearchService[IO](xa).routes
+      collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[IO](
+        xa
+      ).routes
       router = CORS(
         Router(
-          "/" -> (landingPageRoutes <+> collectionRoutes <+> docRoutes)
+          "/" -> (landingPageRoutes <+> collectionRoutes <+> searchRoutes <+> docRoutes)
         )
       ).orNotFound
-      server <- BlazeServerBuilder[IO]
-        .bindHttp(port, "0.0.0.0")
-        .withHttpApp(router)
-        .resource
-    } yield server
+      server <- {
+        BlazeServerBuilder[IO]
+          .bindHttp(port, "0.0.0.0")
+          .withBanner(banner)
+          .withHttpApp(router)
+          .resource
+      }
+    } yield {
+      server
+    }
 
   case class RunMigrations()
 

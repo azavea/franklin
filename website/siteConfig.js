@@ -24,13 +24,15 @@ const users = [
 
 const siteConfig = {
   title: "Franklin", // Title for your website.
-  tagline: "A STAC and OGC API Features compliant web service",
+  tagline: "A STAC and OGC API Features compliant Server",
   url: "https://azavea.github.io", // Your website URL
   baseUrl: "/franklin/", // Base URL for your project */
   // For github.io type URLs, you would set the url and baseUrl like:
   //   url: 'https://facebook.github.io',
   //   baseUrl: '/test-site/',
 
+
+  disableHeaderTitle: true,
   // Used for publishing and more
   projectName: "franklin",
   organizationName: "azavea",
@@ -40,8 +42,7 @@ const siteConfig = {
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    { doc: "introduction", label: "Docs" },
-    { doc: "development", label: "Development" }
+    { doc: "introduction", label: "Getting Started" },
   ],
 
   // If you have users set above, you add it here:
@@ -54,23 +55,25 @@ const siteConfig = {
 
   /* Colors for website */
   colors: {
-    primaryColor: "#847a61",
+    primaryColor: "#092c39",
     secondaryColor: "#5c5543"
   },
 
+  stylesheets: ["https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed:400,700&display=swap"],
+
   /* Custom fonts for website */
-  /*
-  fonts: {
-    myFont: [
-      "Times New Roman",
-      "Serif"
-    ],
-    myOtherFont: [
-      "-apple-system",
-      "system-ui"
-    ]
-  },
-  */
+//   font-family: 'Roboto Condensed', sans-serif;
+// font-family: 'Roboto', sans-serif;
+//   fonts: {
+//     myFont: [
+//       "Roboto Condensed",
+//       "Sans-Serif"
+//     ],
+//     myOtherFont: [
+//       "Roboto",
+//       "system-ui"
+//     ]
+//   },
 
   // This copyright info is used in /core/Footer.js and blog RSS/Atom feeds.
   copyright: `Copyright © ${new Date().getFullYear()} Azavea`,
@@ -89,8 +92,8 @@ const siteConfig = {
   cleanUrl: true,
 
   // Open Graph and Twitter card images.
-  ogImage: "img/undraw_online.svg",
-  twitterImage: "img/undraw_tweetstorm.svg",
+  ogImage: "img/franklin-logo-tagline.svg",
+  twitterImage: "img/franklin-logo-tagline.svg",
 
   // For sites with a sizable amount of content, set collapsible to true.
   // Expand/collapse the links and subcategories under categories.
