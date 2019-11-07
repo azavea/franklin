@@ -28,7 +28,7 @@ class LandingPageService[F[_]: Sync](implicit contextShift: ContextShift[F]) ext
       Some("Franklin Powered Catalog")
     ),
     Link(
-      "http://localhost:9090/api/docs.yaml",
+      "http://localhost:9090/spec.yaml",
       ServiceDesc,
       Some(VendorMediaType("application/vnd.oai.openapi+json;version=3.0")),
       Some("Open API 3 Documentation")
