@@ -68,7 +68,6 @@ $$$$
       transactionEc <- ExecutionContexts.cachedThreadPool[IO]
 
       xa <- {
-        println(e"Connecting to database :fax: :minidisc: ...")
         HikariTransactor
           .fromHikariConfig[IO](
             DatabaseConfig.hikariConfig,
@@ -76,7 +75,6 @@ $$$$
             transactionEc
           )
       }
-      _                 = println(e"Setting up documentation :notebook_with_decorative_cover: ...")
       allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes
@@ -98,7 +96,6 @@ $$$$
           .resource
       }
     } yield {
-      println(e"All systems go... :rocket:")
       server
     }
 
