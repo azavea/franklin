@@ -1,6 +1,6 @@
 package com.azavea.franklin.crawler
 
-import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 
 import cats.{Applicative, MonadError}
 import doobie.ConnectionIO
@@ -55,11 +55,13 @@ class StacImport(val catalogRoot: String) {
       collection: StacCollection,
       parentCollection: Option[StacCollection],
       catalog: StacCatalog
-  ): ConnectionIO[Unit] =
+  ): ConnectionIO[StacCollection] =
     Applicative[ConnectionIO].pure {
       println(
         s"Inserting collection ${collection.title} with parent ${parentCollection map { _.title }} into catalog ${catalog.title}"
       )
+    } flatMap { _ =>
+      StacCollectionDao.insertStacCollection(collection, parentCollection map { _.id })
     }
 
   private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("/")
