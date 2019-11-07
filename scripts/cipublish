@@ -33,7 +33,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         if [[ "${CIRCLE_BRANCH}" =~ ^master$ ]]; then
             docker tag "franklin:${GIT_COMMIT}" \
                 "quay.io/azavea/franklin:latest"
-            docker push "quay.io/azavea/franklin:latest}"
+            docker push "quay.io/azavea/franklin:latest"
         fi
 
     fi
