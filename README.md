@@ -43,6 +43,6 @@ This will start a [server](http://localhost:9090) without data using a provided 
 - [ ] `DELETE /collections/{collectionId}/items/{featureId}`
 
 ### Other Features
-- [ ] Index Static Catalogs
+- [x] Index Static Catalogs
 - [ ] Raster Tile Service for COG collections
 - [ ] Vector Tile Service for Label Collections
