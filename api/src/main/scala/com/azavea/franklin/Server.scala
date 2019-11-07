@@ -38,7 +38,7 @@ object Server extends IOApp {
   val rasterIO: ContextShift[IO] = IO.contextShift(
     ExecutionContext.fromExecutor(
       Executors.newCachedThreadPool(
-        new ThreadFactoryBuilder().setNameFormat("frankil-api-%d").build()
+        new ThreadFactoryBuilder().setNameFormat("franklin-api-%d").build()
       )
     )
   )

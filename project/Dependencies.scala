@@ -7,9 +7,8 @@ object Versions {
   val CirceFs2Version  = "0.11.0"
   val CirceVersion     = "0.11.1"
   val DeclineVersion   = "0.6.2"
-  val emoji            = "1.2.1"
-  val Specs2Version    = "4.6.0"
   val DoobieVersion    = "0.7.1"
+  val EmojiVersion     = "1.2.1"
   val Flyway           = "5.2.4"
   val GeotrellisServer = "3.4.0-8-g362e95f-SNAPSHOT"
   val Http4sVersion    = "0.20.10"
@@ -35,7 +34,7 @@ object Dependencies {
   val doobiePostgresCirce   = "org.tpolecat"           %% "doobie-postgres-circe"    % Versions.DoobieVersion
   val doobieRefined         = "org.tpolecat"           %% "doobie-refined"           % Versions.DoobieVersion
   val doobieScalatest       = "org.tpolecat"           %% "doobie-scalatest"         % Versions.DoobieVersion % "test"
-  val emoji                 = "com.lightbend"          %% "emoji"                    % Versions.emoji
+  val emoji                 = "com.lightbend"          %% "emoji"                    % Versions.EmojiVersion
   val doobieSpecs2          = "org.tpolecat"           %% "doobie-specs2"            % Versions.DoobieVersion % "test"
   val flyway                = "org.flywaydb"           % "flyway-core"               % Versions.Flyway
   val geotrellisServer      = "com.azavea.geotrellis"  %% "geotrellis-server-stac"   % Versions.GeotrellisServer
