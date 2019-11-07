@@ -2,8 +2,6 @@ package com.azavea.franklin.api
 
 import java.util.concurrent.Executors
 
-import com.lightbend.emoji.ShortCodes.Implicits._
-import com.lightbend.emoji.ShortCodes.Defaults._
 import com.azavea.franklin.database.DatabaseConfig
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
