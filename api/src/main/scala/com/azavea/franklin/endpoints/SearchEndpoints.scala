@@ -26,7 +26,7 @@ object SearchEndpoints {
       .in("search")
       .out(jsonBody[Json])
       .description("Search endpoint using POST for all collections")
-      .name("search-get")
+      .name("search-post")
 
   val endpoints = List(rootCatalog, searchGet, searchPost)
 
