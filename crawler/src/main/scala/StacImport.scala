@@ -45,12 +45,6 @@ class StacImport(val catalogRoot: String) {
       collection
     }
 
-  // mock db interaction for now
-  def insertCatalog(catalog: StacCatalog): ConnectionIO[Unit] =
-    Applicative[ConnectionIO].pure {
-      println(s"Inserting catalog ${catalog.title}")
-    }
-
   def insertCollection(
       collection: StacCollection,
       parentCollection: Option[StacCollection],
@@ -153,7 +147,6 @@ class StacImport(val catalogRoot: String) {
   def run(): fs2.Stream[ConnectionIO, Unit] =
     for {
       catalog              <- readRoot
-      _                    <- fs2.Stream.eval { insertCatalog(catalog) }
       (collection, parent) <- readChildren(catalog)
       _                    <- fs2.Stream.eval { insertCollection(collection, parent, catalog) }
       item                 <- readItems(collection)
