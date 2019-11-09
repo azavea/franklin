@@ -4,6 +4,10 @@
       <pattern>[%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg %n</pattern>
     </encoder>
   </appender>
+  <logger name="org.http4s.server.blaze" level="INFO"/>
+  <logger name="org.http4s.server.middleware" level="INFO" />
+  <logger name="org.http4s.blaze" level="WARN"/>
+  <logger name="org.http4s.blaze.channel.nio1" level="WARN"/>
   <logger name="org.http4s" level="INFO"/>
   <root level="WARN">
     <appender-ref ref="STDOUT" />

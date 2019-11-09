@@ -3,12 +3,7 @@ package com.azavea.franklin.services
 import cats._
 import cats.effect._
 import cats.implicits._
-import com.azavea.franklin.datamodel.{
-  Conformance => FranklinConformance,
-  Link,
-  NonEmptyString,
-  LandingPage
-}
+import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
 import com.azavea.franklin.endpoints.LandingPageEndpoints
 import io.circe._
 import io.circe.syntax._
@@ -17,6 +12,7 @@ import org.http4s.dsl.Http4sDsl
 import tapir.server.http4s._
 import geotrellis.server.stac._
 import eu.timepit.refined.auto._
+import eu.timepit.refined.types.string.NonEmptyString
 
 class LandingPageService[F[_]: Sync](implicit contextShift: ContextShift[F]) extends Http4sDsl[F] {
 
@@ -80,6 +76,6 @@ class LandingPageService[F[_]: Sync](implicit contextShift: ContextShift[F]) ext
   }
 
   val routes
-    : HttpRoutes[F] = LandingPageEndpoints.landingPageEndpoint.toRoutes(_ => landingPage()) <+>
+      : HttpRoutes[F] = LandingPageEndpoints.landingPageEndpoint.toRoutes(_ => landingPage()) <+>
     LandingPageEndpoints.conformanceEndpoint.toRoutes(_ => conformancePage())
 }

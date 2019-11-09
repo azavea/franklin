@@ -140,7 +140,7 @@ class Index extends React.Component {
         {[
           {
             content:
-              'Libraries like [**PyStac**](https://pystac.readthedocs.io/en/latest/) allow you to create and manipulate static STAC datasets. **Franklin** ' +
+              'Libraries like [**PySTAC**](https://pystac.readthedocs.io/en/latest/) allow you to create and manipulate static STAC datasets. **Franklin** ' +
               'complements these libraries by allowing you to create a dynamic STAC/OGC API Features web service from ' +
               'these those static datasets.',
             image: `${baseUrl}img/undraw_server_q2pb.svg`,

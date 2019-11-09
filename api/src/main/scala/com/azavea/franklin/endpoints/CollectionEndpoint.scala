@@ -1,6 +1,6 @@
 package com.azavea.franklin.endpoints
 
-import com.azavea.franklin.api.error.NotFound
+import com.azavea.franklin.error.NotFound
 import io.circe._
 import tapir._
 import tapir.json.circe._

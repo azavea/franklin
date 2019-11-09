@@ -28,6 +28,7 @@ object Dependencies {
   val circeGeneric          = "io.circe"               %% "circe-generic"            % Versions.CirceVersion
   val circeRefined          = "io.circe"               %% "circe-refined"            % Versions.CirceVersion
   val decline               = "com.monovore"           %% "decline"                  % Versions.DeclineVersion
+  val declineRefined        = "com.monovore"           %% "decline-refined"          % Versions.DeclineVersion
   val doobie                = "org.tpolecat"           %% "doobie-core"              % Versions.DoobieVersion
   val doobieHikari          = "org.tpolecat"           %% "doobie-hikari"            % Versions.DoobieVersion
   val doobiePostgres        = "org.tpolecat"           %% "doobie-postgres"          % Versions.DoobieVersion

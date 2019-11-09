@@ -40,7 +40,7 @@ class Footer extends React.Component {
             <a href="https://rasterfoundry.azavea.com">
               Raster Foundry
             </a>
-            <a href="">
+            <a href="https://rastervision.io">
               Raster Vision
             </a>
             <a href="https://geotrellis.io">

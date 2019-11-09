@@ -2,7 +2,7 @@ package com.azavea.franklin.services
 
 import cats.effect._
 import cats.implicits._
-import com.azavea.franklin.api.error.{NotFound => NF}
+import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.datamodel.CollectionsResponse
 import com.azavea.franklin.endpoints.CollectionEndpoints

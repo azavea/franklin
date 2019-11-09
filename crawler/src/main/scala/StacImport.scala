@@ -11,7 +11,7 @@ import io.circe.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 class StacImport(val catalogRoot: String) {
 
@@ -75,7 +75,7 @@ class StacImport(val catalogRoot: String) {
   def readFromLocalPath(path: String): fs2.Stream[ConnectionIO, Json] =
     fs2.io.file
       .readAll[ConnectionIO](
-        Path.of(path),
+        Paths.get(path),
         global,
         256
       )

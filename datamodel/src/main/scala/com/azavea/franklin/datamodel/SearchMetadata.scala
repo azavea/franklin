@@ -1,5 +1,6 @@
 package com.azavea.franklin.datamodel
 
+import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 object SearchMetadata {
