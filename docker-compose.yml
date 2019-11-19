@@ -41,37 +41,6 @@ services:
       - $HOME/.aws:/root/.aws:ro
     working_dir: /opt/franklin/api/target/scala-2.12/
 
-
-  import:
-    image: openjdk:11-jdk
-    depends_on:
-      database:
-        condition: service_healthy
-    entrypoint: java
-    command:
-      - "-jar"
-      - "franklin-api-assembly.jar"
-      - "import"
-      - "--catalogRoot"
-      - "/opt/franklin/data/catalog.json"
-    environment:
-      - AWS_PROFILE
-      - ENVIRONMENT=development
-      - POSTGRES_URL=jdbc:postgresql://database.service.internal/
-      - POSTGRES_NAME=franklin
-      - POSTGRES_USER=franklin
-      - POSTGRES_PASSWORD=franklin
-    links:
-      - database:database.service.internal
-    volumes:
-      - ./:/opt/franklin/
-      - $HOME/.sbt:/root/.sbt
-      - $HOME/.coursier:/root/.coursier
-      - ./.bintray:/root/.bintray
-      - $HOME/.ivy2:/root/.ivy2
-      - $HOME/.aws:/root/.aws:ro
-    working_dir: /opt/franklin/api/target/scala-2.12/
-
   migrations:
     image: boxfuse/flyway:5.2.4
     environment:

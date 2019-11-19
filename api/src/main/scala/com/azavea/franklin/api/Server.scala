@@ -1,5 +1,20 @@
 package com.azavea.franklin.api
 
+import cats.effect._
+import cats.implicits._
+import com.azavea.franklin.api.commands.{ApiConfig, Commands, DatabaseConfig}
+import com.azavea.franklin.api.endpoints.{
+  CollectionEndpoints,
+  CollectionItemEndpoints,
+  LandingPageEndpoints,
+  SearchEndpoints
+}
+import com.azavea.franklin.api.services.{
+  CollectionItemsService,
+  CollectionsService,
+  LandingPageService,
+  SearchService
+}
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import org.http4s.implicits._
@@ -9,21 +24,6 @@ import org.http4s.server.{Router, Server => HTTP4sServer}
 import tapir.docs.openapi._
 import tapir.openapi.circe.yaml._
 import tapir.swagger.http4s.SwaggerHttp4s
-import cats.effect._
-import com.azavea.franklin.api.commands.{ApiConfig, Commands, DatabaseConfig}
-import com.azavea.franklin.endpoints.{
-  CollectionEndpoints,
-  CollectionItemEndpoints,
-  LandingPageEndpoints,
-  SearchEndpoints
-}
-import com.azavea.franklin.services.{
-  CollectionItemsService,
-  CollectionsService,
-  LandingPageService,
-  SearchService
-}
-import cats.implicits._
 
 object Server extends IOApp {
 
@@ -61,7 +61,7 @@ $$$$
       allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionEndpoints.endpoints ++ CollectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
-      landingPageRoutes = new LandingPageService[IO].routes
+      landingPageRoutes = new LandingPageService[IO](apiConfig).routes
       searchRoutes      = new SearchService[IO](apiConfig, xa).routes
       collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[IO](
         xa

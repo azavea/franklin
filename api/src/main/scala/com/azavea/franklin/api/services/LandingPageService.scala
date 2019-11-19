@@ -1,10 +1,12 @@
-package com.azavea.franklin.services
+package com.azavea.franklin.api.services
 
 import cats._
 import cats.effect._
 import cats.implicits._
+import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.api.implicits._
+import com.azavea.franklin.api.endpoints.LandingPageEndpoints
 import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
-import com.azavea.franklin.endpoints.LandingPageEndpoints
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
@@ -14,41 +16,42 @@ import geotrellis.server.stac._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
 
-class LandingPageService[F[_]: Sync](implicit contextShift: ContextShift[F]) extends Http4sDsl[F] {
+class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift: ContextShift[F])
+    extends Http4sDsl[F] {
 
   val links = List(
     Link(
-      "http://localhost:9090",
+      apiConfig.apiHost,
       Self,
       Some(`application/json`),
       Some("Franklin Powered Catalog")
     ),
     Link(
-      "http://localhost:9090/spec.yaml",
+      apiConfig.apiHost + "/spec.yaml",
       ServiceDesc,
       Some(VendorMediaType("application/vnd.oai.openapi+json;version=3.0")),
       Some("Open API 3 Documentation")
     ),
     Link(
-      "http://localhost:9090/conformance",
+      apiConfig.apiHost + "/conformance",
       Conformance,
       Some(`application/json`),
       None
     ),
     Link(
-      "http://localhost:9090/collections",
+      apiConfig.apiHost + "/collections",
       Data,
       Some(`application/json`),
       Some("Collections Listing")
     ),
     Link(
-      "http://localhost:9090/stac/search",
+      apiConfig.apiHost + "/stac/search",
       Data,
       Some(`application/geo+json`),
       Some("Franklin Powered STAC Search")
     ),
     Link(
-      "http://localhost:9090/stac/",
+      apiConfig.apiHost + "/stac/",
       StacRoot,
       Some(`application/json`),
       Some("Root Catalog")

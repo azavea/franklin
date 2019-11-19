@@ -1,4 +1,4 @@
-package com.azavea.franklin.endpoints
+package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.error.NotFound
 import io.circe._

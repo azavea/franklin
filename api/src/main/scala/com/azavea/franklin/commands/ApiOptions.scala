@@ -20,8 +20,8 @@ trait ApiOptions {
     .withDefault(PosInt(9090))
 
   private val apiHost = Opts
-    .option[String]("api-host", help = "Hostname Franklin is hosted it")
-    .withDefault("http://localhost:9090")
+    .option[String]("api-host", help = "Hostname Franklin is hosted it (e.g. localhost)")
+    .withDefault("localhost")
 
   private val apiScheme =
     Opts

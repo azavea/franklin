@@ -1,10 +1,10 @@
-package com.azavea.franklin.services
+package com.azavea.franklin.api.services
 
 import cats.effect._
 import cats.implicits._
+import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
 import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.database.StacItemDao
-import com.azavea.franklin.endpoints.CollectionItemEndpoints
 import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
