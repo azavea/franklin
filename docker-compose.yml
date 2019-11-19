@@ -22,7 +22,7 @@ services:
     command:
       - "-jar"
       - "franklin-api-assembly.jar"
-      - "server"
+      - "serve"
       - "--db-host"
       - "database.service"
     environment:

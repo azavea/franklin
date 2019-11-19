@@ -76,6 +76,6 @@ class LandingPageService[F[_]: Sync](implicit contextShift: ContextShift[F]) ext
   }
 
   val routes
-      : HttpRoutes[F] = LandingPageEndpoints.landingPageEndpoint.toRoutes(_ => landingPage()) <+>
+    : HttpRoutes[F] = LandingPageEndpoints.landingPageEndpoint.toRoutes(_ => landingPage()) <+>
     LandingPageEndpoints.conformanceEndpoint.toRoutes(_ => conformancePage())
 }

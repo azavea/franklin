@@ -27,7 +27,7 @@ object Commands {
     }
 
   private def runServerOpts(implicit cs: ContextShift[IO]): Opts[RunServer] =
-    Opts.subcommand("server", "Runs web service") {
+    Opts.subcommand("serve", "Runs web service") {
       (Options.apiConfig, Options.databaseConfig) mapN RunServer
     }
 
