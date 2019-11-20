@@ -146,4 +146,4 @@ services:
       - "9090:9090"
 ```
 
-Second, you can run `docker-compose run franklin migrate` to set up the database. Next, you can import a local dataset by copying it to the same directory as the `docker-compose.yml` file you created. Assuming that the root catalog is `catalog.json` the command would be `docker-compose run franklin import --catalog-root /opt/data/catalog.json`. Lastly, once the import is finished you can start the webserver and go to [`localhost:9090`](http://localhost:9090) to view your catalog.
+Second, you can run `docker-compose run franklin migrate` to set up the database. Next, you can import a local dataset by copying it to the same directory as the `docker-compose.yml` file you created. Assuming that the root catalog is `catalog.json` the command would be `docker-compose run franklin import --catalog-root /opt/franklin/catalog.json`. Lastly, once the import is finished you can start the webserver and go to [`localhost:9090`](http://localhost:9090) to view your catalog.
