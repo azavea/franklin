@@ -30,7 +30,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         pushd "${DIR}"
 
         echo "Building JAR for API subproject"
-        ./sbt api/assembly
+        ./sbt application/assembly
 
         popd
 

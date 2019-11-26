@@ -15,6 +15,7 @@ Starts servers using docker-compose.
 "
 }
 
+
 if [ "${BASH_SOURCE[0]}" = "${0}" ]
 then
     case "${1}" in
@@ -22,9 +23,8 @@ then
             usage
             ;;
         *)
-            echo "Starting API service"
-            docker-compose -f docker-compose.yml \
-                up api
+            echo -e "\e[32m[franklin] Starting API service\e[0m"
+            bloop run application -- serve --db-host=localhost
             ;;
     esac
 fi

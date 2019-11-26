@@ -10,7 +10,7 @@ function usage() {
     echo -n \
          "Usage: $(basename "$0") [flyway command]
 
-Runs api migrations via flywaydb CLI
+Runs app-backend migrations via flywaydb CLI
 
 Available flyway commands are migrate|clean|info|validate|undo|baseline|repair
 
@@ -24,9 +24,8 @@ then
             usage
             ;;
         *)
-            docker-compose -f docker-compose.yml \
-                run --rm \
-                migrations "${1:-info}"
+            echo -e "\e[32m[franklin] Running migrations\e[0m"
+            bloop run application -- migrate --db-host=localhost
             ;;
     esac
 fi

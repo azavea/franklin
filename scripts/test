@@ -37,16 +37,8 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         fi
 
         echo "Executing Scala tests"
-        if [[ $CI ]]; then
-            pushd "${DIR}"
+                    echo -e "\e[32m[franklin] Execute Scalafix\e[0m"
+            ./sbt ";scalafix --check;scalafmtCheck;scalafmtSbtCheck;scapegoat;undeclaredCompileDependenciesTest;unusedCompileDependenciesTest;test"
 
-            ./sbt "; scalafix --check; test; docs/mdoc --check"
-
-            popd
-        else
-            docker-compose \
-                run --rm sbt \
-                "; scalafix --check; test"
-        fi
     fi
 fi

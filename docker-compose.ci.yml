@@ -3,7 +3,7 @@ services:
   api:
     image: "franklin:${GIT_COMMIT}"
     build:
-      context: ./api
+      context: application
       dockerfile: Dockerfile
 
   shellcheck:
