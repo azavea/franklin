@@ -108,7 +108,10 @@ const siteConfig = {
   // You may provide arbitrary config keys to be used as needed by your
   // template. For example, if you need your repo's URL...
   repoUrl: "https://github.com/azavea/franklin",
-  customDocsPath: "api-docs/target/mdoc"
+  customDocsPath: "api-docs/target/mdoc",
+
+  // Google analytics ID
+  gaTrackingId: "UA-970854-35"
 };
 
 module.exports = siteConfig;
