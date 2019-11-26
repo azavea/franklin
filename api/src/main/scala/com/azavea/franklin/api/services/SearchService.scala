@@ -1,12 +1,15 @@
-package com.azavea.franklin.services
+package com.azavea.franklin.api.services
 
 import cats.effect._
 import cats.implicits._
+import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.api.endpoints.SearchEndpoints
 import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
+import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.datamodel._
-import com.azavea.franklin.endpoints.SearchEndpoints
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.server.stac.{`application/json`, Child, Data, Self}
 import io.circe._
 import io.circe.syntax._
@@ -14,15 +17,16 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import tapir.server.http4s._
 
-class SearchService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: ContextShift[F])
-    extends Http4sDsl[F] {
+class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
+    implicit contextShift: ContextShift[F]
+) extends Http4sDsl[F] {
 
   def rootSearch: F[Either[Unit, Json]] = {
     for {
       collections <- StacCollectionDao.listCollections().transact(xa)
     } yield {
       val collectionLinks = collections.map { collection =>
-        val href = NonEmptyString.unsafeFrom(s"http://localhost:9090/collections/${collection.id}")
+        val href: NonEmptyString = apiConfig.apiHost + s"/collections/${collection.id}"
         val title = collection.title match {
           case Some(s) if s.length > 0 => Some(NonEmptyString.unsafeFrom(s))
           case _                       => None
@@ -36,14 +40,14 @@ class SearchService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: Contex
       }
 
       val selfLink = Link(
-        NonEmptyString("http://localhost:9090/stac"),
+        apiConfig.apiHost + "/stac",
         Self,
         Some(`application/json`),
         Some(NonEmptyString("Franklin STAC API"))
       )
 
       val searchLink = Link(
-        NonEmptyString("http://localhost:9090/stac/search"),
+        apiConfig.apiHost + "/stac/search",
         Data,
         Some(`application/json`),
         Some(NonEmptyString("Franklin STAC Search API"))

@@ -122,6 +122,7 @@ lazy val apiSettings = commonSettings ++ Seq(
 
 lazy val apiDependencies = commonDependencies ++ databaseDependencies ++ Seq(
   Dependencies.decline,
+  Dependencies.declineRefined,
   Dependencies.http4s,
   Dependencies.http4sCirce,
   Dependencies.http4sDsl,

@@ -1,4 +1,4 @@
-package com.azavea.franklin.api.error
+package com.azavea.franklin.error
 
 import cats.implicits._
 import io.circe._
@@ -8,8 +8,10 @@ import io.circe.syntax._
 sealed abstract class CrudError
 
 object CrudError {
+
   implicit val decCrudErrror
     : Decoder[CrudError] = Decoder[NotFound].widen or Decoder[ValidationError].widen
+
   implicit val encCrudError: Encoder[CrudError] = new Encoder[CrudError] {
 
     def apply(thing: CrudError): Json = thing match {

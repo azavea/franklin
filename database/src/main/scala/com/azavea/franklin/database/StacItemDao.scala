@@ -1,9 +1,10 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel.{NonEmptyString, SearchMetadata, StacSearch}
+import com.azavea.franklin.datamodel.{SearchMetadata, StacSearch}
 import doobie._
 import doobie.implicits._
 import doobie.free.connection.ConnectionIO
+import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.server.stac.StacItem
 import geotrellis.vector.Projected
 

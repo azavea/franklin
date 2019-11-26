@@ -22,16 +22,14 @@ services:
     command:
       - "-jar"
       - "franklin-api-assembly.jar"
-      - "server"
+      - "serve"
+      - "--db-host"
+      - "database.service"
     environment:
       - AWS_PROFILE
       - ENVIRONMENT=development
-      - POSTGRES_URL=jdbc:postgresql://database.service.internal/
-      - POSTGRES_NAME=franklin
-      - POSTGRES_USER=franklin
-      - POSTGRES_PASSWORD=franklin
     links:
-      - database:database.service.internal
+      - database:database.service
     ports:
       - "9090:9090"
     volumes:

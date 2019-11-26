@@ -1,5 +1,6 @@
 package com.azavea.franklin.datamodel
 
+import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.server.stac.{StacLinkType, StacMediaType}
 import io.circe.Encoder
 import io.circe.generic.semiauto._
