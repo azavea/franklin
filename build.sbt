@@ -87,7 +87,7 @@ lazy val applicationDependencies = Seq(
   "org.flywaydb"                % "flyway-core"               % Versions.Flyway,
   "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
-  "org.http4s"                  %% "http4s-circe"             % Versions.Http4sVersion,
+  "org.http4s"                  %% "http4s-circe"             % Versions.Http4sVersion % "test",
   "org.http4s"                  %% "http4s-core"              % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-dsl"               % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-server"            % Versions.Http4sVersion,
