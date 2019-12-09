@@ -23,13 +23,13 @@ object SearchFilters {
 
     final def apply(c: HCursor): Decoder.Result[SearchFilters] =
       for {
-        bbox <- c.downField("bbox").as[Option[Bbox]]
-        datetime <- c.downField("datetime").as[Option[TemporalExtent]]
-        intersects <- c.downField("intersects").as[Option[Geometry]]
+        bbox              <- c.downField("bbox").as[Option[Bbox]]
+        datetime          <- c.downField("datetime").as[Option[TemporalExtent]]
+        intersects        <- c.downField("intersects").as[Option[Geometry]]
         collectionsOption <- c.downField("collections").as[Option[List[String]]]
-        itemsOption <- c.downField("items").as[Option[List[String]]]
-        limit <- c.downField("limit").as[Option[Int]]
-        next <- c.downField("next").as[Option[String]]
+        itemsOption       <- c.downField("items").as[Option[List[String]]]
+        limit             <- c.downField("limit").as[Option[Int]]
+        next              <- c.downField("next").as[Option[String]]
       } yield {
         SearchFilters(
           bbox,
