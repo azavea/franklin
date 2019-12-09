@@ -5,7 +5,7 @@ import sbt._
 // Versions
 object Versions {
   val CatsEffectVersion     = "1.4.0"
-  val CatsScalacheckVersion = "0.2.0"
+  val CatsScalacheckVersion = "0.1.1"
   val CatsVersion           = "1.6.1"
   val CirceFs2Version       = "0.11.0"
   val CirceVersion          = "0.11.1"
