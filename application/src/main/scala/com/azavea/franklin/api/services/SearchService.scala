@@ -72,7 +72,6 @@ class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
   }
 
   def search(searchFilters: SearchFilters): F[Either[Unit, Json]] = {
-    println(s"Search Filters: $searchFilters")
     for {
       items <- StacItemDao.query
         .filter(searchFilters)

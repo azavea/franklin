@@ -12,7 +12,7 @@ object DatabaseConfig {
   val jdbcNoDBUrl: String =
     Properties.envOrElse(
       "POSTGRES_URL",
-      "jdbc:postgresql://database.service.internal/"
+      "jdbc:postgresql://localhost/"
     )
 
   val jdbcDBName: String =

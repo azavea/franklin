@@ -52,7 +52,6 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
 
   implicit val searchFilter: Filterable[Any, SearchFilters] =
     Filterable[Any, SearchFilters] { searchFilters: SearchFilters =>
-      println(searchFilters)
       val collectionsFilter: Option[Fragment] = searchFilters.collections.toNel
         .map(
           collections => Fragments.in(fr"item #>> '{properties, collection}'", collections)
@@ -65,8 +64,9 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
 
       val bboxFilter: Option[Fragment] = searchFilters.bbox.flatMap { bbox =>
         bbox.toExtent match {
-          case Left(_)       => None
-          case Right(extent) => Some(fr"ST_INTERSECTS(geom, ${Projected(extent.toPolygon(), 4326)}")
+          case Left(_) => None
+          case Right(extent) =>
+            Some(fr"ST_INTERSECTS(geom, ${Projected(extent.toPolygon(), 4326)})")
         }
       }
       val temporalExtentFilter: Option[Fragment] =

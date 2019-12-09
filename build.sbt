@@ -77,6 +77,7 @@ lazy val applicationDependencies = Seq(
   "com.softwaremill.tapir"      %% "tapir-swagger-ui-http4s"  % Versions.TapirVersion,
   "com.zaxxer"                  % "HikariCP"                  % Versions.HikariVersion,
   "eu.timepit"                  %% "refined"                  % Versions.Refined,
+  "io.chrisdavenport"           %% "cats-scalacheck"          % Versions.CatsScalacheckVersion % "test",
   "io.circe"                    %% "circe-core"               % Versions.CirceVersion,
   "io.circe"                    %% "circe-fs2"                % Versions.CirceFs2Version,
   "io.circe"                    %% "circe-generic"            % Versions.CirceVersion,
@@ -86,6 +87,7 @@ lazy val applicationDependencies = Seq(
   "org.flywaydb"                % "flyway-core"               % Versions.Flyway,
   "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
+  "org.http4s"                  %% "http4s-circe"             % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-core"              % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-dsl"               % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-server"            % Versions.Http4sVersion,
@@ -101,7 +103,10 @@ lazy val applicationDependencies = Seq(
   "org.tpolecat"                %% "doobie-specs2"            % Versions.DoobieVersion % "test",
   "org.typelevel"               %% "cats-core"                % Versions.CatsVersion,
   "org.typelevel"               %% "cats-effect"              % Versions.CatsEffectVersion,
-  "org.typelevel"               %% "cats-free"                % Versions.CatsVersion
+  "org.typelevel"               %% "cats-free"                % Versions.CatsVersion,
+  "org.scalacheck"              %% "scalacheck"               % Versions.ScalacheckVersion % "test",
+  "org.specs2"                  %% "specs2-core"              % Versions.Specs2Version % "test",
+  "org.specs2"                  %% "specs2-scalacheck"        % Versions.Specs2Version % "test"
 )
 
 lazy val application = (project in file("application"))
