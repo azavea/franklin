@@ -9,13 +9,6 @@ import tapir.json.circe._
 
 object SearchEndpoints {
 
-  // TODO:
-  // - Allow nulls for items and collections
-  // - Tests, Tests, Tests
-  // - Error on issues parsing parameters
-  // - rewrite links to be absolute wrt API
-  // - fix spatial filter
-
   val base = endpoint.in("stac")
 
   val rootCatalog: Endpoint[Unit, Unit, Json, Nothing] =
