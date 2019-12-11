@@ -4,30 +4,30 @@ import geotrellis.server.stac.StacItem
 import io.circe._
 import io.circe.syntax._
 
-object StacSearch {
+object StacSearchCollection {
 
-  implicit val stacSearchEncoder = new Encoder[StacSearch] {
+  implicit val stacSearchEncoder = new Encoder[StacSearchCollection] {
 
-    final def apply(a: StacSearch): Json = Json.obj(
+    final def apply(a: StacSearchCollection): Json = Json.obj(
       ("type", Json.fromString("FeatureCollection")),
       ("search:metadata", a.searchMetadata.asJson),
       ("features", a.features.asJson)
     )
   }
 
-  implicit val stacSearchDecoder = new Decoder[StacSearch] {
+  implicit val stacSearchDecoder = new Decoder[StacSearchCollection] {
 
-    final def apply(c: HCursor): Decoder.Result[StacSearch] =
+    final def apply(c: HCursor): Decoder.Result[StacSearchCollection] =
       for {
         metadata <- c.downField("search:metadata").as[SearchMetadata]
         features <- c.downField("features").as[List[StacItem]]
       } yield {
-        new StacSearch(metadata, features)
+        new StacSearchCollection(metadata, features)
       }
   }
 }
 
-case class StacSearch(
+case class StacSearchCollection(
     searchMetadata: SearchMetadata,
     features: List[StacItem]
 )

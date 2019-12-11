@@ -89,6 +89,8 @@ object Dao {
         .to[List]
     }
 
+    def count: ConnectionIO[Int] = countF.query[Int].unique
+
     /** Provide a list of responses */
     def list(offset: Int, limit: Int): ConnectionIO[List[Model]] = {
       listQ(offset, limit).to[List]

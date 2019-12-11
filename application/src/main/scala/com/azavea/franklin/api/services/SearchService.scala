@@ -5,13 +5,12 @@ import cats.implicits._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.SearchEndpoints
 import com.azavea.franklin.database.{SearchFilters, StacCollectionDao, StacItemDao}
-import com.azavea.franklin.database.Filterables._
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.datamodel._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.server.stac.{`application/json`, Child, Data, Self, StacLink}
+import geotrellis.server.stac.{`application/json`, Child, Data, Self}
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
@@ -73,12 +72,9 @@ class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
 
   def search(searchFilters: SearchFilters): F[Either[Unit, Json]] = {
     for {
-      items <- StacItemDao.query
-        .filter(searchFilters)
-        .list(searchFilters.page)
-        .transact(xa)
+      searchResult <- StacItemDao.getSearchResult(searchFilters).transact(xa)
     } yield {
-      Either.right(StacItemFeatureCollection(items, List.empty[StacLink]).asJson)
+      Either.right(searchResult.asJson)
     }
   }
 

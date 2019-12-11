@@ -11,6 +11,6 @@ object SearchMetadata {
 case class SearchMetadata(
     next: Option[NonEmptyString],
     returned: Int,
-    limit: Int,
+    limit: Option[Int],
     matched: Int
 )

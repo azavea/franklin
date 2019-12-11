@@ -1,6 +1,6 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel.{SearchMetadata, StacSearch}
+import com.azavea.franklin.datamodel.{SearchMetadata, StacSearchCollection}
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
@@ -13,18 +13,19 @@ object StacItemDao extends Dao[StacItem] {
 
   val selectF = fr"SELECT item FROM " ++ tableF
 
-  def getSearchResult(limit: Int, offset: Int): ConnectionIO[StacSearch] = {
+  def getSearchResult(searchFilters: SearchFilters): ConnectionIO[StacSearchCollection] = {
+    val page = searchFilters.page
     for {
-      items   <- (selectF ++ fr"LIMIT $limit OFFSET $offset").query[StacItem].to[List]
-      matched <- fr"SELECT count(1) FROM collection_items".query[Int].unique
+      items   <- query.filter(searchFilters).list(searchFilters.page)
+      matched <- query.filter(searchFilters).count
     } yield {
       val next =
-        if ((limit + offset) < matched) Some(NonEmptyString.unsafeFrom(s"${limit + offset}"))
+        if ((items.length + page.offset) < matched)
+          page.nextPage.next.flatMap(s => NonEmptyString.from(s).toOption)
         else None
-      val metadata = SearchMetadata(next, items.length, limit, matched)
-      StacSearch(metadata, items)
+      val metadata = SearchMetadata(next, items.length, page.limit, matched)
+      StacSearchCollection(metadata, items)
     }
-
   }
 
   def insertStacItem(item: StacItem): ConnectionIO[StacItem] = {
