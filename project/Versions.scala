@@ -1,7 +1,3 @@
-import scala.util.Properties
-
-import sbt._
-
 // Versions
 object Versions {
   val CatsEffectVersion     = "1.4.0"
