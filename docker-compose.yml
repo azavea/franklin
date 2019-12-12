@@ -6,79 +6,11 @@ services:
       - POSTGRES_USER=franklin
       - POSTGRES_PASSWORD=franklin
       - POSTGRES_DB=franklin
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "franklin"]
       interval: 3s
       timeout: 3s
       retries: 3
       start_period: 5s
-
-  api:
-    image: openjdk:11-jdk
-    depends_on:
-      database:
-        condition: service_healthy
-    entrypoint: java
-    command:
-      - "-jar"
-      - "franklin-api-assembly.jar"
-      - "serve"
-      - "--db-host"
-      - "database.service"
-    environment:
-      - AWS_PROFILE
-      - ENVIRONMENT=development
-    links:
-      - database:database.service
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./:/opt/franklin/
-      - $HOME/.sbt:/root/.sbt
-      - $HOME/.coursier:/root/.coursier
-      - ./.bintray:/root/.bintray
-      - $HOME/.ivy2:/root/.ivy2
-      - $HOME/.aws:/root/.aws:ro
-    working_dir: /opt/franklin/api/target/scala-2.12/
-
-  migrations:
-    image: boxfuse/flyway:5.2.4
-    environment:
-      - FLYWAY_DRIVER=org.postgresql.Driver
-      - FLYWAY_URL=jdbc:postgresql://database.service.internal/franklin
-      - FLYWAY_USER=franklin
-      - FLYWAY_PASSWORD=franklin
-      - FLYWAY_LOCATIONS=filesystem:/opt/franklin/database/src/main/resources/migrations
-      - FLYWAY_SCHEMAS=public
-      - FLYWAY_BASELINE_ON_MIGRATE=true
-    depends_on:
-      database:
-        condition: service_healthy
-    links:
-      - database:database.service.internal
-    volumes:
-      - ./:/opt/franklin
-
-  sbt:
-    image: openjdk:11-jdk
-    depends_on:
-      database:
-        condition: service_healthy
-    links:
-      - database:database.service.internal
-    environment:
-      - AWS_PROFILE
-      - POSTGRES_URL=jdbc:postgresql://database.service.internal/
-      - POSTGRES_NAME=franklin
-      - POSTGRES_USER=franklin
-      - POSTGRES_PASSWORD=franklin
-      - COURSIER_CACHE=/root/.coursier
-    volumes:
-      - ./:/opt/franklin
-      - $HOME/.sbt:/root/.sbt
-      - $HOME/.coursier:/root/.coursier
-      - ./.bintray:/root/.bintray
-      - $HOME/.ivy2:/root/.ivy2
-      - $HOME/.aws:/root/.aws:ro
-    working_dir: /opt/franklin/
-    entrypoint: ./sbt

@@ -1,25 +1,11 @@
 cancelable in Global := true
 
-lazy val commonDependencies =
-  Seq(Dependencies.specs2Core, Dependencies.logbackClassic)
-
 lazy val commonSettings = Seq(
   organization := "com.azavea",
   name := "franklin",
   version := "0.0.1-SNAPSHOT",
   scalaVersion := "2.12.10",
-  scalafmtOnCompile := true,
   scapegoatVersion in ThisBuild := Versions.ScapegoatVersion,
-  scalacOptions := Seq(
-    "-Ypartial-unification",
-    "-language:higherKinds",
-    "-deprecation",
-    "-feature",
-    // Required by ScalaFix
-    "-Yrangepos",
-    "-Ywarn-unused",
-    "-Ywarn-unused-import"
-  ),
   autoCompilerPlugins := true,
   externalResolvers := Seq(
     DefaultMavenRepository,
@@ -42,71 +28,22 @@ lazy val commonSettings = Seq(
   addCompilerPlugin(
     "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full
   ),
+  unusedCompileDependenciesFilter -= moduleFilter(
+    "com.sksamuel.scapegoat",
+    "scalac-scapegoat-plugin"
+  ),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
-  .aggregate(api, database, datamodel)
-lazy val rootRef = LocalProject("root")
+  .aggregate(application)
 
-///////////////
-// Datamodel //
-///////////////
-lazy val datamodelSettings = commonSettings ++ Seq(
-  name := "datamodel",
-  fork in run := true
-)
-
-lazy val datamodelDependencies = commonDependencies ++ Seq(
-  Dependencies.circeCore,
-  Dependencies.emoji,
-  Dependencies.tapir,
-  Dependencies.circeGeneric,
-  Dependencies.circeRefined,
-  Dependencies.http4s,
-  Dependencies.http4sCirce,
-  Dependencies.geotrellisServer,
-  Dependencies.refined,
-  Dependencies.refinedCats
-)
-
-lazy val datamodel = (project in file("datamodel"))
-  .settings(datamodelSettings: _*)
-  .settings({ libraryDependencies ++= datamodelDependencies })
-
-//////////////
-// Database //
-//////////////
-lazy val databaseSettings = commonSettings ++ Seq(
-  name := "database",
-  fork in run := true
-)
-
-lazy val databaseDependencies = commonDependencies ++ Seq(
-  Dependencies.doobie,
-  Dependencies.doobieHikari,
-  Dependencies.doobiePostgres,
-  Dependencies.doobiePostgresCirce,
-  Dependencies.doobieSpecs2,
-  Dependencies.doobieScalatest,
-  Dependencies.doobieRefined,
-  Dependencies.flyway,
-  Dependencies.postgis
-)
-
-lazy val database = (project in file("database"))
-  .dependsOn(datamodel)
-  .settings(databaseSettings: _*)
-  .settings({
-    libraryDependencies ++= databaseDependencies
-  })
-
-///////////////
-//    API    //
-///////////////
-lazy val apiSettings = commonSettings ++ Seq(
-  name := "api",
+///////////////////////
+//    Application    //
+///////////////////////
+lazy val applicationSettings = commonSettings ++ Seq(
+  name := "application",
   fork in run := true,
   assemblyJarName in assembly := "franklin-api-assembly.jar",
   assemblyMergeStrategy in assembly := {
@@ -120,54 +57,73 @@ lazy val apiSettings = commonSettings ++ Seq(
   }
 )
 
-lazy val apiDependencies = commonDependencies ++ databaseDependencies ++ Seq(
-  Dependencies.decline,
-  Dependencies.declineRefined,
-  Dependencies.http4s,
-  Dependencies.http4sCirce,
-  Dependencies.http4sDsl,
-  Dependencies.http4sServer,
-  Dependencies.tapir,
-  Dependencies.log4cats,
-  Dependencies.pureConfig,
-  Dependencies.tapirCirce,
-  Dependencies.tapirHttp4sServer,
-  Dependencies.tapirOpenAPICirceYAML,
-  Dependencies.tapirOpenAPIDocs,
-  Dependencies.tapirSwaggerUIHttp4s
+lazy val applicationDependencies = Seq(
+  "co.fs2"                      %% "fs2-core"                 % Versions.Fs2Version,
+  "co.fs2"                      %% "fs2-io"                   % Versions.Fs2Version,
+  "com.azavea.geotrellis"       %% "geotrellis-server-stac"   % Versions.GeotrellisServer,
+  "com.chuusai"                 %% "shapeless"                % Versions.ShapelessVersion,
+  "com.lightbend"               %% "emoji"                    % Versions.EmojiVersion,
+  "com.lihaoyi"                 %% "sourcecode"               % Versions.SourceCodeVersion,
+  "com.monovore"                %% "decline"                  % Versions.DeclineVersion,
+  "com.monovore"                %% "decline-refined"          % Versions.DeclineVersion,
+  "com.propensive"              %% "magnolia"                 % Versions.MagnoliaVersion,
+  "com.propensive"              %% "mercator"                 % Versions.MercatorVersion,
+  "com.softwaremill.tapir"      %% "tapir-core"               % Versions.TapirVersion,
+  "com.softwaremill.tapir"      %% "tapir-http4s-server"      % Versions.TapirVersion,
+  "com.softwaremill.tapir"      %% "tapir-json-circe"         % Versions.TapirVersion,
+  "com.softwaremill.tapir"      %% "tapir-openapi-circe-yaml" % Versions.TapirVersion,
+  "com.softwaremill.tapir"      %% "tapir-openapi-docs"       % Versions.TapirVersion,
+  "com.softwaremill.tapir"      %% "tapir-openapi-model"      % Versions.TapirVersion,
+  "com.softwaremill.tapir"      %% "tapir-swagger-ui-http4s"  % Versions.TapirVersion,
+  "com.zaxxer"                  % "HikariCP"                  % Versions.HikariVersion,
+  "eu.timepit"                  %% "refined"                  % Versions.Refined,
+  "io.chrisdavenport"           %% "cats-scalacheck"          % Versions.CatsScalacheckVersion % "test",
+  "io.circe"                    %% "circe-core"               % Versions.CirceVersion,
+  "io.circe"                    %% "circe-fs2"                % Versions.CirceFs2Version,
+  "io.circe"                    %% "circe-generic"            % Versions.CirceVersion,
+  "io.circe"                    %% "circe-numbers"            % Versions.CirceVersion,
+  "io.circe"                    %% "circe-refined"            % Versions.CirceVersion,
+  "net.postgis"                 % "postgis-jdbc"              % Versions.Postgis,
+  "org.flywaydb"                % "flyway-core"               % Versions.Flyway,
+  "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
+  "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
+  "org.http4s"                  %% "http4s-circe"             % Versions.Http4sVersion % "test",
+  "org.http4s"                  %% "http4s-core"              % Versions.Http4sVersion,
+  "org.http4s"                  %% "http4s-dsl"               % Versions.Http4sVersion,
+  "org.http4s"                  %% "http4s-server"            % Versions.Http4sVersion,
+  "org.locationtech.geotrellis" %% "geotrellis-vector"        % Versions.GeoTrellisVersion,
+  "org.scala-lang"              % "scala-reflect"             % Versions.ScalaReflectVersion,
+  "org.specs2"                  %% "specs2-core"              % Versions.Specs2Version % "test",
+  "org.tpolecat"                %% "doobie-core"              % Versions.DoobieVersion,
+  "org.tpolecat"                %% "doobie-free"              % Versions.DoobieVersion,
+  "org.tpolecat"                %% "doobie-hikari"            % Versions.DoobieVersion,
+  "org.tpolecat"                %% "doobie-postgres"          % Versions.DoobieVersion,
+  "org.tpolecat"                %% "doobie-postgres-circe"    % Versions.DoobieVersion,
+  "org.tpolecat"                %% "doobie-scalatest"         % Versions.DoobieVersion % "test",
+  "org.tpolecat"                %% "doobie-specs2"            % Versions.DoobieVersion % "test",
+  "org.typelevel"               %% "cats-core"                % Versions.CatsVersion,
+  "org.typelevel"               %% "cats-effect"              % Versions.CatsEffectVersion,
+  "org.typelevel"               %% "cats-free"                % Versions.CatsVersion,
+  "org.scalacheck"              %% "scalacheck"               % Versions.ScalacheckVersion % "test",
+  "org.specs2"                  %% "specs2-core"              % Versions.Specs2Version % "test",
+  "org.specs2"                  %% "specs2-scalacheck"        % Versions.Specs2Version % "test"
 )
 
-lazy val api = (project in file("api"))
-  .dependsOn(datamodel, database, crawler)
-  .settings(apiSettings: _*)
+lazy val application = (project in file("application"))
+  .settings(applicationSettings: _*)
   .settings({
-    libraryDependencies ++= apiDependencies
+    libraryDependencies ++= applicationDependencies
   })
 
 //////////
 // DOCS //
 //////////
 lazy val docs = (project in file("api-docs"))
-  .dependsOn(api)
+  .dependsOn(application)
   .enablePlugins(MdocPlugin)
   .enablePlugins(MdocPlugin, DocusaurusPlugin)
   .settings(
     mdocVariables := Map(
       "VERSION" -> version.value
     )
-  )
-
-/////////////
-// CRAWLER //
-/////////////
-
-lazy val crawlerDependencies = Seq(
-  Dependencies.circeFs2
-)
-
-lazy val crawler = project
-  .dependsOn(datamodel, database)
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++= crawlerDependencies
   )
