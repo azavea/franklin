@@ -3,7 +3,7 @@ package com.azavea.franklin.database
 import cats.implicits._
 import doobie._
 import doobie.postgres.circe.jsonb.implicits._
-import geotrellis.server.stac.{StacCollection, StacItem}
+import com.azavea.stac4s.{StacCollection, StacItem}
 import io.circe._
 import io.circe.syntax._
 

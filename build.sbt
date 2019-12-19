@@ -23,14 +23,18 @@ lazy val commonSettings = Seq(
       Resolver.ivyStylePatterns
     )
   ),
-  addCompilerPlugin("org.spire-math" %% "kind-projector"     % "0.9.6"),
-  addCompilerPlugin("com.olegpy"     %% "better-monadic-for" % "0.2.4"),
+  addCompilerPlugin("org.spire-math" %% "kind-projector"     % "0.9.10"),
+  addCompilerPlugin("com.olegpy"     %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
-    "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full
+    "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full
   ),
   unusedCompileDependenciesFilter -= moduleFilter(
     "com.sksamuel.scapegoat",
     "scalac-scapegoat-plugin"
+  ),
+  unusedCompileDependenciesFilter -= moduleFilter(
+    "org.slf4j",
+    "slf4j-simple"
   ),
   addCompilerPlugin(scalafixSemanticdb)
 )
@@ -60,21 +64,23 @@ lazy val applicationSettings = commonSettings ++ Seq(
 lazy val applicationDependencies = Seq(
   "co.fs2"                      %% "fs2-core"                 % Versions.Fs2Version,
   "co.fs2"                      %% "fs2-io"                   % Versions.Fs2Version,
-  "com.azavea.geotrellis"       %% "geotrellis-server-stac"   % Versions.GeotrellisServer,
+  "com.azavea.stac4s"           %% "core"                     % Versions.Stac4SVersion,
   "com.chuusai"                 %% "shapeless"                % Versions.ShapelessVersion,
   "com.lightbend"               %% "emoji"                    % Versions.EmojiVersion,
+  "com.lihaoyi"                 %% "sourcecode"               % Versions.SourceCodeVersion,
   "com.lihaoyi"                 %% "sourcecode"               % Versions.SourceCodeVersion,
   "com.monovore"                %% "decline"                  % Versions.DeclineVersion,
   "com.monovore"                %% "decline-refined"          % Versions.DeclineVersion,
   "com.propensive"              %% "magnolia"                 % Versions.MagnoliaVersion,
   "com.propensive"              %% "mercator"                 % Versions.MercatorVersion,
-  "com.softwaremill.tapir"      %% "tapir-core"               % Versions.TapirVersion,
-  "com.softwaremill.tapir"      %% "tapir-http4s-server"      % Versions.TapirVersion,
-  "com.softwaremill.tapir"      %% "tapir-json-circe"         % Versions.TapirVersion,
-  "com.softwaremill.tapir"      %% "tapir-openapi-circe-yaml" % Versions.TapirVersion,
-  "com.softwaremill.tapir"      %% "tapir-openapi-docs"       % Versions.TapirVersion,
-  "com.softwaremill.tapir"      %% "tapir-openapi-model"      % Versions.TapirVersion,
-  "com.softwaremill.tapir"      %% "tapir-swagger-ui-http4s"  % Versions.TapirVersion,
+  "com.softwaremill.sttp.model" %% "core"                     % Versions.SttpModelVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-core"               % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-http4s-server"      % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs"       % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-openapi-model"      % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s"  % Versions.TapirVersion,
   "com.zaxxer"                  % "HikariCP"                  % Versions.HikariVersion,
   "eu.timepit"                  %% "refined"                  % Versions.Refined,
   "io.chrisdavenport"           %% "cats-scalacheck"          % Versions.CatsScalacheckVersion % "test",
@@ -92,8 +98,13 @@ lazy val applicationDependencies = Seq(
   "org.http4s"                  %% "http4s-dsl"               % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-server"            % Versions.Http4sVersion,
   "org.locationtech.geotrellis" %% "geotrellis-vector"        % Versions.GeoTrellisVersion,
+  "org.locationtech.jts"        % "jts-core"                  % Versions.JtsVersion,
   "org.scala-lang"              % "scala-reflect"             % Versions.ScalaReflectVersion,
+  "org.scalacheck"              %% "scalacheck"               % Versions.ScalacheckVersion % "test",
+  "org.slf4j"                   % "slf4j-simple"              % Versions.Slf4jVersion,
   "org.specs2"                  %% "specs2-core"              % Versions.Specs2Version % "test",
+  "org.specs2"                  %% "specs2-core"              % Versions.Specs2Version % "test",
+  "org.specs2"                  %% "specs2-scalacheck"        % Versions.Specs2Version % "test",
   "org.tpolecat"                %% "doobie-core"              % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-free"              % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-hikari"            % Versions.DoobieVersion,
@@ -103,10 +114,7 @@ lazy val applicationDependencies = Seq(
   "org.tpolecat"                %% "doobie-specs2"            % Versions.DoobieVersion % "test",
   "org.typelevel"               %% "cats-core"                % Versions.CatsVersion,
   "org.typelevel"               %% "cats-effect"              % Versions.CatsEffectVersion,
-  "org.typelevel"               %% "cats-free"                % Versions.CatsVersion,
-  "org.scalacheck"              %% "scalacheck"               % Versions.ScalacheckVersion % "test",
-  "org.specs2"                  %% "specs2-core"              % Versions.Specs2Version % "test",
-  "org.specs2"                  %% "specs2-scalacheck"        % Versions.Specs2Version % "test"
+  "org.typelevel"               %% "cats-free"                % Versions.CatsVersion
 )
 
 lazy val application = (project in file("application"))

@@ -12,3 +12,4 @@ addSbtPlugin("ch.epfl.scala"             % "sbt-scalajs-bundler"       % "0.14.0
 addSbtPlugin("org.portable-scala"        % "sbt-scalajs-crossproject"  % "0.6.0")
 addSbtPlugin("org.scalameta"             % "sbt-mdoc"                  % "2.0.0")
 addSbtPlugin("com.github.cb372"          % "sbt-explicit-dependencies" % "0.2.11")
+addSbtPlugin("org.jmotor.sbt"            % "sbt-dependency-updates"    % "1.2.1")

@@ -41,12 +41,12 @@ trait GeotrellisWktMeta {
   implicit val GeometryCollectionType: Meta[Projected[GeometryCollection]] =
     geometryType[GeometryCollection]
 
-  implicit val MultiLineStringType: Meta[Projected[MultiLine]] =
-    geometryType[MultiLine]
+  implicit val MultiLineStringType: Meta[Projected[MultiLineString]] =
+    geometryType[MultiLineString]
 
   implicit val MultiPolygonType: Meta[Projected[MultiPolygon]] =
     geometryType[MultiPolygon]
-  implicit val LineStringType: Meta[Projected[Line]] = geometryType[Line]
+  implicit val LineStringType: Meta[Projected[LineString]] = geometryType[LineString]
 
   implicit val MultiPointType: Meta[Projected[MultiPoint]] =
     geometryType[MultiPoint]

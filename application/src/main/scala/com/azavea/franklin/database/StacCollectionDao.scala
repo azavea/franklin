@@ -3,7 +3,7 @@ package com.azavea.franklin.database
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
-import geotrellis.server.stac._
+import com.azavea.stac4s._
 
 object StacCollectionDao {
 
@@ -21,8 +21,10 @@ object StacCollectionDao {
     )).query[StacCollection].option
   }
 
-  def insertStacCollection(collection: StacCollection,
-                           parentId: Option[String]): ConnectionIO[StacCollection] = {
+  def insertStacCollection(
+      collection: StacCollection,
+      parentId: Option[String]
+  ): ConnectionIO[StacCollection] = {
 
     val insertFragment = fr"""
       INSERT INTO collections (id, parent, collection)
