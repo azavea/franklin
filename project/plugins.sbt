@@ -10,6 +10,6 @@ addSbtPlugin("com.eed3si9n"              % "sbt-assembly"              % "0.14.9
 addSbtPlugin("org.scala-js"              % "sbt-scalajs"               % "0.6.26")
 addSbtPlugin("ch.epfl.scala"             % "sbt-scalajs-bundler"       % "0.14.0")
 addSbtPlugin("org.portable-scala"        % "sbt-scalajs-crossproject"  % "0.6.0")
-addSbtPlugin("org.scalameta"             % "sbt-mdoc"                  % "2.0.0")
+addSbtPlugin("org.scalameta"             % "sbt-mdoc"                  % "2.0.3")
 addSbtPlugin("com.github.cb372"          % "sbt-explicit-dependencies" % "0.2.11")
 addSbtPlugin("org.jmotor.sbt"            % "sbt-dependency-updates"    % "1.2.1")
