@@ -21,9 +21,9 @@ import org.http4s.implicits._
 import org.http4s.server.blaze._
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server => HTTP4sServer}
-import tapir.docs.openapi._
-import tapir.openapi.circe.yaml._
-import tapir.swagger.http4s.SwaggerHttp4s
+import sttp.tapir.docs.openapi._
+import sttp.tapir.openapi.circe.yaml._
+import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
 object Server extends IOApp {
 
@@ -40,7 +40,7 @@ $             $$ |   $$ |     /$$$$$$$ |$$ |  $$ |$$$$$$  \ $$ |$$ |$$ |  $$ |
 $$$$$$        $$ |   $$ |     $$    $$ |$$ |  $$ |$$ | $$  |$$ |$$ |$$ |  $$ |
 $$$$$         $$/    $$/       $$$$$$$/ $$/   $$/ $$/   $$/ $$/ $$/ $$/   $$/
 $$$$
- 
+
 """.split("\n").toList
 
   private def createServer(
@@ -56,7 +56,7 @@ $$$$
         dbConfig.dbUser,
         dbConfig.dbPass,
         connectionEc,
-        transactionEc
+        Blocker.liftExecutionContext(transactionEc)
       )
       allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionEndpoints.endpoints ++ CollectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")

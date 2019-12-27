@@ -1,8 +1,8 @@
 package com.azavea.franklin.api.endpoints
 
 import io.circe._
-import tapir._
-import tapir.json.circe._
+import sttp.tapir._
+import sttp.tapir.json.circe._
 
 object LandingPageEndpoints {
 

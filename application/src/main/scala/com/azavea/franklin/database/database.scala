@@ -3,7 +3,7 @@ package com.azavea.franklin
 import java.time.Instant
 
 import cats.implicits._
-import geotrellis.server.stac.TemporalExtent
+import com.azavea.stac4s.TemporalExtent
 import io.circe.{Decoder, Encoder}
 
 package object database extends CirceJsonbMeta with GeotrellisWktMeta {

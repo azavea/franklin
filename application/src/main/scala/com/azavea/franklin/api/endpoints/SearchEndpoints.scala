@@ -2,10 +2,10 @@ package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database._
-import geotrellis.server.stac.{Bbox, TemporalExtent}
+import com.azavea.stac4s.{Bbox, TemporalExtent}
 import io.circe._
-import tapir._
-import tapir.json.circe._
+import sttp.tapir._
+import sttp.tapir.json.circe._
 
 object SearchEndpoints {
 
@@ -16,6 +16,8 @@ object SearchEndpoints {
       .out(jsonBody[Json])
       .description("Root Catalog and entrypoint into STAC collections")
       .name("root")
+
+  implicit val searchFiltersValidator: Validator[SearchFilters] = Validator.pass[SearchFilters]
 
   val searchFilters: EndpointInput[SearchFilters] =
     query[Option[TemporalExtent]]("datetime")

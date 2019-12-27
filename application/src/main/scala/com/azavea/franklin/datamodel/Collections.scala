@@ -1,6 +1,6 @@
 package com.azavea.franklin.datamodel
 
-import geotrellis.server.stac.StacCollection
+import com.azavea.stac4s.StacCollection
 import io.circe._
 import io.circe.generic.semiauto._
 

@@ -13,7 +13,7 @@ import io.circe._
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
-import tapir.server.http4s._
+import sttp.tapir.server.http4s._
 import eu.timepit.refined.auto._
 
 class CollectionsService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: ContextShift[F])

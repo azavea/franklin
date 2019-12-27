@@ -2,11 +2,12 @@ package com.azavea.franklin.crawler
 
 import java.nio.file.Paths
 
+import cats.effect.Blocker
 import cats.{Applicative, MonadError}
 import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 import doobie.ConnectionIO
 import doobie.implicits._
-import geotrellis.server.stac._
+import com.azavea.stac4s._
 import io.circe.Json
 import io.circe.fs2._
 
@@ -59,7 +60,7 @@ class StacImport(val catalogRoot: String) {
     fs2.io.file
       .readAll[ConnectionIO](
         Paths.get(path),
-        global,
+        Blocker.liftExecutionContext(global),
         256
       )
       .through(byteArrayParser[ConnectionIO])

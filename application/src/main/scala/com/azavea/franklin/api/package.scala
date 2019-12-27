@@ -1,20 +1,20 @@
 package com.azavea.franklin.api
 
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
-import geotrellis.server.stac.{Bbox, TemporalExtent, ThreeDimBbox, TwoDimBbox}
+import com.azavea.stac4s.{Bbox, TemporalExtent, ThreeDimBbox, TwoDimBbox}
 import geotrellis.vector.Geometry
-import tapir.Codec.PlainCodec
-import tapir.{Codec, DecodeResult, SchemaFor}
-import tapir.json.circe.schemaForCirceJson
+import sttp.tapir.Codec.PlainCodec
+import sttp.tapir.{Codec, DecodeResult, Schema}
+import sttp.tapir.json.circe._
 
 import scala.util.Try
 
 package object schemas {
 
-  implicit val schemaForTemporalExtent: SchemaFor[TemporalExtent] = SchemaFor(
-    schemaForCirceJson.schema
+  implicit val schemaForTemporalExtent: Schema[TemporalExtent] = Schema(
+    schemaForCirceJson.schemaType
   )
-  implicit val schemaForGeometry: SchemaFor[Geometry] = SchemaFor(schemaForCirceJson.schema)
+  implicit val schemaForGeometry: Schema[Geometry] = Schema(schemaForCirceJson.schemaType)
 
   def decode(s: String): DecodeResult[TemporalExtent] = {
     temporalExtentFromString(s) match {

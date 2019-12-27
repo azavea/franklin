@@ -11,8 +11,8 @@ import io.circe._
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
-import tapir.server.http4s._
-import geotrellis.server.stac._
+import sttp.tapir.server.http4s._
+import com.azavea.stac4s._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
 

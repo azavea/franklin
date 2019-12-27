@@ -4,7 +4,7 @@ import com.azavea.franklin.datamodel.{SearchMetadata, StacSearchCollection}
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.server.stac._
+import com.azavea.stac4s._
 import geotrellis.vector.Projected
 
 object StacItemDao extends Dao[StacItem] {
@@ -29,12 +29,11 @@ object StacItemDao extends Dao[StacItem] {
   }
 
   def insertStacItem(item: StacItem): ConnectionIO[StacItem] = {
-
     val projectedGeometry = Projected(item.geometry, 4326)
-    val itemExtent        = Projected(projectedGeometry.envelope.toPolygon, 4326)
+    val itemExtent        = Projected(item.geometry.getEnvelope, 4326)
 
     val insertFragment = fr"""
-      INSERT INTO collection_items (id, extent, geom, item) 
+      INSERT INTO collection_items (id, extent, geom, item)
       VALUES
       (${item.id}, $itemExtent, $projectedGeometry, $item)
       """

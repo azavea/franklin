@@ -6,24 +6,27 @@ import org.scalacheck.cats.implicits._
 import cats.implicits._
 import com.azavea.franklin.database.SearchFilters
 import org.scalacheck._
-import geotrellis.server.stac._
+import com.azavea.stac4s._
 import geotrellis.vector.{Geometry, Point, Polygon}
 import org.scalacheck.Arbitrary.arbitrary
 import com.azavea.franklin.api.schemas._
 
 trait Generators {
+
   private def twoDimBboxGen: Gen[TwoDimBbox] = {
-    (arbitrary[Double], arbitrary[Double],
-      arbitrary[Double], arbitrary[Double]).mapN(TwoDimBbox.apply _)
+    (arbitrary[Double], arbitrary[Double], arbitrary[Double], arbitrary[Double])
+      .mapN(TwoDimBbox.apply _)
   }
 
   private def threeDimBboxGen: Gen[ThreeDimBbox] =
-    (arbitrary[Double],
+    (
       arbitrary[Double],
       arbitrary[Double],
       arbitrary[Double],
       arbitrary[Double],
-      arbitrary[Double]).mapN(ThreeDimBbox.apply _)
+      arbitrary[Double],
+      arbitrary[Double]
+    ).mapN(ThreeDimBbox.apply _)
 
   private def bboxGen: Gen[Bbox] =
     Gen.oneOf(twoDimBboxGen.widen, threeDimBboxGen.widen)
@@ -59,27 +62,31 @@ trait Generators {
   implicit val arbGeometry: Arbitrary[Geometry] = Arbitrary { rectangleGen }
 
   private def searchFiltersGen: Gen[SearchFilters] = {
-    (Gen.option(bboxGen),
-    Gen.option(temporalExtentGen),
-    Gen.option(rectangleGen),
-    Gen.const(List.empty[String]),
-    Gen.const(List.empty[String]),
-    Gen.option(Gen.choose(1, 20)),
-    Gen.const[Option[String]](None)).mapN(SearchFilters.apply)
+    (
+      Gen.option(bboxGen),
+      Gen.option(temporalExtentGen),
+      Gen.option(rectangleGen),
+      Gen.const(List.empty[String]),
+      Gen.const(List.empty[String]),
+      Gen.option(Gen.choose(1, 20)),
+      Gen.const[Option[String]](None)
+    ).mapN(SearchFilters.apply)
   }
 
   def searchFiltersToParams(filters: SearchFilters): String = {
-    val bboxString = ("bbox", filters.bbox.map(bboxCodec.encode))
+    val bboxString           = ("bbox", filters.bbox.map(bboxCodec.encode))
     val temporalExtentString = ("datetime", filters.datetime.map(teCodec.encode))
-    val collections = ("collections", Some(csvListCodec.encode(filters.collections)))
-    val items = ("items", Some(csvListCodec.encode(filters.items)))
-    val limit = ("limit", filters.limit.map(_.toString))
-    val next = ("next", filters.next)
+    val collections          = ("collections", Some(csvListCodec.encode(filters.collections)))
+    val items                = ("items", Some(csvListCodec.encode(filters.items)))
+    val limit                = ("limit", filters.limit.map(_.toString))
+    val next                 = ("next", filters.next)
 
-    List(bboxString, temporalExtentString, collections, items, limit, next).flatMap {
-      case (k, Some(v)) => Some(s"$k=$v")
-      case _ => None
-    }.mkString("&")
+    List(bboxString, temporalExtentString, collections, items, limit, next)
+      .flatMap {
+        case (k, Some(v)) => Some(s"$k=$v")
+        case _            => None
+      }
+      .mkString("&")
   }
   implicit val arbSearchFilters = Arbitrary { searchFiltersGen }
 }

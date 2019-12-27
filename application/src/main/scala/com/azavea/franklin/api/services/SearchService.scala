@@ -10,20 +10,16 @@ import com.azavea.franklin.datamodel._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.server.stac.{`application/json`, Child, Data, Self}
+import com.azavea.stac4s.{`application/json`, Child, Data, Self}
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
-import tapir.server.LoggingOptions
-import tapir.server.http4s._
+import sttp.tapir.server.http4s._
 
 class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
-
-  implicit val customServerOptions: Http4sServerOptions[F] =
-    Http4sServerOptions.default[F].copy(loggingOptions = LoggingOptions(true, true, true))
 
   def rootSearch: F[Either[Unit, Json]] = {
     for {

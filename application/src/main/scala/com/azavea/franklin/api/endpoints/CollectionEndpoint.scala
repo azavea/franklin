@@ -2,8 +2,9 @@ package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.error.NotFound
 import io.circe._
-import tapir._
-import tapir.json.circe._
+import sttp.tapir._
+import sttp.tapir.json.circe._
+import sttp.model.StatusCode.{NotFound => NF}
 
 object CollectionEndpoints {
 
@@ -19,7 +20,7 @@ object CollectionEndpoints {
     base.get
       .in(path[String])
       .out(jsonBody[Json])
-      .errorOut(oneOf(statusMapping(404, jsonBody[NotFound].description("not found"))))
+      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .description("A single collection")
       .name("collectionUnique")
 

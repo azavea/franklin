@@ -1,10 +1,10 @@
 package com.azavea.franklin.database
 
-import geotrellis.server.stac.{Bbox, TemporalExtent}
+import com.azavea.stac4s.{Bbox, TemporalExtent}
 import geotrellis.vector.Geometry
 import io.circe.generic.semiauto._
-import geotrellis.server.stac.Implicits.{geometryDecoder, geometryEncoder}
 import io.circe.{Decoder, HCursor}
+import geotrellis.vector.{io => _, _}
 
 final case class SearchFilters(
     bbox: Option[Bbox],
@@ -19,6 +19,7 @@ final case class SearchFilters(
 }
 
 object SearchFilters {
+
   implicit val searchFilterDecoder = new Decoder[SearchFilters] {
 
     final def apply(c: HCursor): Decoder.Result[SearchFilters] =

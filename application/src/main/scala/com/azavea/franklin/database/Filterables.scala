@@ -3,7 +3,7 @@ package com.azavea.franklin.database
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-import geotrellis.server.stac.TemporalExtent
+import com.azavea.stac4s.TemporalExtent
 import geotrellis.vector.Projected
 
 trait FilterHelpers {
@@ -14,7 +14,8 @@ trait FilterHelpers {
       temporalExtent.value match {
         case Some(start) :: Some(end) :: _ =>
           Some(
-            fr"(item #>> '{properties, datetime}') :: TIMESTAMP >= $start AND (item #>> '{properties, datetime}') :: TIMESTAMP <= $end")
+            fr"(item #>> '{properties, datetime}') :: TIMESTAMP >= $start AND (item #>> '{properties, datetime}') :: TIMESTAMP <= $end"
+          )
         case Some(start) :: _ =>
           Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMP >= $start")
         case _ :: Some(end) :: _ =>
