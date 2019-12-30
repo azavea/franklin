@@ -49,6 +49,7 @@ lazy val root = (project in file("."))
 lazy val applicationSettings = commonSettings ++ Seq(
   name := "application",
   fork in run := true,
+  test in assembly := {},
   assemblyJarName in assembly := "franklin-api-assembly.jar",
   assemblyMergeStrategy in assembly := {
     case "reference.conf"                       => MergeStrategy.concat
