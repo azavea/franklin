@@ -49,6 +49,7 @@ lazy val root = (project in file("."))
 lazy val applicationSettings = commonSettings ++ Seq(
   name := "application",
   fork in run := true,
+  test in assembly := {},
   assemblyJarName in assembly := "franklin-api-assembly.jar",
   assemblyMergeStrategy in assembly := {
     case "reference.conf"                       => MergeStrategy.concat
@@ -62,6 +63,8 @@ lazy val applicationSettings = commonSettings ++ Seq(
 )
 
 lazy val applicationDependencies = Seq(
+  "com.amazonaws"               % "aws-java-sdk-core"         % Versions.AWSVersion,
+  "com.amazonaws"               % "aws-java-sdk-s3"           % Versions.AWSVersion,
   "co.fs2"                      %% "fs2-core"                 % Versions.Fs2Version,
   "co.fs2"                      %% "fs2-io"                   % Versions.Fs2Version,
   "com.azavea.stac4s"           %% "core"                     % Versions.Stac4SVersion,

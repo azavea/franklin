@@ -1,19 +1,27 @@
 package com.azavea.franklin.crawler
 
+import java.io.InputStream
 import java.nio.file.Paths
 
 import cats.effect.Blocker
 import cats.{Applicative, MonadError}
+import com.amazonaws.services.s3.{AmazonS3ClientBuilder, AmazonS3URI}
 import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 import doobie.ConnectionIO
 import doobie.implicits._
 import com.azavea.stac4s._
 import io.circe.Json
 import io.circe.fs2._
+import fs2.io.readInputStream
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StacImport(val catalogRoot: String) {
+
+  val s3 = AmazonS3ClientBuilder
+    .standard()
+    .withForceGlobalBucketAccessEnabled(true)
+    .build()
 
   def addSelf(collection: StacCollection, absPath: String): StacCollection = {
     if (collection.links.filter(_.rel == Self).isEmpty) {
@@ -54,7 +62,17 @@ class StacImport(val catalogRoot: String) {
                                    else relPathSplit.drop(1)).mkString("/")) mkString ("/")
   }
 
-  def readFromS3(path: String): fs2.Stream[ConnectionIO, Json] = ???
+  def readFromS3(path: String): fs2.Stream[ConnectionIO, Json] = {
+    val awsURI = new AmazonS3URI(path)
+    val inputStream: ConnectionIO[InputStream] =
+      Applicative[ConnectionIO].pure(s3.getObject(awsURI.getBucket, awsURI.getKey).getObjectContent)
+    readInputStream[ConnectionIO](
+      inputStream,
+      chunkSize = 256,
+      Blocker.liftExecutionContext(global),
+      closeAfterUse = true
+    ).through(byteArrayParser[ConnectionIO])
+  }
 
   def readFromLocalPath(path: String): fs2.Stream[ConnectionIO, Json] =
     fs2.io.file
