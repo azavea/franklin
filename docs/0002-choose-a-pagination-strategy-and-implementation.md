@@ -78,7 +78,7 @@ better that we do not use `offset/limit` which relies heavily on `SQL`.
 An upcoming release for the [STAC specification](https://github.com/radiantearth/stac-spec/blob/dev/CHANGELOG.md#changed) 
 changes how pagination will be communicated in the API and simplifies implementation. In order to implement this we will 
 need to update API responses for `/search` and `/collections/<id>/items/` to include a `next` link for
-paginating forward. Initial implementation should `base64` encode the primary key and for the last result in the current
+paginating forward. Initial implementation should `base64` encode the primary key for the last result in the current
 page.
 
 One thing that is unclear is how we should handle primary keys/identifiers when implementing `continuation` pagination.
