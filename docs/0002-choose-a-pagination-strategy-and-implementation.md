@@ -68,7 +68,7 @@ time
 
 We will use **continuation** tokens for managing pagination. Keeping the implementation flexible/hidden
 from end-users so that it can be optimized or changed later without breaking functionality for existing users outweighs
-disadvantages around increased complexity for implementation. Additionally, since `franlin` APIs are expected to hold 
+disadvantages around increased complexity for implementation. Additionally, since `franklin` APIs are expected to hold 
 large amounts of data (tens of millions of rows) it is important that the pagination approach scales accordingly.
 Lastly, since eventually `franklin` may move beyond relying solely on `postgresl` for managing state it may actually be
 better that we do not use `offset/limit` which relies heavily on `SQL`. 
