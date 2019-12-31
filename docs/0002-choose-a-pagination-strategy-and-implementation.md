@@ -66,7 +66,7 @@ time
 
 ## Decision
 
-We will use **continuation** tokens for managing pagination. The advantage of keeping the implementation flexible/hidden
+We will use **continuation** tokens for managing pagination. Keeping the implementation flexible/hidden
 from end-users so that it can be optimized or changed later without breaking functionality for existing users outweighs
 disadvantages around increased complexity for implementation. Additionally, since `franlin` APIs are expected to hold 
 large amounts of data (tens of millions of rows) it is important that the pagination approach scales accordingly.
