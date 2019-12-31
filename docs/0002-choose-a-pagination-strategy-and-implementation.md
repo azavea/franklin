@@ -44,7 +44,7 @@ results out of the total to return. This maps closely to how `limit` and `offset
 The `keyset`, `cursor`, or `continuation` token approach uses an opaque-*ish* token to control the page of results 
 returned and can also be combined with a `limit` parameter to control the number of results. Often the token used will 
 represent a unique identifier for the last result of the current page returned to the client. This token is then used in
-subsequent requests use the token in a query parameter (e.g. `/?next=<token>).
+subsequent requests use the token in a query parameter (e.g. `/?next=<token>`).
 
 #### Benefits
 
