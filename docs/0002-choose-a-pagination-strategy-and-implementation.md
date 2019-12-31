@@ -95,7 +95,7 @@ every query ends up being something like:
 ```SQL
 SELECT * FROM table
 WHERE 
-  id > <continuation-id> 
+  id > {continuation-id} 
 ORDER BY <any-user-supplied-sort-options>, id asc
 LIMIT <page-size>
 ```
