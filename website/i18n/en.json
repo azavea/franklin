@@ -3,22 +3,27 @@
   "localized-strings": {
     "next": "Next",
     "previous": "Previous",
-    "tagline": "A STAC- and OGC API Features-compliant Server",
+    "tagline": "A STAC and OGC API Features compliant Server",
     "docs": {
+      "0001-record-architecture-decisions": {
+        "title": "1 - Recording Architecture Decisions"
+      },
+      "0002-choose-a-pagination-strategy-and-implementation": {
+        "title": "2 - Choose a Pagination Strategy and Implementation"
+      },
       "development": {
         "title": "development"
       },
       "introduction": {
-        "title": "introduction"
+        "title": "Introduction"
       }
     },
     "links": {
       "Getting Started": "Getting Started"
     },
     "categories": {
-      "Docusaurus": "Docusaurus",
-      "First Category": "First Category",
-      "Second Category": "Second Category"
+      "Overview": "Overview",
+      "ADRs": "ADRs"
     }
   },
   "pages-strings": {

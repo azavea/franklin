@@ -1,3 +1,8 @@
+---
+id: introduction
+title: Introduction
+---
+
 # `franklin`
 
 ## What's `franklin`?
