@@ -1,0 +1,133 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>2 - Choose a Pagination Strategy and Implementation · Franklin</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="Date: 2019-12-31"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="2 - Choose a Pagination Strategy and Implementation · Franklin"/><meta property="og:type" content="website"/><meta property="og:url" content="https://azavea.github.io/franklin/"/><meta property="og:description" content="Date: 2019-12-31"/><meta property="og:image" content="https://azavea.github.io/franklin/img/franklin-logo-tagline.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://azavea.github.io/franklin/img/franklin-logo-tagline.svg"/><link rel="shortcut icon" href="/franklin/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-970854-35', 'auto');
+              ga('send', 'pageview');
+            </script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed:400,700&amp;display=swap"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/franklin/js/scrollSpy.js"></script><link rel="stylesheet" href="/franklin/css/main.css"/><script src="/franklin/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/franklin/"><img class="logo" src="/franklin/img/header.png" alt="Franklin"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/franklin/docs/introduction" target="_self">Getting Started</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>ADRs</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Overview</h3><ul class=""><li class="navListItem"><a class="navItem" href="/franklin/docs/introduction">Introduction</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">ADRs</h3><ul class=""><li class="navListItem"><a class="navItem" href="/franklin/docs/0001-record-architecture-decisions">1 - Recording Architecture Decisions</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/franklin/docs/0002-choose-a-pagination-strategy-and-implementation">2 - Choose a Pagination Strategy and Implementation</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">2 - Choose a Pagination Strategy and Implementation</h1></header><article><div><span><p>Date: 2019-12-31</p>
+<h2><a class="anchor" aria-hidden="true" id="status"></a><a href="#status" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Status</h2>
+<p>Provisional</p>
+<h2><a class="anchor" aria-hidden="true" id="context"></a><a href="#context" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Context</h2>
+<p>The SpatioTemporal Asset Catalog (STAC) API specification allows for the use of <code>next</code> links in the responses for the the
+<code>/search</code> and <code>/collections/&lt;id&gt;/items</code> endpoints. The specific implementation for creating a token and scheme for constructing
+the parameters to get the next page of results is left open to different implementations.</p>
+<p>According to the OGC API - Features specification for links in responses the <code>next</code> relation signifies:</p>
+<blockquote>
+<p>the link’s context is a part of a series, and that the next in the series is the link target</p>
+</blockquote>
+<p>Since the parameters of the <code>href</code> itself is not specified to follow a certain pattern or any additional requirements
+implementation itself is left to <code>franklin</code>. There are a few common options that have been <a href="https://www.moesif.com/blog/technical/api-design/REST-API-Design-Filtering-Sorting-and-Pagination/">documented</a> <a href="https://nordicapis.com/everything-you-need-to-know-about-api-pagination/">by</a> <a href="https://phauer.com/2015/restful-api-design-best-practices/">a</a> <a href="https://phauer.com/2018/web-api-pagination-timestamp-id-continuation-token/">number</a> <a href="https://developers.facebook.com/docs/graph-api/using-graph-api/#paging">of</a>
+<a href="https://developer.github.com/v3/#pagination">existing</a> <a href="https://developer.spotify.com/documentation/web-api/reference/object-model/#paging-object">resources</a>.</p>
+<h3><a class="anchor" aria-hidden="true" id="limit-offset"></a><a href="#limit-offset" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>limit &amp; offset</h3>
+<p>Using <code>offset</code> and <code>limit</code> parameters is a common patten for paginating results. With this approach the <code>limit</code>
+parameter specifies the number of results in a response and the <code>offset</code> parameter specifies which particular set of
+results out of the total to return. This maps closely to how <code>limit</code> and <code>offset</code> work in <code>SQL</code> already.</p>
+<h4><a class="anchor" aria-hidden="true" id="benefits"></a><a href="#benefits" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Benefits</h4>
+<p><strong>Easy to implement</strong>: maps closely to <code>SQL</code> and therefore easy to implement</p>
+<p><strong>Stateless</strong>: requires no additional context</p>
+<h4><a class="anchor" aria-hidden="true" id="disadvantages"></a><a href="#disadvantages" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Disadvantages</h4>
+<p><strong>Performance</strong>: can be slow for large datasets</p>
+<p><strong>Inconsistent</strong>: depending on sort ordering and the inclusion/deletion of items the same results can be returned multiple times</p>
+<h3><a class="anchor" aria-hidden="true" id="keyset-cursor-continuation-token"></a><a href="#keyset-cursor-continuation-token" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>keyset/cursor/continuation token</h3>
+<p>The <code>keyset</code>, <code>cursor</code>, or <code>continuation</code> token approach uses an opaque-<em>ish</em> token to control the page of results
+returned and can also be combined with a <code>limit</code> parameter to control the number of results. Often the token used will
+represent a unique identifier for the last result of the current page returned to the client. This token is then used in
+subsequent requests use the token in a query parameter (e.g. <code>/?next=&lt;token&gt;</code>).</p>
+<h4><a class="anchor" aria-hidden="true" id="benefits-1"></a><a href="#benefits-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Benefits</h4>
+<p><strong>Performance</strong>: on large datasets with indices performs better than scanning previous results</p>
+<p><strong>Consistent Ordering</strong>: even when data is added/removed results are stable</p>
+<p><strong>Can page forward and backwards</strong>: tokens can be used to page before and after search results</p>
+<p><strong>Implementation logic hidden from users</strong>: while there may be an interpretation of a continuation token, it is not
+guaranteed to be consistent or long-lived, which frees up back-end optimizations and changes without breaking the API</p>
+<h4><a class="anchor" aria-hidden="true" id="disadvantages-1"></a><a href="#disadvantages-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Disadvantages</h4>
+<p><strong>Implementation more complex</strong>: needs to manage sort ordering to ensure that the continuation token equality check is
+consistent even if data is added, removed, or sorted by additional fields</p>
+<p><strong>Tokens become invalid</strong>: continuation tokens can become invalid, users should not rely on them for long periods of
+time</p>
+<h2><a class="anchor" aria-hidden="true" id="decision"></a><a href="#decision" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Decision</h2>
+<p>We will use <strong>continuation</strong> tokens for managing pagination. Keeping the implementation flexible/hidden
+from end-users so that it can be optimized or changed later without breaking functionality for existing users outweighs
+disadvantages around increased complexity for implementation. Additionally, since <code>franklin</code> APIs are expected to hold
+large amounts of data (tens of millions of rows) it is important that the pagination approach scales accordingly.
+Lastly, since eventually <code>franklin</code> may move beyond relying solely on <code>postgresl</code> for managing state it may actually be
+better that we do not use <code>offset/limit</code> which relies heavily on <code>SQL</code>.</p>
+<h2><a class="anchor" aria-hidden="true" id="consequences"></a><a href="#consequences" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Consequences</h2>
+<p>An upcoming release for the <a href="https://github.com/radiantearth/stac-spec/blob/dev/CHANGELOG.md#changed">STAC specification</a>
+changes how pagination will be communicated in the API and simplifies implementation. In order to implement this we will
+need to update API responses for <code>/search</code> and <code>/collections/&lt;id&gt;/items/</code> to include a <code>next</code> link for
+paginating forward. Initial implementation should <code>base64</code> encode the primary key for the last result in the current
+page.</p>
+<p>One thing that is unclear is how we should handle primary keys/identifiers when implementing <code>continuation</code> pagination.
+This approach to pagination relies on sorting by an identifier that signals the last value in the current page. If that
+value is a primary key then then including the PK in the <code>sort by</code> for <code>SQL</code> queries with a limit gives the next set of
+results. For a <code>SERIAL</code> column in <code>postgresql</code> this is performant with an index. However, we use client supplied
+identifiers right now for IDs since they are likely meaningful to the client and don't create our own PK. In
+implementing a <code>continuation</code> token based approach we should keep the user supplied identifier, but also add a column
+for a real PK that is a <code>SERIAL</code> column.</p>
+<p>The implementation should follow the approach laid out <a href="https://phauer.com/2018/web-api-pagination-timestamp-id-continuation-token/">here</a>
+every query ends up being something like:</p>
+<pre><code class="hljs css language-SQL"><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> <span class="hljs-keyword">table</span>
+<span class="hljs-keyword">WHERE</span> 
+  <span class="hljs-keyword">id</span> &gt; {continuation-<span class="hljs-keyword">id</span>} 
+<span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> &lt;<span class="hljs-keyword">any</span>-<span class="hljs-keyword">user</span>-supplied-<span class="hljs-keyword">sort</span>-options&gt;, <span class="hljs-keyword">id</span> <span class="hljs-keyword">asc</span>
+<span class="hljs-keyword">LIMIT</span> &lt;page-<span class="hljs-keyword">size</span>&gt;
+</code></pre>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/franklin/docs/0001-record-architecture-decisions"><span class="arrow-prev">← </span><span>1 - Recording Architecture Decisions</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#status">Status</a></li><li><a href="#context">Context</a><ul class="toc-headings"><li><a href="#limit-amp-offset">limit &amp; offset</a></li><li><a href="#keyset-cursor-continuation-token">keyset/cursor/continuation token</a></li></ul></li><li><a href="#decision">Decision</a></li><li><a href="#consequences">Consequences</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/franklin/" class="nav-home"><img src="/franklin/img/footer.png" alt="Franklin" width="66" height="58"/></a><div><h5>Other Projects</h5><a href="https://rasterfoundry.azavea.com">Raster Foundry</a><a href="https://rastervision.io">Raster Vision</a><a href="https://geotrellis.io">GeoTrellis</a></div><div><h5>Contribute</h5><a href="https://github.com/azavea/franklin">GitHub</a></div><div></div></section><a href="https://www.azavea.com/blog/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/franklin/img/azavea_white_solo.svg" alt="Azavea" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Azavea</section></footer></div></body></html>
