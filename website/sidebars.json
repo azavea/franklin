@@ -1,10 +1,9 @@
 {
   "docs": {
-    "Docusaurus": ["doc1"],
-    "First Category": ["doc2"],
-    "Second Category": ["doc3"]
-  },
-  "docs-other": {
-    "First Category": ["doc4", "doc5"]
+    "Overview": ["introduction"],
+    "ADRs": [
+      "0001-record-architecture-decisions",
+      "0002-choose-a-pagination-strategy-and-implementation"
+    ]
   }
 }
