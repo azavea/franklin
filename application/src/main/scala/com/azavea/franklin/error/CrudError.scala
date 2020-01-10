@@ -10,7 +10,7 @@ sealed abstract class CrudError
 object CrudError {
 
   implicit val decCrudErrror
-    : Decoder[CrudError] = Decoder[NotFound].widen or Decoder[ValidationError].widen
+      : Decoder[CrudError] = Decoder[NotFound].widen or Decoder[ValidationError].widen
 
   implicit val encCrudError: Encoder[CrudError] = new Encoder[CrudError] {
 
