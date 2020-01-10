@@ -102,7 +102,6 @@ lazy val applicationDependencies = Seq(
   "org.http4s"                  %% "http4s-server"            % Versions.Http4sVersion,
   "org.locationtech.geotrellis" %% "geotrellis-vector"        % Versions.GeoTrellisVersion,
   "org.locationtech.jts"        % "jts-core"                  % Versions.JtsVersion,
-  "org.scala-lang"              % "scala-reflect"             % Versions.ScalaReflectVersion,
   "org.scalacheck"              %% "scalacheck"               % Versions.ScalacheckVersion % "test",
   "org.slf4j"                   % "slf4j-simple"              % Versions.Slf4jVersion,
   "org.specs2"                  %% "specs2-core"              % Versions.Specs2Version % "test",
