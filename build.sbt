@@ -23,8 +23,8 @@ lazy val commonSettings = Seq(
       Resolver.ivyStylePatterns
     )
   ),
-  addCompilerPlugin("org.spire-math" %% "kind-projector"     % "0.9.10"),
-  addCompilerPlugin("com.olegpy"     %% "better-monadic-for" % "0.3.1"),
+  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.0" cross CrossVersion.full),
+  addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
     "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full
   ),
@@ -102,7 +102,6 @@ lazy val applicationDependencies = Seq(
   "org.http4s"                  %% "http4s-server"            % Versions.Http4sVersion,
   "org.locationtech.geotrellis" %% "geotrellis-vector"        % Versions.GeoTrellisVersion,
   "org.locationtech.jts"        % "jts-core"                  % Versions.JtsVersion,
-  "org.scala-lang"              % "scala-reflect"             % Versions.ScalaReflectVersion,
   "org.scalacheck"              %% "scalacheck"               % Versions.ScalacheckVersion % "test",
   "org.slf4j"                   % "slf4j-simple"              % Versions.Slf4jVersion,
   "org.specs2"                  %% "specs2-core"              % Versions.Specs2Version % "test",

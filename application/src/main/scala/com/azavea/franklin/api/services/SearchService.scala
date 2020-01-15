@@ -75,7 +75,7 @@ class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
   }
 
   val routes
-    : HttpRoutes[F] = SearchEndpoints.rootCatalog.toRoutes(_ => rootSearch) <+> SearchEndpoints.searchGet
+      : HttpRoutes[F] = SearchEndpoints.rootCatalog.toRoutes(_ => rootSearch) <+> SearchEndpoints.searchGet
     .toRoutes(searchFilters => search(searchFilters)) <+> SearchEndpoints.searchPost.toRoutes {
     case searchFilters => search(searchFilters)
   }

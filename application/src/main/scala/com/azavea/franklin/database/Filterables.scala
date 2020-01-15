@@ -3,6 +3,7 @@ package com.azavea.franklin.database
 import cats.implicits._
 import doobie._
 import doobie.implicits._
+import doobie.implicits.legacy.instant._
 import com.azavea.stac4s.TemporalExtent
 import geotrellis.vector.Projected
 
