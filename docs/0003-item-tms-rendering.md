@@ -160,7 +160,18 @@ Neither of those is a big payoff, but they're something.
 
 ### How do users discover that there's a tile layer available for an item?
 
-(forthcoming)
+One question is whether tile URLs are links or assets. Since a links are
+"link objects to resources and related URLs", and assets are "asset objects
+that can be downloaded," tile layer URLs are more links than assets. There isn't
+currently an
+[IANA relation type](https://www.iana.org/assignments/link-relations/link-relations.xhtml)
+for tiles. However, the
+[Map Tiles API specification](https://github.com/opengeospatial/OGC-API-Maps/blob/master/standard/openapi/ogc-api-map-tiles.yaml#L97-L116)
+does include a link with a `rel` of `tile`. The Map Tiles specification is
+still a work in progress, but it's at least a sign of the direction OGC
+is going thinking about how to advertise tiles for a collection. While
+we're planning to serve tiles for items rather than collections, it's still
+a reasonable source of inspiration.
 
 Decision
 --------
