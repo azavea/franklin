@@ -1,12 +1,12 @@
-# 3. Item TMS Rendering
+# 3. Item TMS Rendering #
 
 Date: 2020-01-14
 
-## Status
+## Status ##
 
 Proposed
 
-## Context
+## Context ##
 
 To make Franklin a useful tool for people working on machine learning projects, we need not only to be able to serve json metadata about imagery and labels, but also the imagery and label assets themselves. This ADR will focus on two questions in particular in the domain of serving imagery:
 
@@ -14,7 +14,7 @@ To make Franklin a useful tool for people working on machine learning projects, 
 - how should we render it?
 - how do users discover that they have something renderable?
 
-### What should we render?
+### What should we render? ###
 
 In a STAC API with many items, each of which may or may not have a COG, we have some challenges deciding what we should make TMS endpoints available for. We have a few options at different levels of user interaction:
 
@@ -24,11 +24,11 @@ In a STAC API with many items, each of which may or may not have a COG, we have 
 
 Rendering collections is not a hard technical problem. However, rendering collections also exposes us to risks of people returning items with different sorts of imagery. For the short-term needs of viewing images with their labels, this risk doesn't come with much of a benefit attached to it. For that reason, we should render only single items for now.
 
-### How should we render single items?
+### How should we render single items? ###
 
 For now our goal is only to support TMS rendering, which solves the problem of how the data should be accessed, but doesn't solve the problem of how to render the imagery.
 
-#### Rendering labels
+#### Rendering labels ####
 
 Since we're working on TMS rendering, we can only paint raster labels. There are at least three possibilities for the state of those raster labels: they can have three bands, one band, or some surprising number of bands.
 
@@ -38,7 +38,7 @@ If the raster label has one band, the situation is more ambiguous. In this case,
 
 If the raster label has some other number of bands, it's not obvious what we should do. My instinct is that we should refuse to render it. I don't think I can guess at this stage why someone would produce such a label or what they want to do with it, so if it comes up we can listen and see how we should incorporate this.
 
-#### Rendering imagery
+#### Rendering imagery ####
 
 Several attempts have been made to standardize on an interface for describing how to render imagery. In Raster Foundry we described a bunch of imagery adjustment options with custom types for color ramps and color palettes. Last summer someone proposed [an extension](https://github.com/radiantearth/stac-spec/pull/470) to the STAC specification to include visualization parameters based on their Google Earth Engine experience. The OGC description of styles uses the Styled Layer Descriptors (SLDs).
 
@@ -50,22 +50,22 @@ Second, SLDs allow us to describe rendering strategies for vector and raster dat
 
 Third, the dialog between STAC and OGC about the direction geospatial web services should take makes it likely that we'd have to justify not using SLD if we chose something else. We're probably better off not writing and forcing ourselves to champion usage of [the 15th standard](https://xkcd.com/927/).
 
-#### Persisting styles
+#### Persisting styles ####
 
 Since users probably don't want to have to specify their visualization parameters every time they look at a layer, we'll want to persist SLDs for items somewhere. Right now, Franklin is backed by a PostgreSQL database, but other backends are possible as well. Our easy options are inserting the SLD directly into the item's properties, creating an additional column for items to hold the SLD.
 
 The downside of inserting the SLD directly into the item's properties is that, since SLD is XML, we'll be mixing JSON and XML in JSON that people generally expect to conform to a specification. The `properties` of STAC items are free-form with a preference for avoiding nesting, and throwing a potentially nested raw XML string into properties sounds like not a great idea. However, we could provide a JSON codec for the types generated from the SLD schema. Providing a JSON codec for those types would let us convert easily between json in Postgres and case classes in Scala for our uses, prove conformance with the schema by not writing any of the classes ourselves, and produce XML SLDs for portability if we really need to. If we can pull off that trifecta I don't think it matters much whether we throw the SLD JSON into the item properties or into a separate database column. If we throw it into a separate column, we won't have to explain that there's no extension and it's just a thing we're working on at a future STAC sprint, and if we really need to we can declare style bankruptcy by dropping and re-adding the column. Neither of those is a big payoff, but they're something.
 
-### How do users discover that there's a tile layer available for an item?
+### How do users discover that there's a tile layer available for an item? ###
 
 (forthcoming)
 
-## Decision
+## Decision ##
 
 - items only
 - TMS with SLDs for style falling back to best guess following heuristics
 - persisted in a style column on items
 
-## Consequences
+## Consequences ##
 
 What becomes easier or more difficult to do and any risks introduced by the change that will need to be mitigated.
