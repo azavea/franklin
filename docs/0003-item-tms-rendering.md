@@ -136,27 +136,42 @@ standard](https://xkcd.com/927/).
 Since users probably don't want to have to specify their visualization
 parameters every time they look at a layer, we'll want to persist SLDs
 for items somewhere. Right now, Franklin is backed by a PostgreSQL
-database, but other backends are possible as well. Our easy options are
-inserting the SLD directly into the item's properties, creating an
-additional column for items to hold the SLD.
+database, but other backends are possible as well.
 
+One option we have is to store style information in a separate table.
+Storing styles in a separate table would open up the possibility of
+conforming to the
+[OGC Styles API specification](https://app.swaggerhub.com/apis/UAB-CREAF/opf-style-api/1.0.0#/sld-10).
+The OGC Styles API prescribes a set of endpoints for creating and managing
+styles, with either of SLD or mapbox styles. Adding endpoints for style
+management would make API interaction slightly easier. Users would be able
+to color style their raster (and later vector) layers in QGIS, export
+the SLD, and POST to the API. The request after that would be to add
+an asset to a STAC item, which would require `PATCH`ing an additional
+asset instead of the full SLD document.
+
+Our other two options are to store the SLD documents in properties on
+items or in a separate column.
 The downside of inserting the SLD directly into the item's properties is
 that, since SLD is XML, we'll be mixing JSON and XML in JSON that people
 generally expect to conform to a specification. The `properties` of STAC
 items are free-form with a preference for avoiding nesting, and throwing
 a potentially nested raw XML string into properties sounds like not a
 great idea. However, we could provide a JSON codec for the types
-generated from the SLD schema. Providing a JSON codec for those types
-would let us convert easily between json in Postgres and case classes in
-Scala for our uses, prove conformance with the schema by not writing any
-of the classes ourselves, and produce XML SLDs for portability if we
-really need to. If we can pull off that trifecta I don't think it
-matters much whether we throw the SLD JSON into the item properties or
-into a separate database column. If we throw it into a separate column,
-we won't have to explain that there's no extension and it's just a thing
-we're working on at a future STAC sprint, and if we really need to we
-can declare style bankruptcy by dropping and re-adding the column.
-Neither of those is a big payoff, but they're something.
+generated from the SLD schema. The downside of throwing them into a
+separate column is that it to some extent breaks our model of having ids,
+foreign keys, and JSON documents as entire records in Postgres. Expanding
+on the columns that represent an entity in conjunction with the entity's
+JSON document makes Postgres less like other backends we might pursue.
+
+The question is then whether we should attempt to develop in line with
+the OGC API Styles specification.
+The win we get from attempting to conform to the styles specification
+is that we don't have to go out on a limb for the design of styles
+management and justify choices we make that other people think are
+weird. Since the previous section already says we should use SLD for
+describing how to render, attempting to conform to the OGC Styles API
+specification is a natural choice.
 
 ### How do users discover that there's a tile layer available for an item?
 
@@ -176,13 +191,26 @@ a reasonable source of inspiration.
 Decision
 --------
 
--   items only
--   TMS with SLDs for style falling back to best guess following
-    heuristics
--   persisted in a style column on items
+For now, in pursuit of our short-term goals and to get the rendering
+machinery in place, we will render only items. For styling, we will use
+SLDs, since they provide many styling options and are compatible with
+other open source geospatial tools and standards. Styles will be persisted
+in a separate table, and style management will occur through endpoints
+as described by the OGC API Styles specification. Users will know they
+can view a TMS layer for an item when it has a link with relation type
+`tile`.
 
 Consequences
 ------------
 
-What becomes easier or more difficult to do and any risks introduced by
-the change that will need to be mitigated.
+As a result of this ADR, we'll need to:
+
+- familiarize ourselves with SLD
+- open issues in the appropriate repositories for rendering entities with `TMSReification`
+  and `HasRasterExtents` (the latter for histograms)
+- add `geotrellis-server` as a dependency to Franklin and typeclass evidence for `TMSReification`
+  and `HasRasterExtents` for `StacItem`s
+- add a migration to add a `styles` table to the Franklin database
+- add a `Dao` and routes for managing styles in conformance with the OGC API styles specifiation
+- add routes for serving imagery from items and a command line argument to the Franklin server
+  to activate them
