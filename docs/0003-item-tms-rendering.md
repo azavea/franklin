@@ -1,5 +1,4 @@
-3. Item TMS Rendering
-=====================
+# 3. Item TMS Rendering #
 
 -   [Status](#status)
 -   [Context](#context)
