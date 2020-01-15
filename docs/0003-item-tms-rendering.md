@@ -118,7 +118,7 @@ necessary not to write SLDs by hand. [This pull
 request](https://github.com/geotrellis/geotrellis-server/pull/186) in
 `geotrellis-server` adds the relevant XML schemas, and you can verify
 that the types exist by publishing the `opengis` submodule locally and
-import from `opengis.sld._` in an ammonite repl.
+importing from `opengis.sld._` in an ammonite repl.
 
 Second, SLDs allow us to describe rendering strategies for vector and
 raster data. While this ADR only addresses rendering raster data, we
