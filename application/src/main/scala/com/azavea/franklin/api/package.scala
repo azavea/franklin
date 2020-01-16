@@ -64,6 +64,7 @@ package object schemas {
     schemaForCirceJson.schemaType
   )
 
-  implicit def stacItemCodec[T: Encoder: Decoder: Validator]: Codec.JsonCodec[T] = encoderDecoderCodec[T]
+  implicit def stacItemCodec[T: Encoder: Decoder: Validator]: Codec.JsonCodec[T] =
+    encoderDecoderCodec[T]
 
 }

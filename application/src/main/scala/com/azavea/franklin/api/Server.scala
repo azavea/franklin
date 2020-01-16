@@ -58,13 +58,12 @@ $$$$
         connectionEc,
         Blocker.liftExecutionContext(transactionEc)
       )
-      _ = println(apiConfig)
       collectionItemEndpoints = new CollectionItemEndpoints(apiConfig.enableTransactions)
-      allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
-      docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
-      docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
-      landingPageRoutes = new LandingPageService[IO](apiConfig).routes
-      searchRoutes      = new SearchService[IO](apiConfig, xa).routes
+      allEndpoints            = LandingPageEndpoints.endpoints ++ CollectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
+      docs                    = allEndpoints.toOpenAPI("Franklin", "0.0.1")
+      docRoutes               = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
+      landingPageRoutes       = new LandingPageService[IO](apiConfig).routes
+      searchRoutes            = new SearchService[IO](apiConfig, xa).routes
       collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[IO](
         xa,
         apiConfig.apiHost,
