@@ -1,10 +1,10 @@
 package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.api.schemas._
-import com.azavea.franklin.error.{NotFound, ValidationError}
+import com.azavea.franklin.error.{CrudError, MidAirCollision, NotFound, ValidationError}
 import io.circe._
 import sttp.tapir._
-import sttp.model.StatusCode.{NotFound => NF, BadRequest}
+import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import com.azavea.stac4s.StacItem
 
 class CollectionItemEndpoints(enableTransactions: Boolean) {
@@ -44,8 +44,30 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
       .description("Create a new feature in a collection")
       .name("postItem")
 
+  val putItem: Endpoint[(String, String, StacItem, String), CrudError, Json, Nothing] =
+    base.put
+      .in(path[String] / "items" / path[String])
+      .in(jsonBody[StacItem])
+      .in(header[String]("If-Match"))
+      .out(jsonBody[Json])
+      .errorOut(
+        oneOf[CrudError](
+          statusMapping(
+            BadRequest,
+            jsonBody[ValidationError]
+              .description("Something was wrong with the body of the request")
+          ),
+          statusMapping(
+            PreconditionFailed,
+            jsonBody[MidAirCollision]
+              .description("Your state of the item is stale. Refresh the item and try again.")
+          )
+        )
+      )
+
   val transactionEndpoints = List(
-    postItem
+    postItem,
+    putItem
   )
 
   val endpoints = List(collectionItemsList, collectionItemsUnique) ++

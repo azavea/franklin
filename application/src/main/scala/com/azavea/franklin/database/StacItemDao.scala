@@ -41,4 +41,6 @@ object StacItemDao extends Dao[StacItem] {
       .withUniqueGeneratedKeys[StacItem]("item")
   }
 
+  def updateStacItem(itemId: String, item: StacItem, etag: String): ConnectionIO[StacItem] =
+    ???
 }

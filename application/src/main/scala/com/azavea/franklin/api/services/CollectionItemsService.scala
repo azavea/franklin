@@ -1,7 +1,7 @@
 package com.azavea.franklin.api.services
 
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
-import com.azavea.franklin.error.{NotFound => NF, ValidationError}
+import com.azavea.franklin.error.{CrudError, NotFound => NF, ValidationError}
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.database.Filterables._
 
@@ -101,11 +101,22 @@ class CollectionItemsService[F[_]: Sync](
     }
   }
 
+  def putItem(
+      collectionId: String,
+      itemId: String,
+      itemUpdate: StacItem,
+      etag: String
+  ): F[Either[CrudError, Json]] =
+    ???
+
   val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions)
 
   val transactionRoutes: List[HttpRoutes[F]] = List(
     collectionItemEndpoints.postItem.toRoutes {
       case (collectionId, stacItem) => postItem(collectionId, stacItem)
+    },
+    collectionItemEndpoints.putItem.toRoutes {
+      case (collectionId, itemId, stacItem, etag) => putItem(collectionId, itemId, stacItem, etag)
     }
   )
 

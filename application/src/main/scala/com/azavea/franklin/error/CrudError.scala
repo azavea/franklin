@@ -17,6 +17,7 @@ object CrudError {
     def apply(thing: CrudError): Json = thing match {
       case t: NotFound        => t.asJson
       case t: ValidationError => t.asJson
+      case t: MidAirCollision => t.asJson
     }
   }
 }
@@ -33,4 +34,11 @@ case class ValidationError(msg: String) extends CrudError
 object ValidationError {
   implicit val encValidationError: Encoder[ValidationError] = deriveEncoder
   implicit val decValidationError: Decoder[ValidationError] = deriveDecoder
+}
+
+case class MidAirCollision(msg: String) extends CrudError
+
+object MidAirCollision {
+  implicit val encMidAirCollision: Encoder[MidAirCollision] = deriveEncoder
+  implicit val decMidAirCollision: Decoder[MidAirCollision] = deriveDecoder
 }
