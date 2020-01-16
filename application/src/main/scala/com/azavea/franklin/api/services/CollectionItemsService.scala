@@ -5,6 +5,7 @@ import com.azavea.franklin.error.{NotFound => NF, ValidationError}
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.database.Filterables._
 
+import cats.Applicative
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.implicits._
@@ -63,18 +64,37 @@ class CollectionItemsService[F[_]: Sync](
   }
 
   def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, Json]] = {
+    val fallbackCollectionLink = StacLink(
+      s"$apiHost/api/collections/$collectionId",
+      Parent,
+      Some(`application/json`),
+      Some("Parent collection"),
+      Nil
+    )
     item.collection match {
-      case Some(_) =>
-        ???
+      case Some(collId) =>
+        if (collectionId == collId) {
+          val parentLink = item.links.filter(_.rel == Parent).headOption map { existingLink =>
+            existingLink.copy(href = s"$apiHost/api/collections/$collectionId")
+          } getOrElse {
+            fallbackCollectionLink
+          }
+          val withParent =
+            item.copy(links = parentLink +: item.links.filter(_.rel != Parent))
+          StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
+            Right(inserted.asJson)
+          }
+        } else {
+          Applicative[F].pure(
+            Left(
+              ValidationError(
+                s"Collection ID in item $collId did not match collection ID in route $collectionId"
+              )
+            )
+          )
+        }
       case None =>
-        val collectionLink = StacLink(
-          s"$apiHost/api/collections/$collectionId",
-          Parent,
-          Some(`application/json`),
-          Some("Parent collection"),
-          Nil
-        )
-        val withParent = item.copy(links = collectionLink +: item.links)
+        val withParent = item.copy(links = fallbackCollectionLink +: item.links)
         StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
           Right(inserted.asJson)
         }

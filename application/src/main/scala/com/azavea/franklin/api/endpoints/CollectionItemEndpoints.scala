@@ -9,8 +9,6 @@ import com.azavea.stac4s.StacItem
 
 class CollectionItemEndpoints(enableTransactions: Boolean) {
 
-  println(enableTransactions)
-
   val base = endpoint.in("collections")
 
   val collectionItemsList: Endpoint[String, Unit, Json, Nothing] =
@@ -46,5 +44,10 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
       .description("Create a new feature in a collection")
       .name("postItem")
 
-  val endpoints = List(collectionItemsList, collectionItemsUnique)
+  val transactionEndpoints = List(
+    postItem
+  )
+
+  val endpoints = List(collectionItemsList, collectionItemsUnique) ++
+    (if (enableTransactions) transactionEndpoints else Nil)
 }
