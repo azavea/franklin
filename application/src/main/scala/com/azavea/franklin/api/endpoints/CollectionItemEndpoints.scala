@@ -5,8 +5,9 @@ import io.circe._
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.model.StatusCode.{NotFound => NF}
+import com.azavea.stac4s.StacItem
 
-object CollectionItemEndpoints {
+class CollectionItemEndpoints(enableTransactions: Boolean) {
 
   val base = endpoint.in("collections")
 
@@ -25,6 +26,14 @@ object CollectionItemEndpoints {
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .description("A single feature")
       .name("collectionItemUnique")
+
+  val postItem: Endpoint[(String, StacItem), Unit, Json, Nothing] =
+    base.post
+      .in(path[String] / "items")
+      .in(jsonBody[StacItem])
+      .out(jsonBody[Json])
+      .description("Create a new feature in a collection")
+      .name("postItem")
 
   val endpoints = List(collectionItemsList, collectionItemsUnique)
 }
