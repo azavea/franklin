@@ -1,14 +1,18 @@
 package com.azavea.franklin.api.services
 
-import cats.effect._
-import cats.implicits._
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
-import com.azavea.franklin.error.{NotFound => NF}
+import com.azavea.franklin.error.{NotFound => NF, ValidationError}
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.database.Filterables._
+
+import cats.data.NonEmptyList
+import cats.effect._
+import cats.implicits._
+import com.azavea.stac4s.{`application/json`, Parent, StacItem, StacLink}
 import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
+import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
 import org.http4s.dsl.Http4sDsl
@@ -16,8 +20,13 @@ import sttp.tapir.server.http4s._
 import eu.timepit.refined.auto._
 import org.http4s.HttpRoutes
 
-class CollectionItemsService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: ContextShift[F])
-    extends Http4sDsl[F] {
+class CollectionItemsService[F[_]: Sync](
+    xa: Transactor[F],
+    apiHost: NonEmptyString,
+    enableTransactions: Boolean
+)(
+    implicit contextShift: ContextShift[F]
+) extends Http4sDsl[F] {
 
   def collectionFilter: String => Fragment =
     (collectionId: String) => fr"""item @> {"collection":"$collectionId"} :: jsonb"""
@@ -53,9 +62,45 @@ class CollectionItemsService[F[_]: Sync](xa: Transactor[F])(implicit contextShif
     }
   }
 
-  val routes: HttpRoutes[F] = CollectionItemEndpoints.collectionItemsList.toRoutes(
-    collectionId => listCollectionItems(collectionId)
-  ) <+> CollectionItemEndpoints.collectionItemsUnique.toRoutes {
-    case (collectionId, itemId) => getCollectionItemUnique(collectionId, itemId)
+  def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, Json]] = {
+    item.collection match {
+      case Some(_) =>
+        ???
+      case None =>
+        val collectionLink = StacLink(
+          s"$apiHost/api/collections/$collectionId",
+          Parent,
+          Some(`application/json`),
+          Some("Parent collection"),
+          Nil
+        )
+        val withParent = item.copy(links = collectionLink +: item.links)
+        StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
+          Right(inserted.asJson)
+        }
+    }
   }
+
+  val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions)
+
+  val transactionRoutes: List[HttpRoutes[F]] = List(
+    collectionItemEndpoints.postItem.toRoutes {
+      case (collectionId, stacItem) => postItem(collectionId, stacItem)
+    }
+  )
+
+  val routesList: NonEmptyList[HttpRoutes[F]] = NonEmptyList.of(
+    collectionItemEndpoints.collectionItemsList.toRoutes { collectionId =>
+      listCollectionItems(collectionId)
+    },
+    collectionItemEndpoints.collectionItemsUnique.toRoutes {
+      case (collectionId, itemId) => getCollectionItemUnique(collectionId, itemId)
+    }
+  ) ++ (if (enableTransactions) {
+          transactionRoutes
+        } else {
+          List.empty
+        })
+
+  val routes: HttpRoutes[F] = routesList.foldK
 }

@@ -1,13 +1,15 @@
 package com.azavea.franklin.api.endpoints
 
-import com.azavea.franklin.error.NotFound
+import com.azavea.franklin.api.schemas._
+import com.azavea.franklin.error.{NotFound, ValidationError}
 import io.circe._
 import sttp.tapir._
-import sttp.tapir.json.circe._
-import sttp.model.StatusCode.{NotFound => NF}
+import sttp.model.StatusCode.{NotFound => NF, BadRequest}
 import com.azavea.stac4s.StacItem
 
 class CollectionItemEndpoints(enableTransactions: Boolean) {
+
+  println(enableTransactions)
 
   val base = endpoint.in("collections")
 
@@ -27,11 +29,20 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
       .description("A single feature")
       .name("collectionItemUnique")
 
-  val postItem: Endpoint[(String, StacItem), Unit, Json, Nothing] =
+  val postItem: Endpoint[(String, StacItem), ValidationError, Json, Nothing] =
     base.post
       .in(path[String] / "items")
       .in(jsonBody[StacItem])
       .out(jsonBody[Json])
+      .errorOut(
+        oneOf(
+          statusMapping(
+            BadRequest,
+            jsonBody[ValidationError]
+              .description("Collection in route did not match collection in item")
+          )
+        )
+      )
       .description("Create a new feature in a collection")
       .name("postItem")
 
