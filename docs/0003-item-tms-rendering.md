@@ -210,6 +210,8 @@ As a result of this ADR, we'll need to:
   and `HasRasterExtents` (the latter for histograms)
 - add `geotrellis-server` as a dependency to Franklin and typeclass evidence for `TMSReification`
   and `HasRasterExtents` for `StacItem`s
+- add an `extensions/` directory to Franklin including a STAC extension that our rendering strategy
+  conforms to
 - add a migration to add a `styles` table to the Franklin database
 - add a `Dao` and routes for managing styles in conformance with the OGC API styles specifiation
 - add routes for serving imagery from items and a command line argument to the Franklin server
