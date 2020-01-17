@@ -1,11 +1,12 @@
 package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.api.schemas._
-import com.azavea.franklin.error.{CrudError, MidAirCollision, NotFound, ValidationError}
+import com.azavea.franklin.error.{CrudError, InvalidPatch, MidAirCollision, NotFound, ValidationError}
 import io.circe._
 import sttp.tapir._
 import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import com.azavea.stac4s.StacItem
+import sttp.model.StatusCode
 
 class CollectionItemEndpoints(enableTransactions: Boolean) {
 
@@ -76,6 +77,30 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
     base.delete
       .in(path[String] / "items" / path[String])
       .out(emptyOutput)
+      .out(statusCode(StatusCode.NoContent))
+
+  val patchItem: Endpoint[(String, String, Json, String), CrudError, (Json, String), Nothing] =
+    base.patch
+      .in(path[String] / "items" / path[String])
+      .in(jsonBody[Json])
+      .in(header[String]("If-Match"))
+      .out(jsonBody[Json])
+      .out(header[String]("ETag"))
+      .errorOut(
+        oneOf[CrudError](
+          statusMapping(
+            PreconditionFailed,
+            jsonBody[MidAirCollision]
+              .description("Your state of the item is stale. Refresh the item and try again.")
+          ),
+          statusMapping(
+            BadRequest,
+            jsonBody[InvalidPatch]
+              .description("Applying this patch would result in an invalid STAC Item")
+          )
+        )
+      )
+
 
   val transactionEndpoints = List(
     postItem,

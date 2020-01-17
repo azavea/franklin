@@ -126,6 +126,13 @@ class CollectionItemsService[F[_]: Sync](
       .delete
       .transact(xa) *> Applicative[F].pure { Right(()) }
 
+  def patchItem(
+    collectionId: String,
+    itemId: String,
+    jsonPatch: Json,
+    etag: String
+  ): F[Either[CrudError, (Json, String)]] = ???
+
   val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions)
 
   val transactionRoutes: List[HttpRoutes[F]] = List(
@@ -137,6 +144,9 @@ class CollectionItemsService[F[_]: Sync](
     },
     collectionItemEndpoints.deleteItem.toRoutes {
       case (collectionId, itemId) => deleteItem(collectionId, itemId)
+    },
+    collectionItemEndpoints.patchItem.toRoutes {
+      case (collectionId, itemId, jsonPatch, etag) => patchItem(collectionId, itemId, jsonPatch, etag)
     }
   )
 
