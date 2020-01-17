@@ -28,11 +28,12 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
       .description("A single feature")
       .name("collectionItemUnique")
 
-  val postItem: Endpoint[(String, StacItem), ValidationError, Json, Nothing] =
+  val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Nothing] =
     base.post
       .in(path[String] / "items")
       .in(jsonBody[StacItem])
       .out(jsonBody[Json])
+      .out(header[String]("ETag"))
       .errorOut(
         oneOf(
           statusMapping(
@@ -45,12 +46,13 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
       .description("Create a new feature in a collection")
       .name("postItem")
 
-  val putItem: Endpoint[(String, String, StacItem, String), CrudError, Json, Nothing] =
+  val putItem: Endpoint[(String, String, StacItem, String), CrudError, (Json, String), Nothing] =
     base.put
       .in(path[String] / "items" / path[String])
       .in(jsonBody[StacItem])
       .in(header[String]("If-Match"))
       .out(jsonBody[Json])
+      .out(header[String]("ETag"))
       .errorOut(
         oneOf[CrudError](
           statusMapping(

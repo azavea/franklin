@@ -45,7 +45,10 @@ class CollectionItemsService[F[_]: Sync](
 
   }
 
-  def getCollectionItemUnique(collectionId: String, itemId: String): F[Either[NF, (Json, String)]] = {
+  def getCollectionItemUnique(
+      collectionId: String,
+      itemId: String
+  ): F[Either[NF, (Json, String)]] = {
     for {
       itemOption <- StacItemDao.getCollectionItem(collectionId, itemId).transact(xa)
     } yield {
@@ -58,7 +61,7 @@ class CollectionItemsService[F[_]: Sync](
     }
   }
 
-  def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, Json]] = {
+  def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, (Json, String)]] = {
     val fallbackCollectionLink = StacLink(
       s"$apiHost/api/collections/$collectionId",
       Parent,
@@ -77,7 +80,7 @@ class CollectionItemsService[F[_]: Sync](
           val withParent =
             item.copy(links = parentLink +: item.links.filter(_.rel != Parent))
           StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-            Right(inserted.asJson)
+            Right((inserted.asJson, inserted.##.toString))
           }
         } else {
           Applicative[F].pure(
@@ -91,7 +94,7 @@ class CollectionItemsService[F[_]: Sync](
       case None =>
         val withParent = item.copy(links = fallbackCollectionLink +: item.links)
         StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-          Right(inserted.asJson)
+          Right((inserted.asJson, inserted.##.toString))
         }
     }
   }
@@ -101,7 +104,7 @@ class CollectionItemsService[F[_]: Sync](
       itemId: String,
       itemUpdate: StacItem,
       etag: String
-  ): F[Either[CrudError, Json]] =
+  ): F[Either[CrudError, (Json, String)]] =
     StacItemDao.updateStacItem(collectionId, itemId, itemUpdate, etag).transact(xa) map {
       case Left(StacItemDao.UpdateFailed) =>
         Left(ValidationError(s"Update of $itemId not possible with value passed"))
@@ -110,7 +113,7 @@ class CollectionItemsService[F[_]: Sync](
       case Left(StacItemDao.ItemNotFound) =>
         Left(NF(s"Item $itemId in collection $collectionId not found"))
       case Right(item) =>
-        Right(item.asJson)
+        Right((item.asJson, item.##.toString))
     }
 
   val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions)
