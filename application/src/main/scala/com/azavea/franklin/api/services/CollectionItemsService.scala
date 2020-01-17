@@ -29,8 +29,10 @@ class CollectionItemsService[F[_]: Sync](
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
 
-  def collectionFilter: String => Fragment =
-    (collectionId: String) => fr"""item @> {"collection":"$collectionId"} :: jsonb"""
+  def collectionFilter(collectionId: String): Fragment = {
+    val jsonFilter = s"""{"collection": "$collectionId"}"""
+    fr"""item @> $jsonFilter :: jsonb"""
+  }
 
   def listCollectionItems(collectionId: String): F[Either[Unit, Json]] = {
     for {
