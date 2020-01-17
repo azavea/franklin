@@ -19,11 +19,12 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
       .description("A feature collection of collection items")
       .name("collectionItems")
 
-  val collectionItemsUnique: Endpoint[(String, String), NotFound, Json, Nothing] =
+  val collectionItemsUnique: Endpoint[(String, String), NotFound, (Json, String), Nothing] =
     base.get
       .in(path[String] / "items" / path[String])
       .out(jsonBody[Json])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
+      .out(header[String]("ETag"))
       .description("A single feature")
       .name("collectionItemUnique")
 
@@ -56,6 +57,10 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
             BadRequest,
             jsonBody[ValidationError]
               .description("Something was wrong with the body of the request")
+          ),
+          statusMapping(
+            NF,
+            jsonBody[NotFound].description("not found")
           ),
           statusMapping(
             PreconditionFailed,

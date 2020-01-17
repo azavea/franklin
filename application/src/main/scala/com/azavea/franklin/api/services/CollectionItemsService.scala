@@ -1,7 +1,7 @@
 package com.azavea.franklin.api.services
 
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
-import com.azavea.franklin.error.{CrudError, NotFound => NF, ValidationError}
+import com.azavea.franklin.error.{CrudError, MidAirCollision, NotFound => NF, ValidationError}
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.database.Filterables._
 
@@ -29,15 +29,10 @@ class CollectionItemsService[F[_]: Sync](
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
 
-  def collectionFilter(collectionId: String): Fragment = {
-    val jsonFilter = s"""{"collection": "$collectionId"}"""
-    fr"""item @> $jsonFilter :: jsonb"""
-  }
-
   def listCollectionItems(collectionId: String): F[Either[Unit, Json]] = {
     for {
       items <- StacItemDao.query
-        .filter(collectionFilter(collectionId))
+        .filter(StacItemDao.collectionFilter(collectionId))
         .list
         .transact(xa)
     } yield {
@@ -50,16 +45,14 @@ class CollectionItemsService[F[_]: Sync](
 
   }
 
-  def getCollectionItemUnique(collectionId: String, itemId: String): F[Either[NF, Json]] = {
+  def getCollectionItemUnique(collectionId: String, itemId: String): F[Either[NF, (Json, String)]] = {
     for {
-      itemOption <- StacItemDao.query
-        .filter(fr"id = $itemId")
-        .filter(collectionFilter(collectionId))
-        .selectOption
-        .transact(xa)
+      itemOption <- StacItemDao.getCollectionItem(collectionId, itemId).transact(xa)
     } yield {
       Either.fromOption(
-        itemOption map { _.asJson },
+        itemOption map { item =>
+          (item.asJson, item.##.toString)
+        },
         NF(s"Item $itemId in collection $collectionId not found")
       )
     }
@@ -109,7 +102,16 @@ class CollectionItemsService[F[_]: Sync](
       itemUpdate: StacItem,
       etag: String
   ): F[Either[CrudError, Json]] =
-    ???
+    StacItemDao.updateStacItem(collectionId, itemId, itemUpdate, etag).transact(xa) map {
+      case Left(StacItemDao.UpdateFailed) =>
+        Left(ValidationError(s"Update of $itemId not possible with value passed"))
+      case Left(StacItemDao.StaleObject) =>
+        Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
+      case Left(StacItemDao.ItemNotFound) =>
+        Left(NF(s"Item $itemId in collection $collectionId not found"))
+      case Right(item) =>
+        Right(item.asJson)
+    }
 
   val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions)
 
