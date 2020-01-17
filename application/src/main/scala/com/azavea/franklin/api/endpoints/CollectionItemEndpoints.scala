@@ -72,9 +72,15 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
         )
       )
 
+  val deleteItem: Endpoint[(String, String), Unit, Unit, Nothing] =
+    base.delete
+      .in(path[String] / "items" / path[String])
+      .out(emptyOutput)
+
   val transactionEndpoints = List(
     postItem,
-    putItem
+    putItem,
+    deleteItem
   )
 
   val endpoints = List(collectionItemsList, collectionItemsUnique) ++

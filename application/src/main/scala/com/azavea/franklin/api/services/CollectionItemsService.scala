@@ -116,6 +116,16 @@ class CollectionItemsService[F[_]: Sync](
         Right((item.asJson, item.##.toString))
     }
 
+  def deleteItem(
+      collectionId: String,
+      itemId: String
+  ): F[Either[Unit, Unit]] =
+    StacItemDao.query
+      .filter(fr"id = $itemId")
+      .filter(StacItemDao.collectionFilter(collectionId))
+      .delete
+      .transact(xa) *> Applicative[F].pure { Right(()) }
+
   val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions)
 
   val transactionRoutes: List[HttpRoutes[F]] = List(
@@ -124,6 +134,9 @@ class CollectionItemsService[F[_]: Sync](
     },
     collectionItemEndpoints.putItem.toRoutes {
       case (collectionId, itemId, stacItem, etag) => putItem(collectionId, itemId, stacItem, etag)
+    },
+    collectionItemEndpoints.deleteItem.toRoutes {
+      case (collectionId, itemId) => deleteItem(collectionId, itemId)
     }
   )
 
