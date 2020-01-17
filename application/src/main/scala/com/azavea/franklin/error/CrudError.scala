@@ -35,6 +35,7 @@ object InvalidPatch {
   implicit val encError: Encoder[Error] = new Encoder[Error] {
     def apply(err: Error): Json = Show[Error].show(err).asJson
   }
+
   implicit val decError: Decoder[Error] = Decoder.decodeString.emap { s =>
     s.takeWhile(_ != ':').toLowerCase match {
       case "parsingfailure" =>

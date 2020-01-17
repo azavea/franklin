@@ -1,7 +1,13 @@
 package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.api.schemas._
-import com.azavea.franklin.error.{CrudError, InvalidPatch, MidAirCollision, NotFound, ValidationError}
+import com.azavea.franklin.error.{
+  CrudError,
+  InvalidPatch,
+  MidAirCollision,
+  NotFound,
+  ValidationError
+}
 import io.circe._
 import sttp.tapir._
 import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
@@ -109,7 +115,6 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
           )
         )
       )
-
 
   val transactionEndpoints = List(
     postItem,

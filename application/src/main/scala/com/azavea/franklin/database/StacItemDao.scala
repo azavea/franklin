@@ -113,11 +113,15 @@ object StacItemDao extends Dao[StacItem] {
         ItemNotFound: StacItemDaoError
       )
       etagInDb = itemInDB.##
-      patched  = itemInDB.asJson.deepMerge(jsonPatch)
+      patched  = itemInDB.asJson.deepMerge(jsonPatch).dropNullValues
       decoded  = patched.as[StacItem]
       update <- (decoded, etagInDb.toString == etag) match {
         case (Right(patchedItem), true) =>
-          EitherT { doUpdate(itemId, patchedItem).attempt } leftMap { _ =>
+          EitherT {
+            doUpdate(itemId, patchedItem.copy(properties = patchedItem.properties.filter({
+              case (_, v) => v.isNull
+            }))).attempt
+          } leftMap { _ =>
             UpdateFailed: StacItemDaoError
           }
         case (_, false) =>
