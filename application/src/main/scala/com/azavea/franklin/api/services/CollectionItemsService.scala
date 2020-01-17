@@ -58,10 +58,10 @@ class CollectionItemsService[F[_]: Sync](
         .selectOption
         .transact(xa)
     } yield {
-      itemOption match {
-        case Some(item) => Either.right(item.asJson)
-        case _          => Either.left(NF(s"Item $itemId in collection $collectionId not found"))
-      }
+      Either.fromOption(
+        itemOption map { _.asJson },
+        NF(s"Item $itemId in collection $collectionId not found")
+      )
     }
   }
 
