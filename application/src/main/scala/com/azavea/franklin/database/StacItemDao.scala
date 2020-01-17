@@ -4,12 +4,14 @@ import com.azavea.franklin.datamodel.{SearchMetadata, StacSearchCollection}
 
 import cats.data.EitherT
 import cats.implicits._
+import com.azavea.stac4s._
 import doobie.free.connection.ConnectionIO
 import doobie.Fragment
 import doobie.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
-import com.azavea.stac4s._
 import geotrellis.vector.Projected
+import io.circe.{Error, Json}
+import io.circe.syntax._
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -17,6 +19,9 @@ object StacItemDao extends Dao[StacItem] {
   case object UpdateFailed                                extends StacItemDaoError("Failed to update STAC item")
   case object StaleObject                                 extends StacItemDaoError("Server-side object updated")
   case object ItemNotFound                                extends StacItemDaoError("Not found")
+
+  case class PatchInvalidatesItem(err: Error)
+      extends StacItemDaoError("Applying patch would create an invalid patch item")
 
   val tableName = "collection_items"
 
@@ -82,7 +87,7 @@ object StacItemDao extends Dao[StacItem] {
     (for {
       itemInDB <- EitherT.fromOptionF[ConnectionIO, StacItemDaoError, StacItem](
         getCollectionItem(collectionId, itemId),
-        ItemNotFound
+        ItemNotFound: StacItemDaoError
       )
       etagInDb = itemInDB.##
       update <- if (etagInDb.toString == etag) {
@@ -93,6 +98,32 @@ object StacItemDao extends Dao[StacItem] {
         }
       } else {
         EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
+      }
+    } yield update).value
+
+  def patchItem(
+      collectionId: String,
+      itemId: String,
+      jsonPatch: Json,
+      etag: String
+  ): ConnectionIO[Either[StacItemDaoError, StacItem]] =
+    (for {
+      itemInDB <- EitherT.fromOptionF[ConnectionIO, StacItemDaoError, StacItem](
+        getCollectionItem(collectionId, itemId),
+        ItemNotFound: StacItemDaoError
+      )
+      etagInDb = itemInDB.##
+      patched  = itemInDB.asJson.deepMerge(jsonPatch)
+      decoded  = patched.as[StacItem]
+      update <- (decoded, etagInDb.toString == etag) match {
+        case (Right(patchedItem), true) =>
+          EitherT { doUpdate(itemId, patchedItem).attempt } leftMap { _ =>
+            UpdateFailed: StacItemDaoError
+          }
+        case (_, false) =>
+          EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
+        case (Left(err), _) =>
+          EitherT.leftT[ConnectionIO, StacItem] { PatchInvalidatesItem(err): StacItemDaoError }
       }
     } yield update).value
 }

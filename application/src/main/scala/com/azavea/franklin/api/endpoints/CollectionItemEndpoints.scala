@@ -94,9 +94,18 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
               .description("Your state of the item is stale. Refresh the item and try again.")
           ),
           statusMapping(
+            NF,
+            jsonBody[NotFound].description("not found")
+          ),
+          statusMapping(
             BadRequest,
             jsonBody[InvalidPatch]
               .description("Applying this patch would result in an invalid STAC Item")
+          ),
+          statusMapping(
+            BadRequest,
+            jsonBody[ValidationError]
+              .description("Something was wrong with the body of the request")
           )
         )
       )

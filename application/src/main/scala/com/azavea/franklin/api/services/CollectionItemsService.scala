@@ -1,7 +1,13 @@
 package com.azavea.franklin.api.services
 
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
-import com.azavea.franklin.error.{CrudError, MidAirCollision, NotFound => NF, ValidationError}
+import com.azavea.franklin.error.{
+  CrudError,
+  InvalidPatch,
+  MidAirCollision,
+  NotFound => NF,
+  ValidationError
+}
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.database.Filterables._
 
@@ -106,12 +112,12 @@ class CollectionItemsService[F[_]: Sync](
       etag: String
   ): F[Either[CrudError, (Json, String)]] =
     StacItemDao.updateStacItem(collectionId, itemId, itemUpdate, etag).transact(xa) map {
-      case Left(StacItemDao.UpdateFailed) =>
-        Left(ValidationError(s"Update of $itemId not possible with value passed"))
       case Left(StacItemDao.StaleObject) =>
         Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
       case Left(StacItemDao.ItemNotFound) =>
         Left(NF(s"Item $itemId in collection $collectionId not found"))
+      case Left(_) =>
+        Left(ValidationError(s"Update of $itemId not possible with value passed"))
       case Right(item) =>
         Right((item.asJson, item.##.toString))
     }
@@ -127,11 +133,30 @@ class CollectionItemsService[F[_]: Sync](
       .transact(xa) *> Applicative[F].pure { Right(()) }
 
   def patchItem(
-    collectionId: String,
-    itemId: String,
-    jsonPatch: Json,
-    etag: String
-  ): F[Either[CrudError, (Json, String)]] = ???
+      collectionId: String,
+      itemId: String,
+      jsonPatch: Json,
+      etag: String
+  ): F[Either[CrudError, (Json, String)]] =
+    StacItemDao
+      .patchItem(
+        collectionId,
+        itemId,
+        jsonPatch,
+        etag
+      )
+      .transact(xa) map {
+      case Left(StacItemDao.StaleObject) =>
+        Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
+      case Left(StacItemDao.ItemNotFound) =>
+        Left(NF(s"Item $itemId in collection $collectionId not found"))
+      case Left(StacItemDao.UpdateFailed) =>
+        Left(ValidationError(s"Update of $itemId not possible with value passed"))
+      case Left(StacItemDao.PatchInvalidatesItem(err)) =>
+        Left(InvalidPatch(s"Patch would invalidate item $itemId", jsonPatch, err))
+      case Right(updated) =>
+        Right((updated.asJson, updated.##.toString))
+    }
 
   val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions)
 
@@ -146,7 +171,8 @@ class CollectionItemsService[F[_]: Sync](
       case (collectionId, itemId) => deleteItem(collectionId, itemId)
     },
     collectionItemEndpoints.patchItem.toRoutes {
-      case (collectionId, itemId, jsonPatch, etag) => patchItem(collectionId, itemId, jsonPatch, etag)
+      case (collectionId, itemId, jsonPatch, etag) =>
+        patchItem(collectionId, itemId, jsonPatch, etag)
     }
   )
 

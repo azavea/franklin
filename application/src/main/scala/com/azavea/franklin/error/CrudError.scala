@@ -28,7 +28,7 @@ object MidAirCollision {
   implicit val decMidAirCollision: Decoder[MidAirCollision] = deriveDecoder
 }
 
-case class InvalidPatch(msg: String, patch: Json, errors: Error) extends CrudError
+case class InvalidPatch(msg: String, patch: Json, error: Error) extends CrudError
 
 object InvalidPatch {
 
