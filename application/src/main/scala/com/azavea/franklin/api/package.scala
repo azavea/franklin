@@ -6,7 +6,7 @@ import geotrellis.vector.Geometry
 import io.circe.{Decoder, Encoder}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.{Codec, DecodeResult, Schema, Validator}
-import sttp.tapir.json.circe._
+import sttp.tapir.json.circe.{encoderDecoderCodec, schemaForCirceJson}
 
 import scala.util.Try
 
@@ -60,7 +60,7 @@ package object schemas {
   implicit val csvListCodec: PlainCodec[List[String]] =
     Codec.stringPlainCodecUtf8.mapDecode(commaSeparatedStrings)(listToCSV)
 
-  implicit def circeJsonSchema[T: Encoder]: Schema[T] = Schema(
+  implicit def circeJsonSchema[T]: Schema[T] = Schema(
     schemaForCirceJson.schemaType
   )
 
