@@ -5,6 +5,7 @@ import com.azavea.franklin.database._
 import com.azavea.stac4s.{Bbox, TemporalExtent}
 import io.circe._
 import sttp.tapir._
+import sttp.tapir.json.circe._
 
 object SearchEndpoints {
 

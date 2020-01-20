@@ -1,9 +1,11 @@
 package com.azavea.franklin.error
 
 import cats.Show
-import io.circe._
+import io.circe.{Codec => _, _}
 import io.circe.generic.semiauto._
 import io.circe.syntax._
+import sttp.tapir._
+import sttp.tapir.json.circe._
 
 sealed abstract class CrudError
 
@@ -50,6 +52,18 @@ object InvalidPatch {
         Right(DecodingFailure(baseMessage, Nil))
     }
   }
+
+  val jsonCodec: Codec.JsonCodec[Json] = implicitly[Codec.JsonCodec[Json]]
+
+  def decodePatch(json: Json): DecodeResult[InvalidPatch] = json.as[InvalidPatch] match {
+    case Left(err) => DecodeResult.Error(err.getMessage, err)
+    case Right(v)  => DecodeResult.Value(v)
+  }
+
+  def encodePatch(patch: InvalidPatch): Json = Encoder[InvalidPatch].apply(patch)
+
+  implicit val codecInvalidPatch: Codec.JsonCodec[InvalidPatch] =
+    jsonCodec.mapDecode(decodePatch)(encodePatch)
 
   implicit val encInvalidPatch: Encoder[InvalidPatch] = deriveEncoder
   implicit val decInvalidPatch: Decoder[InvalidPatch] = deriveDecoder

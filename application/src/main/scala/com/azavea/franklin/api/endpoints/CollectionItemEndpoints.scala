@@ -8,8 +8,9 @@ import com.azavea.franklin.error.{
   NotFound,
   ValidationError
 }
-import io.circe._
+import io.circe.{Codec => _, _}
 import sttp.tapir._
+import sttp.tapir.json.circe._
 import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import com.azavea.stac4s.StacItem
 import sttp.model.StatusCode
@@ -107,11 +108,6 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
             BadRequest,
             jsonBody[InvalidPatch]
               .description("Applying this patch would result in an invalid STAC Item")
-          ),
-          statusMapping(
-            BadRequest,
-            jsonBody[ValidationError]
-              .description("Something was wrong with the body of the request")
           )
         )
       )
@@ -119,6 +115,7 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
   val transactionEndpoints = List(
     postItem,
     putItem,
+    patchItem,
     deleteItem
   )
 
