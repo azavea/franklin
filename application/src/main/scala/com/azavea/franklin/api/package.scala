@@ -60,7 +60,7 @@ package object schemas {
   implicit val csvListCodec: PlainCodec[List[String]] =
     Codec.stringPlainCodecUtf8.mapDecode(commaSeparatedStrings)(listToCSV)
 
-  implicit def circeJsonSchema[T: Encoder: Decoder]: Schema[T] = Schema(
+  implicit def circeJsonSchema[T: Encoder]: Schema[T] = Schema(
     schemaForCirceJson.schemaType
   )
 
