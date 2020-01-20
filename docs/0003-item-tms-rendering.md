@@ -1,3 +1,10 @@
+---
+id: 0003-choose-a-pagination-strategy-and-implementation
+title: 3 - Item TMS Rendering
+---
+
+Date: 2020-01-14
+
 # 3. Item TMS Rendering #
 
 -   [Status](#status)
@@ -11,12 +18,10 @@
 -   [Decision](#decision)
 -   [Consequences](#consequences)
 
-Date: 2020-01-14
-
 Status
 ------
 
-Proposed
+Accepted
 
 Context
 -------

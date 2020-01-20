@@ -11,6 +11,9 @@
       "0002-choose-a-pagination-strategy-and-implementation": {
         "title": "2 - Choose a Pagination Strategy and Implementation"
       },
+      "0003-choose-a-pagination-strategy-and-implementation": {
+        "title": "3 - Item TMS Rendering"
+      },
       "development": {
         "title": "development"
       },
