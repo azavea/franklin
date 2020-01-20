@@ -1,0 +1,238 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>3 - Item TMS Rendering · Franklin</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="Date: 2020-01-14"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="3 - Item TMS Rendering · Franklin"/><meta property="og:type" content="website"/><meta property="og:url" content="https://azavea.github.io/franklin/"/><meta property="og:description" content="Date: 2020-01-14"/><meta property="og:image" content="https://azavea.github.io/franklin/img/franklin-logo-tagline.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://azavea.github.io/franklin/img/franklin-logo-tagline.svg"/><link rel="shortcut icon" href="/franklin/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-970854-35', 'auto');
+              ga('send', 'pageview');
+            </script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed:400,700&amp;display=swap"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/franklin/js/scrollSpy.js"></script><link rel="stylesheet" href="/franklin/css/main.css"/><script src="/franklin/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/franklin/"><img class="logo" src="/franklin/img/header.png" alt="Franklin"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/franklin/docs/introduction" target="_self">Getting Started</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>ADRs</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Overview</h3><ul class=""><li class="navListItem"><a class="navItem" href="/franklin/docs/introduction">Introduction</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">ADRs</h3><ul class=""><li class="navListItem"><a class="navItem" href="/franklin/docs/0001-record-architecture-decisions">1 - Recording Architecture Decisions</a></li><li class="navListItem"><a class="navItem" href="/franklin/docs/0002-choose-a-pagination-strategy-and-implementation">2 - Choose a Pagination Strategy and Implementation</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/franklin/docs/0003-item-tms-rendering">3 - Item TMS Rendering</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">3 - Item TMS Rendering</h1></header><article><div><span><p>Date: 2020-01-14</p>
+<h2><a class="anchor" aria-hidden="true" id="status"></a><a href="#status" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Status</h2>
+<p>Accepted</p>
+<h2><a class="anchor" aria-hidden="true" id="context"></a><a href="#context" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Context</h2>
+<p>To make Franklin a useful tool for people working on machine learning
+projects, we need not only to be able to serve json metadata about
+imagery and labels, but also the imagery and label assets themselves.
+This ADR will focus on two questions in particular in the domain of
+serving imagery:</p>
+<ul>
+<li>what should we render?</li>
+<li>how should we render it?</li>
+<li>how do users discover that they have something renderable?</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="what-should-we-render"></a><a href="#what-should-we-render" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>What should we render?</h3>
+<p>In a STAC API with many items, each of which may or may not have a COG,
+we have some challenges deciding what we should make TMS endpoints
+available for. We have a few options at different levels of user
+interaction:</p>
+<ul>
+<li>we could render just <code>Item</code>s -- in this case users don't get to
+choose the collection at all since there is no collection</li>
+<li>we could render just all of the items in a <code>Collection</code> or all of
+the items in a <code>Catalog</code> -- in this case, once <a href="https://github.com/azavea/franklin/issues/4">transaction
+endpoints</a> are
+implemented, it would be up to the user to create the container and
+put the items inside.</li>
+<li>we could render arbitrary search results -- in this case the user
+would describe the sorts of items that they want to see, and we
+would provide a way to visualize their <code>ItemCollection</code> response.
+There wouldn't need to be anything persistent about the collection
+of items, though there would need to be something at least
+semi-persistent for the visualization of the collection of items.</li>
+</ul>
+<p>Rendering collections is not a hard technical problem. However,
+rendering collections also exposes us to risks of people returning items
+with different sorts of imagery. For the short-term needs of viewing
+images with their labels, this risk doesn't come with much of a benefit
+attached to it. For that reason, we should render only single items for
+now.</p>
+<h3><a class="anchor" aria-hidden="true" id="how-should-we-render-single-items"></a><a href="#how-should-we-render-single-items" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How should we render single items?</h3>
+<p>For now our goal is only to support TMS rendering, which solves the
+problem of how the data should be accessed, but doesn't solve the
+problem of how to render the imagery.</p>
+<h4><a class="anchor" aria-hidden="true" id="rendering-labels"></a><a href="#rendering-labels" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Rendering labels</h4>
+<p>Since we're working on TMS rendering, we can only paint raster labels.
+There are at least three possibilities for the state of those raster
+labels: they can have three bands, one band, or some surprising number
+of bands.</p>
+<p>If the raster label has three bands, we don't need any help from the
+user to make a decent effort at coloring it. We can assume the bands are
+RGB, produce a PNG, ship it back, and walk away.</p>
+<p>If the raster label has one band, the situation is more ambiguous. In
+this case, it's probable that the labels are categorical. We can take a
+first stab at coloring the image by using the <code>LabelItem</code>'s
+<code>label:classes</code> property to determine the distinct classes, choose
+random colors for them, and render the image with that color map. This
+strategy exposes a new problem: we don't have anywhere currently to
+persist the color map, so either the color map we choose will need to be
+a query parameter somehow or we'll need to associate it with the <code>Item</code>
+in the database. More detail on this problem is in the section on
+<a href="#persisting-styles">persisting styles</a>. In any case, we have a strategy
+available for coloring single-band labels as well.</p>
+<p>If the raster label has some other number of bands, it's not obvious
+what we should do. My instinct is that we should refuse to render it. I
+don't think I can guess at this stage why someone would produce such a
+label or what they want to do with it, so if it comes up we can listen
+and see how we should incorporate this.</p>
+<h4><a class="anchor" aria-hidden="true" id="rendering-imagery"></a><a href="#rendering-imagery" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Rendering imagery</h4>
+<p>Several attempts have been made to standardize on an interface for
+describing how to render imagery. In Raster Foundry we described a bunch
+of imagery adjustment options with custom types for color ramps and
+color palettes. Last summer someone proposed <a href="https://github.com/radiantearth/stac-spec/pull/470">an
+extension</a> to the
+STAC specification to include visualization parameters based on their
+Google Earth Engine experience. The OGC description of styles uses the
+Styled Layer Descriptors (SLDs).</p>
+<p>In the past, in particular on the District Builder project, getting up
+to speed with SLDs wasn't easy for me. Getting just the essentials to
+color some polygons was more of a challenge than I wanted it to be.
+However, I think that using SLDs is the right move here for n reasons.</p>
+<p>First, in District Builder, the SLDs were hand edited in a gigantic
+config XML file. This made it easy to construct incomplete or invalid
+objects. Since Franklin is written in Scala, we can capitalize on
+<a href="http://scalaxb.org/"><code>scalaxb</code></a> to automatically generate the types
+necessary not to write SLDs by hand. <a href="https://github.com/geotrellis/geotrellis-server/pull/186">This pull
+request</a> in
+<code>geotrellis-server</code> adds the relevant XML schemas, and you can verify
+that the types exist by publishing the <code>opengis</code> submodule locally and
+importing from <code>opengis.sld._</code> in an ammonite repl.</p>
+<p>Second, SLDs allow us to describe rendering strategies for vector and
+raster data. While this ADR only addresses rendering raster data, we
+will need to render vector data in the future, and not having to come up
+with another rendering strategy will be helpful.</p>
+<p>Third, the dialog between STAC and OGC about the direction geospatial
+web services should take makes it likely that we'd have to justify not
+using SLD if we chose something else. We're probably better off not
+writing and forcing ourselves to champion usage of <a href="https://xkcd.com/927/">the 15th
+standard</a>.</p>
+<h4><a class="anchor" aria-hidden="true" id="persisting-styles"></a><a href="#persisting-styles" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Persisting styles</h4>
+<p>Since users probably don't want to have to specify their visualization
+parameters every time they look at a layer, we'll want to persist SLDs
+for items somewhere. Right now, Franklin is backed by a PostgreSQL
+database, but other backends are possible as well.</p>
+<p>One option we have is to store style information in a separate table.
+Storing styles in a separate table would open up the possibility of
+conforming to the
+<a href="https://app.swaggerhub.com/apis/UAB-CREAF/opf-style-api/1.0.0#/sld-10">OGC Styles API specification</a>.
+The OGC Styles API prescribes a set of endpoints for creating and managing
+styles, with either of SLD or mapbox styles. Adding endpoints for style
+management would make API interaction slightly easier. Users would be able
+to color style their raster (and later vector) layers in QGIS, export
+the SLD, and POST to the API. The request after that would be to add
+an asset to a STAC item, which would require <code>PATCH</code>ing an additional
+asset instead of the full SLD document.</p>
+<p>Our other two options are to store the SLD documents in properties on
+items or in a separate column.
+The downside of inserting the SLD directly into the item's properties is
+that, since SLD is XML, we'll be mixing JSON and XML in JSON that people
+generally expect to conform to a specification. The <code>properties</code> of STAC
+items are free-form with a preference for avoiding nesting, and throwing
+a potentially nested raw XML string into properties sounds like not a
+great idea. However, we could provide a JSON codec for the types
+generated from the SLD schema. The downside of throwing them into a
+separate column is that it to some extent breaks our model of having ids,
+foreign keys, and JSON documents as entire records in Postgres. Expanding
+on the columns that represent an entity in conjunction with the entity's
+JSON document makes Postgres less like other backends we might pursue.</p>
+<p>The question is then whether we should attempt to develop in line with
+the OGC API Styles specification.
+The win we get from attempting to conform to the styles specification
+is that we don't have to go out on a limb for the design of styles
+management and justify choices we make that other people think are
+weird. Since the previous section already says we should use SLD for
+describing how to render, attempting to conform to the OGC Styles API
+specification is a natural choice.</p>
+<h3><a class="anchor" aria-hidden="true" id="how-do-users-discover-that-theres-a-tile-layer-available-for-an-item"></a><a href="#how-do-users-discover-that-theres-a-tile-layer-available-for-an-item" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How do users discover that there's a tile layer available for an item?</h3>
+<p>One question is whether tile URLs are links or assets. Since a links are
+&quot;link objects to resources and related URLs&quot;, and assets are &quot;asset objects
+that can be downloaded,&quot; tile layer URLs are more links than assets. There isn't
+currently an
+<a href="https://www.iana.org/assignments/link-relations/link-relations.xhtml">IANA relation type</a>
+for tiles. However, the
+<a href="https://github.com/opengeospatial/OGC-API-Maps/blob/master/standard/openapi/ogc-api-map-tiles.yaml#L97-L116">Map Tiles API specification</a>
+does include a link with a <code>rel</code> of <code>tile</code>. The Map Tiles specification is
+still a work in progress, but it's at least a sign of the direction OGC
+is going thinking about how to advertise tiles for a collection. While
+we're planning to serve tiles for items rather than collections, it's still
+a reasonable source of inspiration.</p>
+<h2><a class="anchor" aria-hidden="true" id="decision"></a><a href="#decision" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Decision</h2>
+<p>For now, in pursuit of our short-term goals and to get the rendering
+machinery in place, we will render only items. For styling, we will use
+SLDs, since they provide many styling options and are compatible with
+other open source geospatial tools and standards. Styles will be persisted
+in a separate table, and style management will occur through endpoints
+as described by the OGC API Styles specification. Users will know they
+can view a TMS layer for an item when it has a link with relation type
+<code>tile</code>.</p>
+<h2><a class="anchor" aria-hidden="true" id="consequences"></a><a href="#consequences" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Consequences</h2>
+<p>As a result of this ADR, we'll need to:</p>
+<ul>
+<li>familiarize ourselves with SLD</li>
+<li>open issues in the appropriate repositories for rendering entities with <code>TMSReification</code>
+and <code>HasRasterExtents</code> (the latter for histograms)</li>
+<li>add <code>geotrellis-server</code> as a dependency to Franklin and typeclass evidence for <code>TMSReification</code>
+and <code>HasRasterExtents</code> for <code>StacItem</code>s</li>
+<li>add an <code>extensions/</code> directory to Franklin including a STAC extension that our rendering strategy
+conforms to</li>
+<li>add a migration to add a <code>styles</code> table to the Franklin database</li>
+<li>add a <code>Dao</code> and routes for managing styles in conformance with the OGC API styles specifiation</li>
+<li>add routes for serving imagery from items and a command line argument to the Franklin server
+to activate them</li>
+</ul>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/franklin/docs/0002-choose-a-pagination-strategy-and-implementation"><span class="arrow-prev">← </span><span>2 - Choose a Pagination Strategy and Implementation</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#status">Status</a></li><li><a href="#context">Context</a><ul class="toc-headings"><li><a href="#what-should-we-render">What should we render?</a></li><li><a href="#how-should-we-render-single-items">How should we render single items?</a></li><li><a href="#how-do-users-discover-that-theres-a-tile-layer-available-for-an-item">How do users discover that there's a tile layer available for an item?</a></li></ul></li><li><a href="#decision">Decision</a></li><li><a href="#consequences">Consequences</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/franklin/" class="nav-home"><img src="/franklin/img/footer.png" alt="Franklin" width="66" height="58"/></a><div><h5>Other Projects</h5><a href="https://rasterfoundry.azavea.com">Raster Foundry</a><a href="https://rastervision.io">Raster Vision</a><a href="https://geotrellis.io">GeoTrellis</a></div><div><h5>Contribute</h5><a href="https://github.com/azavea/franklin">GitHub</a></div><div></div></section><a href="https://www.azavea.com/blog/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/franklin/img/azavea_white_solo.svg" alt="Azavea" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Azavea</section></footer></div></body></html>
