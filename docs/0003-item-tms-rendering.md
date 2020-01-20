@@ -5,7 +5,8 @@ title: 3 - Item TMS Rendering
 
 Date: 2020-01-14
 
-# 3. Item TMS Rendering #
+Table of Contents
+------
 
 -   [Status](#status)
 -   [Context](#context)
