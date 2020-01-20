@@ -5,20 +5,6 @@ title: 3 - Item TMS Rendering
 
 Date: 2020-01-14
 
-Table of Contents
-------
-
--   [Status](#status)
--   [Context](#context)
-    -   [What should we render?](#what-should-we-render)
-    -   [How should we render single
-        items?](#how-should-we-render-single-items)
-    -   [How do users discover that there's a tile layer available for
-        an
-        item?](#how-do-users-discover-that-theres-a-tile-layer-available-for-an-item)
--   [Decision](#decision)
--   [Consequences](#consequences)
-
 Status
 ------
 
