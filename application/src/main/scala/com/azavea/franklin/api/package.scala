@@ -1,7 +1,7 @@
 package com.azavea.franklin.api
 
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
-import com.azavea.stac4s.{Bbox, TemporalExtent, StacItem, ThreeDimBbox, TwoDimBbox}
+import com.azavea.stac4s.{Bbox, StacItem, TemporalExtent, ThreeDimBbox, TwoDimBbox}
 
 import cats.implicits._
 import geotrellis.vector.Geometry
@@ -64,7 +64,7 @@ package object schemas {
 
   def decStacItem(json: Json): DecodeResult[StacItem] = json.as[StacItem] match {
     case Left(err) => DecodeResult.Error(err.getMessage, err)
-    case Right(v) => DecodeResult.Value(v)
+    case Right(v)  => DecodeResult.Value(v)
   }
   def encStacItem(stacItem: StacItem): Json = Encoder[StacItem].apply(stacItem)
 
