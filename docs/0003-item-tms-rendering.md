@@ -1,5 +1,5 @@
 ---
-id: 0003-choose-a-pagination-strategy-and-implementation
+id: 0003-item-tms-rendering
 title: 3 - Item TMS Rendering
 ---
 
