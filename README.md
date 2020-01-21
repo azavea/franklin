@@ -44,5 +44,6 @@ This will start a [server](http://localhost:9090) without data using a provided 
 
 ### Other Features
 - [x] Index Static Catalogs
+- [ ] Raster Tile Service for Items with COGs
 - [ ] Raster Tile Service for COG collections
 - [ ] Vector Tile Service for Label Collections
