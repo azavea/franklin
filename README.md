@@ -37,10 +37,10 @@ This will start a [server](http://localhost:9090) without data using a provided 
 - [x] `POST /stac/search`
 
 ### STAC Transaction
-- [ ] `POST /collections/{collectionId}/items`
-- [ ] `PUT /collections/{collectionId}/items/{featureId}`
-- [ ] `PATCH /collections/{collectionId}/items/{featureId}`
-- [ ] `DELETE /collections/{collectionId}/items/{featureId}`
+- [x] `POST /collections/{collectionId}/items`
+- [x] `PUT /collections/{collectionId}/items/{featureId}`
+- [x] `PATCH /collections/{collectionId}/items/{featureId}`
+- [x] `DELETE /collections/{collectionId}/items/{featureId}`
 
 ### Other Features
 - [x] Index Static Catalogs
