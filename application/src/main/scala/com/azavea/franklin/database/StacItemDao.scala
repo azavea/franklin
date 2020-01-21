@@ -119,7 +119,7 @@ object StacItemDao extends Dao[StacItem] {
         case (Right(patchedItem), true) =>
           EitherT {
             doUpdate(itemId, patchedItem.copy(properties = patchedItem.properties.filter({
-              case (_, v) => v.isNull
+              case (_, v) => !v.isNull
             }))).attempt
           } leftMap { _ =>
             UpdateFailed: StacItemDaoError
