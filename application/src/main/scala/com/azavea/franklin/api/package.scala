@@ -1,8 +1,11 @@
 package com.azavea.franklin.api
 
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
-import com.azavea.stac4s.{Bbox, TemporalExtent, ThreeDimBbox, TwoDimBbox}
+import com.azavea.stac4s.{Bbox, StacItem, TemporalExtent, ThreeDimBbox, TwoDimBbox}
+
+import cats.implicits._
 import geotrellis.vector.Geometry
+import io.circe.{Encoder, Json}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.{Codec, DecodeResult, Schema}
 import sttp.tapir.json.circe._
@@ -59,4 +62,14 @@ package object schemas {
   implicit val csvListCodec: PlainCodec[List[String]] =
     Codec.stringPlainCodecUtf8.mapDecode(commaSeparatedStrings)(listToCSV)
 
+  def decStacItem(json: Json): DecodeResult[StacItem] = json.as[StacItem] match {
+    case Left(err) => DecodeResult.Error(err.getMessage, err)
+    case Right(v)  => DecodeResult.Value(v)
+  }
+  def encStacItem(stacItem: StacItem): Json = Encoder[StacItem].apply(stacItem)
+
+  val jsonCodec: Codec.JsonCodec[Json] = implicitly[Codec.JsonCodec[Json]]
+
+  implicit val codecStacItem: Codec.JsonCodec[StacItem] =
+    jsonCodec.mapDecode(decStacItem)(encStacItem)
 }

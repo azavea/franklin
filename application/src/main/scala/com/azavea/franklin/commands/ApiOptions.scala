@@ -29,5 +29,19 @@ trait ApiOptions {
       .withDefault("http")
       .validate("Scheme must be either 'http' or 'https'")(s => (s == "http" || s == "https"))
 
-  val apiConfig: Opts[ApiConfig] = (externalPort, internalPort, apiHost, apiScheme) mapN ApiConfig
+  private val enableTransactions =
+    Opts
+      .flag(
+        "with-transactions",
+        "Whether to respond to transaction requests, like adding or updating items"
+      )
+      .orFalse
+
+  val apiConfig: Opts[ApiConfig] = (
+    externalPort,
+    internalPort,
+    apiHost,
+    apiScheme,
+    enableTransactions
+  ) mapN ApiConfig
 }
