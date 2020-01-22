@@ -29,7 +29,7 @@ object StacItemDao extends Dao[StacItem] {
 
   def collectionFilter(collectionId: String): Fragment = {
     val jsonFilter = s"""{"collection": "$collectionId"}"""
-    fr"""item @> $jsonFilter :: jsonb"""
+    fr"item @> $jsonFilter :: jsonb"
   }
 
   def getSearchResult(searchFilters: SearchFilters): ConnectionIO[StacSearchCollection] = {
