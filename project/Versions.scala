@@ -1,6 +1,6 @@
 // Versions
 object Versions {
-  val AWSVersion            = "1.11.704"
+  val AWSVersion            = "1.11.712"
   val CatsEffectVersion     = "2.0.0"
   val CatsScalacheckVersion = "0.2.0"
   val CatsVersion           = "2.1.0"
@@ -10,9 +10,9 @@ object Versions {
   val DoobieVersion         = "0.8.8"
   val EmojiVersion          = "1.2.1"
   val Flyway                = "6.1.4"
-  val Fs2Version            = "2.1.0"
+  val Fs2Version            = "2.2.1"
   val GeoTrellisVersion     = "3.2.0"
-  val HikariVersion         = "3.4.1"
+  val HikariVersion         = "3.4.2"
   val Http4sVersion         = "0.21.0-M6"
   val JtsVersion            = "1.16.1"
   val MagnoliaVersion       = "0.12.6"
