@@ -13,7 +13,7 @@ object Versions {
   val Fs2Version            = "2.1.0"
   val GeoTrellisVersion     = "3.2.0"
   val HikariVersion         = "3.4.1"
-  val Http4sVersion         = "0.21.0-M6"
+  val Http4sVersion         = "0.21.0-RC1"
   val JtsVersion            = "1.16.1"
   val MagnoliaVersion       = "0.12.6"
   val MercatorVersion       = "0.3.0"
