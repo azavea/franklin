@@ -122,3 +122,4 @@ app-lambda/opt/*
 # js files from docusaurus
 node_modules/*
 website/build/*
+/project/metals.sbt
