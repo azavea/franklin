@@ -5,7 +5,7 @@ object Versions {
   val CatsScalacheckVersion = "0.2.0"
   val CatsVersion           = "2.1.0"
   val CirceFs2Version       = "0.13.0-M1"
-  val CirceVersion          = "0.13.0-RC1"
+  val CirceVersion          = "0.13.0"
   val DeclineVersion        = "1.0.0"
   val DoobieVersion         = "0.8.8"
   val EmojiVersion          = "1.2.1"
