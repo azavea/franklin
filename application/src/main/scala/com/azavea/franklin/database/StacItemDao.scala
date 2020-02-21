@@ -93,9 +93,7 @@ object StacItemDao extends Dao[StacItem] {
       update <- if (etagInDb.toString == etag) {
         // this painful type inference failure thanks to subtyping will someday
         // drive me insane, but not yet
-        EitherT { doUpdate(itemId, item).attempt } leftMap { _ =>
-          UpdateFailed: StacItemDaoError
-        }
+        EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }
       } else {
         EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
       }
@@ -121,9 +119,7 @@ object StacItemDao extends Dao[StacItem] {
             doUpdate(itemId, patchedItem.copy(properties = patchedItem.properties.filter({
               case (_, v) => !v.isNull
             }))).attempt
-          } leftMap { _ =>
-            UpdateFailed: StacItemDaoError
-          }
+          } leftMap { _ => UpdateFailed: StacItemDaoError }
         case (_, false) =>
           EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
         case (Left(err), _) =>

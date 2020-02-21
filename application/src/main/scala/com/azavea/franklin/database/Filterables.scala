@@ -30,9 +30,7 @@ trait FilterHelpers {
 trait Filterables extends GeotrellisWktMeta with FilterHelpers {
 
   implicit val fragmentFilter: Filterable[Any, doobie.Fragment] =
-    Filterable[Any, Fragment] { fragment: Fragment =>
-      List(Some(fragment))
-    }
+    Filterable[Any, Fragment] { fragment: Fragment => List(Some(fragment)) }
 
   implicit def maybeTFilter[T](
       implicit filterable: Filterable[Any, T]
@@ -55,9 +53,7 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
   implicit val searchFilter: Filterable[Any, SearchFilters] =
     Filterable[Any, SearchFilters] { searchFilters: SearchFilters =>
       val collectionsFilter: Option[Fragment] = searchFilters.collections.toNel
-        .map(
-          collections => Fragments.in(fr"item #>> '{properties, collection}'", collections)
-        )
+        .map(collections => Fragments.in(fr"item #>> '{properties, collection}'", collections))
       val idFilter: Option[Fragment] =
         searchFilters.items.toNel.map(ids => Fragments.in(fr"id", ids))
 

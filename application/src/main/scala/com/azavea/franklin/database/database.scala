@@ -50,9 +50,7 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta {
   }
 
   implicit val encoderTemporalExtent: Encoder[TemporalExtent] =
-    Encoder.encodeString.contramap[TemporalExtent] { extent =>
-      temporalExtentToString(extent)
-    }
+    Encoder.encodeString.contramap[TemporalExtent] { extent => temporalExtentToString(extent) }
 
   implicit val decoderTemporalExtent: Decoder[TemporalExtent] = Decoder.decodeString.emap { str =>
     temporalExtentFromString(str)

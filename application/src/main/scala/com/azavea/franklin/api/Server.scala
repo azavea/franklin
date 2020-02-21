@@ -97,16 +97,12 @@ $$$$
           .as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
       case RunImport(catalogRoot, dbConfig) =>
-        runImport(catalogRoot, dbConfig).compile.drain map { _ =>
-          ExitCode.Success
-        }
+        runImport(catalogRoot, dbConfig).compile.drain map { _ => ExitCode.Success }
     } match {
       case Left(e) =>
         IO {
           println(e.toString())
-        } map { _ =>
-          ExitCode.Error
-        }
+        } map { _ => ExitCode.Error }
       case Right(s) => s
     }
   }

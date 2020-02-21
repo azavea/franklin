@@ -59,9 +59,7 @@ class CollectionItemsService[F[_]: Sync](
       itemOption <- StacItemDao.getCollectionItem(collectionId, itemId).transact(xa)
     } yield {
       Either.fromOption(
-        itemOption map { item =>
-          (item.asJson, item.##.toString)
-        },
+        itemOption map { item => (item.asJson, item.##.toString) },
         NF(s"Item $itemId in collection $collectionId not found")
       )
     }
