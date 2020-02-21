@@ -41,9 +41,9 @@ class CollectionsService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: C
     }
   }
 
-  val routes: HttpRoutes[F] = CollectionEndpoints.collectionsList.toRoutes(
-    _ => listCollections()
-  ) <+> CollectionEndpoints.collectionUnique.toRoutes {
-    case collectionId => getCollectionUnique(collectionId)
-  }
+  val routes: HttpRoutes[F] =
+    CollectionEndpoints.collectionsList.toRoutes(_ => listCollections()) <+> CollectionEndpoints.collectionUnique
+      .toRoutes {
+        case collectionId => getCollectionUnique(collectionId)
+      }
 }

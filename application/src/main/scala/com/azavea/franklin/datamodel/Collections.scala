@@ -16,8 +16,8 @@ case class CollectionLinks(
 object CollectionLinks {
 
   implicit val encodeCollectionLinks: Encoder[CollectionLinks] =
-    Encoder.forProduct6("href", "rel", "type", "hreflang", "title", "length")(
-      cl => (cl.href, cl.rel, cl._type, cl.hreflang, cl.title, cl.length)
+    Encoder.forProduct6("href", "rel", "type", "hreflang", "title", "length")(cl =>
+      (cl.href, cl.rel, cl._type, cl.hreflang, cl.title, cl.length)
     )
 
   implicit val decodeCollectionLinks: Decoder[CollectionLinks] =
