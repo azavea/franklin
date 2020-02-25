@@ -3,7 +3,7 @@ object Versions {
   val AWSVersion            = "1.11.717"
   val CatsEffectVersion     = "2.1.1"
   val CatsScalacheckVersion = "0.2.0"
-  val CatsVersion           = "2.1.0"
+  val CatsVersion           = "2.1.1"
   val CirceFs2Version       = "0.13.0-M1"
   val CirceVersion          = "0.13.0"
   val DeclineVersion        = "1.0.0"
