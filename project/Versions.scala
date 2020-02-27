@@ -28,5 +28,5 @@ object Versions {
   val Specs2Version         = "4.8.3"
   val Stac4SVersion         = "0.0.3"
   val SttpModelVersion      = "1.0.0-RC7"
-  val TapirVersion          = "0.12.21"
+  val TapirVersion          = "0.12.23"
 }
