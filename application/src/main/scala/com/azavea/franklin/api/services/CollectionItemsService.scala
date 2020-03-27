@@ -1,6 +1,12 @@
 package com.azavea.franklin.api.services
 
+import cats.Applicative
+import cats.data.NonEmptyList
+import cats.effect._
+import cats.implicits._
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
+import com.azavea.franklin.database.Filterables._
+import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.error.{
   CrudError,
   InvalidPatch,
@@ -8,25 +14,18 @@ import com.azavea.franklin.error.{
   NotFound => NF,
   ValidationError
 }
-import com.azavea.franklin.database.StacItemDao
-import com.azavea.franklin.database.Filterables._
-
-import cats.Applicative
-import cats.data.NonEmptyList
-import cats.effect._
-import cats.implicits._
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s.{`application/json`, StacItem, StacLink}
-import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
+import doobie.util.transactor.Transactor
+import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
+import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
-import eu.timepit.refined.auto._
-import org.http4s.HttpRoutes
 
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
@@ -77,8 +76,8 @@ class CollectionItemsService[F[_]: Sync](
     item.collection match {
       case Some(collId) =>
         if (collectionId == collId) {
-          val parentLink = item.links.filter(_.rel == StacLinkType.Parent).headOption map { existingLink =>
-            existingLink.copy(href = s"$apiHost/api/collections/$collectionId")
+          val parentLink = item.links.filter(_.rel == StacLinkType.Parent).headOption map {
+            existingLink => existingLink.copy(href = s"$apiHost/api/collections/$collectionId")
           } getOrElse {
             fallbackCollectionLink
           }

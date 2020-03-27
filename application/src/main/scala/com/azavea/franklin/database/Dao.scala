@@ -1,11 +1,11 @@
 package com.azavea.franklin.database
 
-import java.util.UUID
-
 import doobie.implicits._
 import doobie.postgres.implicits._
 import doobie.util.{Read, Write}
 import doobie.{LogHandler => _, _}
+
+import java.util.UUID
 
 /**
   * This is abstraction over the listing of arbitrary types from the DB with filters/pagination

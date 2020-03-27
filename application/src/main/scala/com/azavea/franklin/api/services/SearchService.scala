@@ -4,14 +4,14 @@ import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.SearchEndpoints
-import com.azavea.franklin.database.{SearchFilters, StacCollectionDao, StacItemDao}
 import com.azavea.franklin.api.implicits._
+import com.azavea.franklin.database.{SearchFilters, StacCollectionDao, StacItemDao}
 import com.azavea.franklin.datamodel._
+import com.azavea.stac4s.StacLinkType.{Child, Self}
+import com.azavea.stac4s.{`application/json`}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.string.NonEmptyString
-import com.azavea.stac4s.StacLinkType.{Child, Self}
-import com.azavea.stac4s.{`application/json`}
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
@@ -54,7 +54,7 @@ class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
           NonEmptyString(
             "The Root of Franklin's catalog search - all sub collections are linked here"
           ),
-          selfLink ::  collectionLinks
+          selfLink :: collectionLinks
         ).asJson
       )
     }
@@ -69,7 +69,8 @@ class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
   }
 
   val routes: HttpRoutes[F] =
-    SearchEndpoints.searchGet.toRoutes(searchFilters => search(searchFilters)) <+> SearchEndpoints.searchPost.toRoutes {
-      case searchFilters => search(searchFilters)
-    }
+    SearchEndpoints.searchGet.toRoutes(searchFilters => search(searchFilters)) <+> SearchEndpoints.searchPost
+      .toRoutes {
+        case searchFilters => search(searchFilters)
+      }
 }

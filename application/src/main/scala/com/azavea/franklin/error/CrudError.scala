@@ -1,9 +1,9 @@
 package com.azavea.franklin.error
 
 import cats.Show
-import io.circe.{Codec => _, _}
 import io.circe.generic.semiauto._
 import io.circe.syntax._
+import io.circe.{Codec => _, _}
 import sttp.tapir._
 import sttp.tapir.json.circe._
 

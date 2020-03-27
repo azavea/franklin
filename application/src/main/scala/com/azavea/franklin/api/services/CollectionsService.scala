@@ -3,18 +3,18 @@ package com.azavea.franklin.api.services
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
-import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.datamodel.CollectionsResponse
-import doobie.util.transactor.Transactor
+import com.azavea.franklin.error.{NotFound => NF}
 import doobie._
 import doobie.implicits._
+import doobie.util.transactor.Transactor
+import eu.timepit.refined.auto._
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
-import eu.timepit.refined.auto._
 
 class CollectionsService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: ContextShift[F])
     extends Http4sDsl[F] {

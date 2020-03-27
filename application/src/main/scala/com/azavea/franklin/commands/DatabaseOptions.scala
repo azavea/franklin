@@ -1,15 +1,15 @@
 package com.azavea.franklin.api.commands
 
-import cats.implicits._
-import com.monovore.decline.Opts
 import cats.effect._
-import doobie.util.transactor.Transactor
-import doobie.implicits._
-import com.lightbend.emoji.ShortCodes.Implicits._
+import cats.implicits._
 import com.lightbend.emoji.ShortCodes.Defaults._
+import com.lightbend.emoji.ShortCodes.Implicits._
+import com.monovore.decline.Opts
 import com.monovore.decline._
-import eu.timepit.refined.types.numeric._
 import com.monovore.decline.refined._
+import doobie.implicits._
+import doobie.util.transactor.Transactor
+import eu.timepit.refined.types.numeric._
 
 import scala.util.Try
 

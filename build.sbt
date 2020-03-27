@@ -41,6 +41,10 @@ lazy val commonSettings = Seq(
   addCompilerPlugin(scalafixSemanticdb)
 )
 
+// Enable a basic import sorter -- rules are defined in .scalafix.conf
+scalafixDependencies in ThisBuild +=
+  "com.nequissimus" %% "sort-imports" % "0.3.2"
+
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
   .aggregate(application)

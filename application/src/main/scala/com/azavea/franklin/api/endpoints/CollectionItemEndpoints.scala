@@ -8,12 +8,12 @@ import com.azavea.franklin.error.{
   NotFound,
   ValidationError
 }
+import com.azavea.stac4s.StacItem
 import io.circe.{Codec => _, _}
+import sttp.model.StatusCode
+import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.json.circe._
-import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
-import com.azavea.stac4s.StacItem
-import sttp.model.StatusCode
 
 class CollectionItemEndpoints(enableTransactions: Boolean) {
 

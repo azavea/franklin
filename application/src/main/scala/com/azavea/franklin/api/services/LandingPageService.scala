@@ -4,18 +4,18 @@ import cats._
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.commands.ApiConfig
-import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.api.endpoints.LandingPageEndpoints
+import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
 import com.azavea.stac4s.StacLinkType
+import com.azavea.stac4s._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
-import com.azavea.stac4s._
-import eu.timepit.refined.auto._
-import eu.timepit.refined.types.string.NonEmptyString
 
 class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift: ContextShift[F])
     extends Http4sDsl[F] {

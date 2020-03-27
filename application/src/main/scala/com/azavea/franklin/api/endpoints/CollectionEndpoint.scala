@@ -2,9 +2,9 @@ package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.error.NotFound
 import io.circe._
+import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.json.circe._
-import sttp.model.StatusCode.{NotFound => NF}
 
 object CollectionEndpoints {
 

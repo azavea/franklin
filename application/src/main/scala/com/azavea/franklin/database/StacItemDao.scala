@@ -1,17 +1,16 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel.{Context, StacSearchCollection}
-
 import cats.data.EitherT
 import cats.implicits._
+import com.azavea.franklin.datamodel.{Context, StacSearchCollection}
 import com.azavea.stac4s._
-import doobie.free.connection.ConnectionIO
 import doobie.Fragment
+import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Projected
-import io.circe.{Error, Json}
 import io.circe.syntax._
+import io.circe.{Error, Json}
 
 object StacItemDao extends Dao[StacItem] {
 
