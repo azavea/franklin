@@ -63,7 +63,7 @@ $$$$
       docs                    = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes               = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes       = new LandingPageService[IO](apiConfig).routes
-      searchRoutes            = new SearchService[IO](apiConfig, xa).routes
+      searchRoutes            = new SearchService[IO](xa).routes
       collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[IO](
         xa,
         apiConfig.apiHost,
