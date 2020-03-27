@@ -50,7 +50,7 @@ class SearchServiceSpec
       decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
     } yield decoded
     val searchResult = result.value.unsafeRunSync.get
-    searchResult.searchMetadata.returned ==== searchResult.features.length
+    searchResult.context.returned ==== searchResult.features.length
   }
 
   def getSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
@@ -62,6 +62,6 @@ class SearchServiceSpec
       decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
     } yield decoded
     val searchResult = result.value.unsafeRunSync.get
-    searchResult.searchMetadata.returned ==== searchResult.features.length
+    searchResult.context.returned ==== searchResult.features.length
   }
 }
