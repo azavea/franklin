@@ -1,6 +1,6 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel.{SearchMetadata, StacSearchCollection}
+import com.azavea.franklin.datamodel.{Context, StacSearchCollection}
 
 import cats.data.EitherT
 import cats.implicits._
@@ -42,7 +42,7 @@ object StacItemDao extends Dao[StacItem] {
         if ((items.length + page.offset) < matched)
           page.nextPage.next.flatMap(s => NonEmptyString.from(s).toOption)
         else None
-      val metadata = SearchMetadata(next, items.length, page.limit, matched)
+      val metadata = Context(next, items.length, page.limit, matched)
       StacSearchCollection(metadata, items)
     }
   }

@@ -3,12 +3,12 @@ package com.azavea.franklin.datamodel
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
-object SearchMetadata {
-  implicit val searchMetadataEncoder = deriveEncoder[SearchMetadata]
-  implicit val searchMetadataDecoder = deriveDecoder[SearchMetadata]
+object Context {
+  implicit val searchMetadataEncoder = deriveEncoder[Context]
+  implicit val searchMetadataDecoder = deriveDecoder[Context]
 }
 
-case class SearchMetadata(
+case class Context(
     next: Option[NonEmptyString],
     returned: Int,
     limit: Option[Int],

@@ -9,13 +9,7 @@ import sttp.tapir.json.circe._
 
 object SearchEndpoints {
 
-  val base = endpoint.in("stac")
-
-  val rootCatalog: Endpoint[Unit, Unit, Json, Nothing] =
-    base.get
-      .out(jsonBody[Json])
-      .description("Root Catalog and entrypoint into STAC collections")
-      .name("root")
+  val base = endpoint.in("search")
 
   implicit val searchFiltersValidator: Validator[SearchFilters] = Validator.pass[SearchFilters]
 
@@ -41,7 +35,6 @@ object SearchEndpoints {
 
   val searchGet: Endpoint[SearchFilters, Unit, Json, Nothing] =
     base.get
-      .in("search")
       .in(searchFilters)
       .out(jsonBody[Json])
       .description("Search endpoint for all collections")
@@ -49,11 +42,10 @@ object SearchEndpoints {
 
   val searchPost: Endpoint[SearchFilters, Unit, Json, Nothing] =
     base.post
-      .in("search")
       .in(jsonBody[SearchFilters])
       .out(jsonBody[Json])
       .description("Search endpoint using POST for all collections")
       .name("search-post")
 
-  val endpoints = List(rootCatalog, searchGet, searchPost)
+  val endpoints = List(searchGet, searchPost)
 }

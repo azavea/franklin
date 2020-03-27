@@ -9,6 +9,7 @@ import com.amazonaws.services.s3.{AmazonS3ClientBuilder, AmazonS3URI}
 import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 import doobie.ConnectionIO
 import doobie.implicits._
+import com.azavea.stac4s.StacLinkType.{Self, Child, Item}
 import com.azavea.stac4s._
 import io.circe.Json
 import io.circe.fs2._

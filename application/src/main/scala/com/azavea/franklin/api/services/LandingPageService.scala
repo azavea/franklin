@@ -7,6 +7,7 @@ import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.api.endpoints.LandingPageEndpoints
 import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
+import com.azavea.stac4s.StacLinkType
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
@@ -22,39 +23,33 @@ class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift
   val links = List(
     Link(
       apiConfig.apiHost,
-      Self,
+      StacLinkType.Self,
       Some(`application/json`),
       Some("Franklin Powered Catalog")
     ),
     Link(
-      apiConfig.apiHost + "/spec.yaml",
-      ServiceDesc,
+      apiConfig.apiHost + "/open-api/spec.yaml",
+      StacLinkType.ServiceDesc,
       Some(VendorMediaType("application/vnd.oai.openapi+json;version=3.0")),
       Some("Open API 3 Documentation")
     ),
     Link(
       apiConfig.apiHost + "/conformance",
-      Conformance,
+      StacLinkType.Conformance,
       Some(`application/json`),
       None
     ),
     Link(
       apiConfig.apiHost + "/collections",
-      Data,
+      StacLinkType.Data,
       Some(`application/json`),
       Some("Collections Listing")
     ),
     Link(
-      apiConfig.apiHost + "/stac/search",
-      Data,
+      apiConfig.apiHost + "/search",
+      StacLinkType.Data,
       Some(`application/geo+json`),
-      Some("Franklin Powered STAC Search")
-    ),
-    Link(
-      apiConfig.apiHost + "/stac/",
-      StacRoot,
-      Some(`application/json`),
-      Some("Root Catalog")
+      Some("Franklin Powered STAC")
     )
   )
 

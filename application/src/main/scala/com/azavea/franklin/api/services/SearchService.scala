@@ -10,7 +10,8 @@ import com.azavea.franklin.datamodel._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.string.NonEmptyString
-import com.azavea.stac4s.{`application/json`, Child, Data, Self}
+import com.azavea.stac4s.StacLinkType.{Child, Self}
+import com.azavea.stac4s.{`application/json`}
 import io.circe._
 import io.circe.syntax._
 import org.http4s._
@@ -40,17 +41,10 @@ class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
       }
 
       val selfLink = Link(
-        apiConfig.apiHost + "/stac",
+        apiConfig.apiHost + "/search",
         Self,
         Some(`application/json`),
         Some(NonEmptyString("Franklin STAC API"))
-      )
-
-      val searchLink = Link(
-        apiConfig.apiHost + "/stac/search",
-        Data,
-        Some(`application/json`),
-        Some(NonEmptyString("Franklin STAC Search API"))
       )
 
       Either.right(
@@ -60,7 +54,7 @@ class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
           NonEmptyString(
             "The Root of Franklin's catalog search - all sub collections are linked here"
           ),
-          selfLink :: searchLink :: collectionLinks
+          selfLink ::  collectionLinks
         ).asJson
       )
     }
@@ -75,8 +69,7 @@ class SearchService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
   }
 
   val routes: HttpRoutes[F] =
-    SearchEndpoints.rootCatalog.toRoutes(_ => rootSearch) <+> SearchEndpoints.searchGet
-      .toRoutes(searchFilters => search(searchFilters)) <+> SearchEndpoints.searchPost.toRoutes {
+    SearchEndpoints.searchGet.toRoutes(searchFilters => search(searchFilters)) <+> SearchEndpoints.searchPost.toRoutes {
       case searchFilters => search(searchFilters)
     }
 }

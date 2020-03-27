@@ -15,7 +15,8 @@ import cats.Applicative
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.implicits._
-import com.azavea.stac4s.{`application/json`, Parent, StacItem, StacLink}
+import com.azavea.stac4s.StacLinkType
+import com.azavea.stac4s.{`application/json`, StacItem, StacLink}
 import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
@@ -68,7 +69,7 @@ class CollectionItemsService[F[_]: Sync](
   def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, (Json, String)]] = {
     val fallbackCollectionLink = StacLink(
       s"$apiHost/api/collections/$collectionId",
-      Parent,
+      StacLinkType.Parent,
       Some(`application/json`),
       Some("Parent collection"),
       Nil
@@ -76,13 +77,13 @@ class CollectionItemsService[F[_]: Sync](
     item.collection match {
       case Some(collId) =>
         if (collectionId == collId) {
-          val parentLink = item.links.filter(_.rel == Parent).headOption map { existingLink =>
+          val parentLink = item.links.filter(_.rel == StacLinkType.Parent).headOption map { existingLink =>
             existingLink.copy(href = s"$apiHost/api/collections/$collectionId")
           } getOrElse {
             fallbackCollectionLink
           }
           val withParent =
-            item.copy(links = parentLink +: item.links.filter(_.rel != Parent))
+            item.copy(links = parentLink +: item.links.filter(_.rel != StacLinkType.Parent))
           StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
             Right((inserted.asJson, inserted.##.toString))
           }
