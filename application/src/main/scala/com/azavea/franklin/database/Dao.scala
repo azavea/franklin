@@ -89,7 +89,7 @@ object Dao {
         .to[List]
     }
 
-    def count: ConnectionIO[Int] = countF.query[Int].unique
+    def count: ConnectionIO[Int] = (countF ++ Fragments.whereAndOpt(filters: _*)).query[Int].unique
 
     /** Provide a list of responses */
     def list(offset: Int, limit: Int): ConnectionIO[List[Model]] = {

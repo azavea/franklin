@@ -15,12 +15,12 @@ trait FilterHelpers {
       temporalExtent.value match {
         case Some(start) :: Some(end) :: _ =>
           Some(
-            fr"(item #>> '{properties, datetime}') :: TIMESTAMP >= $start AND (item #>> '{properties, datetime}') :: TIMESTAMP <= $end"
+            fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ >= $start AND (item #>> '{properties, datetime}') :: TIMESTAMPTZ <= $end"
           )
         case Some(start) :: _ =>
-          Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMP >= $start")
+          Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ >= $start")
         case _ :: Some(end) :: _ =>
-          Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMP <= $end")
+          Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ <= $end")
         case _ => None
       }
     }
