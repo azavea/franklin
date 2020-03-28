@@ -23,6 +23,7 @@ lazy val commonSettings = Seq(
       Resolver.ivyStylePatterns
     )
   ),
+  scalacOptions += "-Yrangepos",
   addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.0" cross CrossVersion.full),
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
@@ -36,8 +37,13 @@ lazy val commonSettings = Seq(
     "org.slf4j",
     "slf4j-simple"
   ),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.1.0" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
+
+// Enable a basic import sorter -- rules are defined in .scalafix.conf
+scalafixDependencies in ThisBuild +=
+  "com.nequissimus" %% "sort-imports" % "0.3.2"
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)

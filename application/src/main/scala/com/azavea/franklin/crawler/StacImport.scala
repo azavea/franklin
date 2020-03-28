@@ -1,20 +1,21 @@
 package com.azavea.franklin.crawler
 
-import java.io.InputStream
-import java.nio.file.Paths
-
 import cats.effect.Blocker
 import cats.{Applicative, MonadError}
 import com.amazonaws.services.s3.{AmazonS3ClientBuilder, AmazonS3URI}
 import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
+import com.azavea.stac4s.StacLinkType.{Child, Item, Self}
+import com.azavea.stac4s._
 import doobie.ConnectionIO
 import doobie.implicits._
-import com.azavea.stac4s._
+import fs2.io.readInputStream
 import io.circe.Json
 import io.circe.fs2._
-import fs2.io.readInputStream
 
 import scala.concurrent.ExecutionContext.Implicits.global
+
+import java.io.InputStream
+import java.nio.file.Paths
 
 class StacImport(val catalogRoot: String) {
 

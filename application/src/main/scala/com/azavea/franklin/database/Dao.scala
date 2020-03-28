@@ -1,11 +1,11 @@
 package com.azavea.franklin.database
 
-import java.util.UUID
-
 import doobie.implicits._
 import doobie.postgres.implicits._
 import doobie.util.{Read, Write}
 import doobie.{LogHandler => _, _}
+
+import java.util.UUID
 
 /**
   * This is abstraction over the listing of arbitrary types from the DB with filters/pagination
@@ -89,7 +89,7 @@ object Dao {
         .to[List]
     }
 
-    def count: ConnectionIO[Int] = countF.query[Int].unique
+    def count: ConnectionIO[Int] = (countF ++ Fragments.whereAndOpt(filters: _*)).query[Int].unique
 
     /** Provide a list of responses */
     def list(offset: Int, limit: Int): ConnectionIO[List[Model]] = {

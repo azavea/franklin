@@ -2,9 +2,9 @@ package com.azavea.franklin.database
 
 import com.azavea.stac4s.{Bbox, TemporalExtent}
 import geotrellis.vector.Geometry
+import geotrellis.vector.{io => _, _}
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, HCursor}
-import geotrellis.vector.{io => _, _}
 
 final case class SearchFilters(
     bbox: Option[Bbox],

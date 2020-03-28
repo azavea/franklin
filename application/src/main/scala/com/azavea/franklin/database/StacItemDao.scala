@@ -1,17 +1,16 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel.{SearchMetadata, StacSearchCollection}
-
 import cats.data.EitherT
 import cats.implicits._
+import com.azavea.franklin.datamodel.{Context, StacSearchCollection}
 import com.azavea.stac4s._
-import doobie.free.connection.ConnectionIO
 import doobie.Fragment
+import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Projected
-import io.circe.{Error, Json}
 import io.circe.syntax._
+import io.circe.{Error, Json}
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -42,7 +41,7 @@ object StacItemDao extends Dao[StacItem] {
         if ((items.length + page.offset) < matched)
           page.nextPage.next.flatMap(s => NonEmptyString.from(s).toOption)
         else None
-      val metadata = SearchMetadata(next, items.length, page.limit, matched)
+      val metadata = Context(next, items.length, page.limit, matched)
       StacSearchCollection(metadata, items)
     }
   }

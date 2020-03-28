@@ -1,9 +1,9 @@
 package com.azavea.franklin.database
 
+import com.azavea.stac4s._
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
-import com.azavea.stac4s._
 
 object StacCollectionDao {
 

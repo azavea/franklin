@@ -1,7 +1,7 @@
 package com.azavea.franklin.datamodel
 
-import eu.timepit.refined.types.string.NonEmptyString
 import com.azavea.stac4s.{StacLinkType, StacMediaType}
+import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 

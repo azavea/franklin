@@ -1,10 +1,10 @@
 package com.azavea.franklin
 
-import java.time.Instant
-
 import cats.implicits._
 import com.azavea.stac4s.TemporalExtent
 import io.circe.{Decoder, Encoder}
+
+import java.time.Instant
 
 package object database extends CirceJsonbMeta with GeotrellisWktMeta {
 
