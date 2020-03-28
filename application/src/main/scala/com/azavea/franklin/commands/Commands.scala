@@ -1,12 +1,12 @@
 package com.azavea.franklin.api.commands
 
 import cats.effect.{ContextShift, ExitCode, IO}
+import cats.implicits._
 import com.azavea.franklin.crawler.StacImport
 import com.monovore.decline._
+import doobie.implicits._
 import doobie.util.transactor.Transactor
 import org.flywaydb.core.Flyway
-import doobie.implicits._
-import cats.implicits._
 
 object Commands {
 

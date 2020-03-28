@@ -1,6 +1,7 @@
 package com.azavea.franklin.database
 
 import io.circe.generic.semiauto._
+
 import scala.util.Try
 
 final case class Page(limit: Option[Int], next: Option[String]) {

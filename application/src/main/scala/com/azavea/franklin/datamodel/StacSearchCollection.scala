@@ -10,7 +10,7 @@ object StacSearchCollection {
 
     final def apply(a: StacSearchCollection): Json = Json.obj(
       ("type", Json.fromString("FeatureCollection")),
-      ("search:metadata", a.searchMetadata.asJson),
+      ("context", a.context.asJson),
       ("features", a.features.asJson)
     )
   }
@@ -19,7 +19,7 @@ object StacSearchCollection {
 
     final def apply(c: HCursor): Decoder.Result[StacSearchCollection] =
       for {
-        metadata <- c.downField("search:metadata").as[SearchMetadata]
+        metadata <- c.downField("context").as[Context]
         features <- c.downField("features").as[List[StacItem]]
       } yield {
         new StacSearchCollection(metadata, features)
@@ -28,6 +28,6 @@ object StacSearchCollection {
 }
 
 case class StacSearchCollection(
-    searchMetadata: SearchMetadata,
+    context: Context,
     features: List[StacItem]
 )
