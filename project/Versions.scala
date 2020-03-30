@@ -17,7 +17,7 @@ object Versions {
   val JtsVersion            = "1.16.1"
   val MagnoliaVersion       = "0.12.8"
   val MercatorVersion       = "0.3.0"
-  val Postgis               = "2.4.0"
+  val Postgis               = "2.5.0"
   val PureConfig            = "0.12.1"
   val Refined               = "0.9.13"
   val ScalacheckVersion     = "1.14.3"
