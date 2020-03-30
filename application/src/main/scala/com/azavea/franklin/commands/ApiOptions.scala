@@ -7,11 +7,11 @@ import eu.timepit.refined.types.numeric.PosInt
 
 trait ApiOptions {
 
-  private val externalPort = Opts
+  val externalPort = Opts
     .option[PosInt]("external-port", help = "Port users/clients hit for requests")
     .withDefault(PosInt(9090))
 
-  private val internalPort = Opts
+  val internalPort = Opts
     .option[PosInt](
       "internal-port",
       help =
@@ -19,11 +19,11 @@ trait ApiOptions {
     )
     .withDefault(PosInt(9090))
 
-  private val apiHost = Opts
+  val apiHost = Opts
     .option[String]("api-host", help = "Hostname Franklin is hosted it (e.g. localhost)")
     .withDefault("localhost")
 
-  private val apiScheme =
+  val apiScheme =
     Opts
       .option[String]("api-scheme", "Scheme server is exposed to end users with")
       .withDefault("http")
