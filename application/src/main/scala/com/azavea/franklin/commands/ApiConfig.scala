@@ -11,10 +11,6 @@ case class ApiConfig(
     enableTransactions: Boolean
 ) {
 
-  val apiHost: NonEmptyString = (publicPort.value, scheme) match {
-    case (443, "https") => NonEmptyString.unsafeFrom(s"$scheme://$host")
-    case (80, "http")   => NonEmptyString.unsafeFrom(s"$scheme://$host")
-    case _              => NonEmptyString.unsafeFrom(s"$scheme://$host:$publicPort")
-  }
+  val apiHost: NonEmptyString = getHost(publicPort, host, scheme)
 
 }

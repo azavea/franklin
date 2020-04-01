@@ -4,8 +4,8 @@ import cats.effect.{ContextShift, ExitCode, IO}
 import cats.implicits._
 import com.azavea.franklin.crawler.StacImport
 import com.monovore.decline._
-import doobie.implicits._
 import doobie.util.transactor.Transactor
+import eu.timepit.refined.types.numeric.PosInt
 import org.flywaydb.core.Flyway
 
 object Commands {
@@ -14,11 +14,23 @@ object Commands {
 
   final case class RunServer(apiConfig: ApiConfig, dbConfig: DatabaseConfig)
 
-  final case class RunImport(catalogRoot: String, config: DatabaseConfig)
+  final case class RunImport(
+      catalogRoot: String,
+      externalPort: PosInt,
+      apiHost: String,
+      apiScheme: String,
+      config: DatabaseConfig
+  )
 
   private def runImportOpts(implicit cs: ContextShift[IO]): Opts[RunImport] =
     Opts.subcommand("import", "Import a STAC catalog") {
-      (Options.catalogRoot, Options.databaseConfig).mapN(RunImport)
+      (
+        Options.catalogRoot,
+        Options.externalPort,
+        Options.apiHost,
+        Options.apiScheme,
+        Options.databaseConfig
+      ).mapN(RunImport)
     }
 
   private def runMigrationsOpts(implicit cs: ContextShift[IO]): Opts[RunMigrations] =
@@ -45,12 +57,19 @@ object Commands {
     ExitCode.Success
   }
 
-  def runImport(stacCatalog: String, config: DatabaseConfig)(
+  def runImport(
+      stacCatalog: String,
+      externalPort: PosInt,
+      apiHost: String,
+      apiScheme: String,
+      config: DatabaseConfig
+  )(
       implicit contextShift: ContextShift[IO]
-  ): fs2.Stream[IO, Unit] = {
+  ): IO[Unit] = {
+    val serverHost = getHost(externalPort, apiHost, apiScheme)
     val xa =
       Transactor.fromDriverManager[IO](config.driver, config.jdbcUrl, config.dbUser, config.dbPass)
-    new StacImport(stacCatalog).run().transact(xa)
+    new StacImport(stacCatalog, serverHost).runIO(xa)
   }
 
   def applicationCommand(implicit cs: ContextShift[IO]): Command[Product] =
