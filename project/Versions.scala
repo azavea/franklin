@@ -15,6 +15,7 @@ object Versions {
   val HikariVersion         = "3.4.2"
   val Http4sVersion         = "0.21.2"
   val JtsVersion            = "1.16.1"
+  val Log4CatsVersion       = "1.0.1"
   val MagnoliaVersion       = "0.12.8"
   val MercatorVersion       = "0.3.0"
   val Postgis               = "2.4.0"
