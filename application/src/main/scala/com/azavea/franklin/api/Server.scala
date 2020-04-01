@@ -96,8 +96,10 @@ $$$$
           .use(_ => IO.never)
           .as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
-      case RunImport(catalogRoot, dbConfig) =>
-        runImport(catalogRoot, dbConfig).compile.drain map { _ => ExitCode.Success }
+      case RunImport(catalogRoot, externalPort, apiHost, apiScheme, dbConfig) =>
+        runImport(catalogRoot, externalPort, apiHost, apiScheme, dbConfig) map { _ =>
+          ExitCode.Success
+        }
     } match {
       case Left(e) =>
         IO {
