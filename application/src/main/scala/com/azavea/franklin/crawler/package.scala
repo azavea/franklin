@@ -8,8 +8,10 @@ package object crawler {
   def filterLinks(links: List[StacLink]): List[StacLink] = {
     links.filter { link =>
       link.rel match {
-        case StacLinkType.Child | StacLinkType.Collection | StacLinkType.Parent | StacLinkType.StacRoot | StacLinkType.Self | StacLinkType.Item      => false
-        case _                       => true
+        case StacLinkType.Child | StacLinkType.Collection | StacLinkType.Parent |
+            StacLinkType.StacRoot | StacLinkType.Self | StacLinkType.Item =>
+          false
+        case _ => true
       }
     }
   }
