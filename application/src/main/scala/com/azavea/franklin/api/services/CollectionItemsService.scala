@@ -30,6 +30,9 @@ import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
     apiHost: NonEmptyString,
@@ -56,9 +59,12 @@ class CollectionItemsService[F[_]: Sync](
   }
 
   def getCollectionItemUnique(
-      collectionId: String,
-      itemId: String
+      rawCollectionId: String,
+      rawItemId: String
   ): F[Either[NF, (Json, String)]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
     for {
       itemOption <- StacItemDao.getCollectionItem(collectionId, itemId).transact(xa)
     } yield {
@@ -74,9 +80,12 @@ class CollectionItemsService[F[_]: Sync](
   }
 
   def getCollectionItemTileInfo(
-      collectionId: String,
-      itemId: String
+      rawCollectionId: String,
+      rawItemId: String
   ): F[Either[NF, (Json, String)]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
     for {
       itemOption <- StacItemDao.getCollectionItem(collectionId, itemId).transact(xa)
     } yield {

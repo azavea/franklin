@@ -3,6 +3,9 @@ package com.azavea.franklin.api
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 package object implicits {
 
   implicit class combineNonEmptyString(s: NonEmptyString) {
@@ -23,8 +26,9 @@ package object implicits {
       }
       val updatedLinks = cogAsset match {
         case true => {
+          val encodedItemId = URLEncoder.encode(itemId, StandardCharsets.UTF_8.toString)
           val tileLink: StacLink = StacLink(
-            s"$apiHost/collections/$collectionId/items/$itemId/tiles",
+            s"$apiHost/collections/$collectionId/items/$encodedItemId/tiles",
             StacLinkType.VendorLinkType("tiles"),
             Some(`application/json`),
             Some("Tile URLs for Item"),

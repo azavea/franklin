@@ -5,6 +5,9 @@ import com.azavea.stac4s._
 import io.circe._
 import io.circe.generic.JsonCodec
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 @JsonCodec
 case class TileMatrixSetLink(tileMatrixSet: String, tileMatrixSetURI: String)
 
@@ -75,8 +78,10 @@ object TileInfo {
 
     val cogTileLinks = cogAssets.map {
       case (key, _) =>
+        val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
+        val encodedKey    = URLEncoder.encode(key, StandardCharsets.UTF_8.toString)
         val href =
-          s"$host/tiles/collections/$collectionId/items/${item.id}/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}/?asset=$key"
+          s"$host/tiles/collections/$collectionId/items/$encodedItemId/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}/?asset=$encodedKey"
         val mediaType = Some(`image/png`)
         TileSetLink(href, StacLinkType.Item, mediaType, None, Some(true))
     }
