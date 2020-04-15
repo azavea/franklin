@@ -3,6 +3,9 @@ package com.azavea.franklin.crawler
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 // A wrapper that stores a collection, an optional parent, its children, and its items
 case class CollectionWrapper(
     value: StacCollection,
@@ -17,9 +20,10 @@ case class CollectionWrapper(
       serverHost: NonEmptyString,
       rootLink: StacLink
   ) = {
-
+    val encodedItemId       = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
+    val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
     val selfLink = StacLink(
-      s"${serverHost.value}/collections/${collection.id}/items/${item.id}",
+      s"${serverHost.value}/collections/$encodedCollectionId/items/$encodedItemId",
       StacLinkType.Self,
       Some(`application/geo+json`),
       Some(item.id),
@@ -27,7 +31,7 @@ case class CollectionWrapper(
     )
 
     val parentLink = StacLink(
-      s"${serverHost.value}/collections/${collection.id}/",
+      s"${serverHost.value}/collections/$encodedCollectionId/",
       StacLinkType.Parent,
       Some(`application/json`),
       collection.title,
@@ -53,11 +57,13 @@ case class CollectionWrapper(
       List.empty
     )
 
-    val collectionId = value.id
+    val collectionId = URLEncoder.encode(value.id, StandardCharsets.UTF_8.toString)
 
     val itemLinks = items.map { item =>
+      val itemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
+
       StacLink(
-        s"${serverHost.value}/collections/$collectionId/items/${item.id}",
+        s"${serverHost.value}/collections/$collectionId/items/$itemId",
         StacLinkType.Item,
         Some(`application/geo+json`),
         Some(item.id),
@@ -66,8 +72,9 @@ case class CollectionWrapper(
     }
 
     val childrenLinks = children.map { child =>
+      val encodedChildId = URLEncoder.encode(child.value.id, StandardCharsets.UTF_8.toString)
       StacLink(
-        s"${serverHost.value}/collections/${child.value.id}/",
+        s"${serverHost.value}/collections/$encodedChildId/",
         StacLinkType.Child,
         Some(`application/json`),
         child.value.title,
@@ -76,9 +83,10 @@ case class CollectionWrapper(
     }
 
     val parentLink = parent.map { p =>
+      val encodedParentId = URLEncoder.encode(p.value.id, StandardCharsets.UTF_8.toString)
       List(
         StacLink(
-          s"${serverHost.value}/collections/${p.value.id}/",
+          s"${serverHost.value}/collections/$encodedParentId/",
           StacLinkType.Parent,
           Some(`application/json`),
           p.value.title,
