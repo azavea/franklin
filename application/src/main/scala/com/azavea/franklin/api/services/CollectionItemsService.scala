@@ -5,8 +5,10 @@ import cats.data.NonEmptyList
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
+import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.Filterables._
 import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.datamodel._
 import com.azavea.franklin.error.{
   CrudError,
   InvalidPatch,
@@ -15,6 +17,7 @@ import com.azavea.franklin.error.{
   ValidationError
 }
 import com.azavea.stac4s.StacLinkType
+import com.azavea.stac4s._
 import com.azavea.stac4s.{`application/json`, StacItem, StacLink}
 import doobie._
 import doobie.implicits._
@@ -27,10 +30,14 @@ import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
     apiHost: NonEmptyString,
-    enableTransactions: Boolean
+    enableTransactions: Boolean,
+    enableTiles: Boolean
 )(
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
@@ -52,16 +59,48 @@ class CollectionItemsService[F[_]: Sync](
   }
 
   def getCollectionItemUnique(
-      collectionId: String,
-      itemId: String
+      rawCollectionId: String,
+      rawItemId: String
   ): F[Either[NF, (Json, String)]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
     for {
       itemOption <- StacItemDao.getCollectionItem(collectionId, itemId).transact(xa)
     } yield {
       Either.fromOption(
-        itemOption map { item => (item.asJson, item.##.toString) },
+        itemOption map { item =>
+          val updatedItem = (if (enableTiles) { item.addTilesLink(apiHost, collectionId, itemId) }
+                             else { item })
+          (updatedItem.asJson, item.##.toString)
+        },
         NF(s"Item $itemId in collection $collectionId not found")
       )
+    }
+  }
+
+  def getCollectionItemTileInfo(
+      rawCollectionId: String,
+      rawItemId: String
+  ): F[Either[NF, (Json, String)]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
+    for {
+      itemOption <- StacItemDao.getCollectionItem(collectionId, itemId).transact(xa)
+    } yield {
+      itemOption match {
+        case Some(item) =>
+          Either.fromOption(
+            TileInfo
+              .fromStacItem(apiHost, collectionId, item)
+              .map(info => (info.asJson, info.##.toString)),
+            NF(
+              s"Unable to construct tile info object for item $itemId in collection $collectionId. Is there at least one COG asset?"
+            )
+          )
+        case None => Either.left(NF(s"Item $itemId in collection $collectionId not found"))
+      }
     }
   }
 
@@ -156,7 +195,11 @@ class CollectionItemsService[F[_]: Sync](
         Right((updated.asJson, updated.##.toString))
     }
 
-  val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions)
+  val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions, enableTiles)
+
+  val collectionItemTileRoutes = collectionItemEndpoints.collectionItemTiles.toRoutes {
+    case (collectionId, itemId) => getCollectionItemTileInfo(collectionId, itemId)
+  }
 
   val transactionRoutes: List[HttpRoutes[F]] = List(
     collectionItemEndpoints.postItem.toRoutes {
@@ -185,7 +228,9 @@ class CollectionItemsService[F[_]: Sync](
           transactionRoutes
         } else {
           List.empty
-        })
+        }) ++ (if (enableTiles) {
+                 List(collectionItemTileRoutes)
+               } else { List.empty })
 
   val routes: HttpRoutes[F] = routesList.foldK
 }
