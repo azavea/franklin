@@ -6,7 +6,7 @@ object Versions {
   val CatsVersion           = "2.1.1"
   val CirceFs2Version       = "0.13.0"
   val CirceVersion          = "0.13.0"
-  val DeclineVersion        = "1.0.0"
+  val DeclineVersion        = "1.2.0"
   val DoobieVersion         = "0.9.0"
   val EmojiVersion          = "1.2.1"
   val Flyway                = "6.3.3"
@@ -29,5 +29,5 @@ object Versions {
   val Specs2Version         = "4.9.3"
   val Stac4SVersion         = "f2ccdf6-SNAPSHOT"
   val SttpModelVersion      = "1.0.3"
-  val TapirVersion          = "0.12.25"
+  val TapirVersion          = "0.12.28"
 }
