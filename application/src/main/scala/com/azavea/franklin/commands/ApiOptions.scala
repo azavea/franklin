@@ -37,11 +37,14 @@ trait ApiOptions {
       )
       .orFalse
 
+  private val enableTiles = Opts.flag("with-tiles", "Whether to include tile endpoints").orFalse
+
   val apiConfig: Opts[ApiConfig] = (
     externalPort,
     internalPort,
     apiHost,
     apiScheme,
-    enableTransactions
+    enableTransactions,
+    enableTiles
   ) mapN ApiConfig
 }
