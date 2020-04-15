@@ -16,6 +16,9 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+
 class CollectionsService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: ContextShift[F])
     extends Http4sDsl[F] {
 
@@ -28,7 +31,8 @@ class CollectionsService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: C
 
   }
 
-  def getCollectionUnique(collectionId: String): F[Either[NF, Json]] = {
+  def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionOption <- StacCollectionDao
         .getCollectionUnique(collectionId)
