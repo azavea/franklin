@@ -15,7 +15,7 @@ import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
-class CollectionItemEndpoints(enableTransactions: Boolean) {
+class CollectionItemEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
 
   val base = endpoint.in("collections")
 
@@ -34,6 +34,15 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .out(header[String]("ETag"))
       .description("A single feature")
+      .name("collectionItemUnique")
+
+  val collectionItemTiles: Endpoint[(String, String), NotFound, (Json, String), Nothing] =
+    base.get
+      .in(path[String] / "items" / path[String] / "tiles")
+      .out(jsonBody[Json])
+      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
+      .out(header[String]("ETag"))
+      .description("An item's tile endpoints")
       .name("collectionItemUnique")
 
   val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Nothing] =
@@ -120,5 +129,7 @@ class CollectionItemEndpoints(enableTransactions: Boolean) {
   )
 
   val endpoints = List(collectionItemsList, collectionItemsUnique) ++
-    (if (enableTransactions) transactionEndpoints else Nil)
+    (if (enableTransactions) transactionEndpoints else Nil) ++ (if (enableTiles)
+                                                                  List(collectionItemTiles)
+                                                                else Nil)
 }

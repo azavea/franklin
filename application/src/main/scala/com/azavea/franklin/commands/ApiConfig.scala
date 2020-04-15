@@ -8,7 +8,8 @@ case class ApiConfig(
     internalPort: PosInt,
     host: String,
     scheme: String,
-    enableTransactions: Boolean
+    enableTransactions: Boolean,
+    enableTiles: Boolean
 ) {
 
   val apiHost: NonEmptyString = getHost(publicPort, host, scheme)
