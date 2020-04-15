@@ -37,7 +37,7 @@ lazy val commonSettings = Seq(
     "org.slf4j",
     "slf4j-simple"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.1.0" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.3.8" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
