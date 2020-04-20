@@ -59,11 +59,12 @@ object StacItemDao extends Dao[StacItem] {
       .withUniqueGeneratedKeys[StacItem]("item")
   }
 
-  def getCollectionItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] =
+  def getCollectionItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] = {
     StacItemDao.query
       .filter(fr"id = $itemId")
       .filter(collectionFilter(collectionId))
       .selectOption
+  }
 
   private def doUpdate(itemId: String, item: StacItem): ConnectionIO[StacItem] = {
     val itemExtent = Projected(item.geometry.getEnvelope, 4326)

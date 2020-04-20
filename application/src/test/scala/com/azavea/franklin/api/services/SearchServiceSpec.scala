@@ -25,8 +25,11 @@ class SearchServiceSpec
     - search with GET search filters          $getSearchFiltersExpectation
 """
 
-  val apiConfig: ApiConfig       = ApiConfig(PosInt(9090), PosInt(9090), "localhost", "http", false, false)
-  def service: SearchService[IO] = new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, transactor)
+  val apiConfig: ApiConfig =
+    ApiConfig(PosInt(9090), PosInt(9090), "localhost", "http", false, false)
+
+  def service: SearchService[IO] =
+    new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, transactor)
 
   def postSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
     val request = Request[IO](method = Method.POST, uri = Uri.fromString("/search").right.get)
