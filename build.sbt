@@ -112,6 +112,7 @@ lazy val applicationDependencies = Seq(
   "io.circe"                    %% "circe-parser"             % Versions.CirceVersion,
   "io.circe"                    %% "circe-refined"            % Versions.CirceVersion,
   "net.postgis"                 % "postgis-jdbc"              % Versions.Postgis,
+  "net.postgis"                 % "postgis-geometry"          % Versions.Postgis,
   "org.flywaydb"                % "flyway-core"               % Versions.Flyway,
   "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
