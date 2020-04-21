@@ -5,11 +5,11 @@ import doobie.postgres.pgisimplicits._
 import doobie.util.invariant.InvalidObjectMapping
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
+import org.postgis.GeometryBuilder
 import org.postgis.PGgeometry
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
-import org.postgis.GeometryBuilder
 
 trait GeotrellisWktMeta {
 
