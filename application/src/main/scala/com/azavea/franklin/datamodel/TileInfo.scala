@@ -11,7 +11,7 @@ case class TileInfo(
     extent: StacExtent,
     title: Option[String],
     description: Option[String],
-    tilesetLinks: List[TileMatrixSetLink],
+    tileMatrixSetLinks: List[TileMatrixSetLink],
     links: List[TileSetLink]
 )
 
@@ -37,7 +37,7 @@ object TileInfo {
         val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
         val encodedKey    = URLEncoder.encode(key, StandardCharsets.UTF_8.toString)
         val href =
-          s"$host/tiles/collections/$collectionId/items/$encodedItemId/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}/?asset=$encodedKey"
+          s"$host/tiles/collections/$collectionId/items/$encodedItemId/{tileMatrixSetId}/{tileMatrix}/{tileCol}/{tileRow}/?asset=$encodedKey"
         val mediaType = Some(`image/png`)
         TileSetLink(href, StacLinkType.Item, mediaType, None, Some(true))
     }
