@@ -20,7 +20,7 @@ object Versions {
   val MercatorVersion       = "0.3.0"
   val Postgis               = "2.4.0"
   val PureConfig            = "0.12.1"
-  val Refined               = "0.9.13"
+  val Refined               = "0.9.14"
   val ScalacheckVersion     = "1.14.3"
   val ScapegoatVersion      = "1.3.11"
   val ShapelessVersion      = "2.3.3"
