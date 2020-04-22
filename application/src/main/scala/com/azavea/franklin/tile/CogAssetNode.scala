@@ -21,11 +21,14 @@ case class CogAssetNode(asset: StacItemAsset, bands: Seq[Int]) extends TileUtil 
 
     val infoFromCache = sync.get[SerializableGeotiffInfo](tiffKey)
     val tiffInfoIO = infoFromCache match {
-      case Some(info) => IO(info)
+      case Some(info) => IO.pure(info)
       case _ => {
-        val info = GeotiffReader.getGeotiffInfo(asset.href)
-        sync.put(tiffKey)(info)
-        IO(info)
+        for {
+          info <- IO.delay(GeotiffReader.getGeotiffInfo(asset.href))
+        } yield {
+          sync.put(tiffKey)(info)
+          info
+        }
       }
     }
 
@@ -48,11 +51,11 @@ case class CogAssetNode(asset: StacItemAsset, bands: Seq[Int]) extends TileUtil 
     }
 
     sync.get[List[Histogram[Int]]](histoKey) match {
-      case Some(histograms) => IO(histograms)
+      case Some(histograms) => IO.pure(histograms)
       case _ => {
         for {
           histograms <- histogramFromSource
-          _          <- IO(sync.put(histoKey)(histograms, None))
+          _          <- IO.pure(sync.put(histoKey)(histograms, None))
         } yield histograms
       }
     }
@@ -80,11 +83,11 @@ case class CogAssetNode(asset: StacItemAsset, bands: Seq[Int]) extends TileUtil 
       val rasterSource =
         rs.reproject(crs, target).tileToLayout(layoutDefinition, method)
       rasterSource.read(key, bands).map(Raster(_, layoutDefinition.mapTransform(key)))
-    } flatMap {
+    } map {
       case Some(t) =>
-        IO(t)
+        t
       case _ =>
-        IO(invisiRaster)
+        invisiRaster
     }
   }
 
