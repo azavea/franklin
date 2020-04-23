@@ -57,7 +57,7 @@ object TileInfo {
     TileInfo(
       collection.extent,
       collection.title map { title => s"$title - MVT" },
-      Some(s"Mapbox Vector Tile representation of item footprints for this collection"),
+      Some("Mapbox Vector Tile representation of item footprints for this collection"),
       List(webMercatorQuadLink),
       List(
         TileSetLink(
