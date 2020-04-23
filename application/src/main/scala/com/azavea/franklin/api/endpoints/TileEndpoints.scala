@@ -20,7 +20,7 @@ class TileEndpoints(enableTiles: Boolean) {
     (basePath / path[String] / "items" / path[String] / "WebMercatorQuad" / zxyPath)
 
   val collectionFootprintTilePath: EndpointInput[(String, Int, Int, Int)] =
-    (basePath / path[String] / "WebMercatorQuad" / zxyPath)
+    (basePath / path[String] / "footprint" / "WebMercatorQuad" / zxyPath)
 
   val itemRasterTileParameters: EndpointInput[ItemRasterTileRequest] =
     itemRasterTilePath
