@@ -48,7 +48,7 @@ lazy val commonSettings = Seq(
 
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
 scalafixDependencies in ThisBuild +=
-  "com.nequissimus" %% "sort-imports" % "0.3.2"
+  "com.nequissimus" %% "sort-imports" % "0.4.0"
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
