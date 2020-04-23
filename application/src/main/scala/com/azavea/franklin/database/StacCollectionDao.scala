@@ -47,7 +47,13 @@ object StacCollectionDao {
           ST_AsMVTGeom(geom, ST_TileEnvelope(${request.z},${request.x},${request.y})) AS geom,
           item -> 'properties'
         FROM collection_items
-        WHERE ST_Intersects(geom, ST_TileEnvelope(${request.z},${request.x},${request.y}))
+        WHERE ST_Intersects(
+          geom,
+          st_transform(
+            ST_TileEnvelope(${request.z},${request.x},${request.y}),
+            4326
+          )
+        )
       )
     SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom;
     """
