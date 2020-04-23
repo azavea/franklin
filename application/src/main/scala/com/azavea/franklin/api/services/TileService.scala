@@ -1,5 +1,7 @@
 package com.azavea.franklin.api.services
 
+import com.azavea.franklin.datamodel.{ItemRasterTileRequest}
+
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.effect._
@@ -16,6 +18,8 @@ import geotrellis.server._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
+import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
+import com.azavea.franklin.database.StacCollectionDao
 
 class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
     implicit cs: ContextShift[F],
@@ -26,7 +30,7 @@ class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
 
   val tileEndpoints = new TileEndpoints(enableTiles)
 
-  def getTile(tileRequest: RasterTileRequest): F[Either[NF, Array[Byte]]] = {
+  def getItemRasterTile(tileRequest: ItemRasterTileRequest): F[Either[NF, Array[Byte]]] = {
     val assetKey     = tileRequest.asset
     val collectionId = tileRequest.collection
     val itemId       = tileRequest.item
@@ -78,9 +82,18 @@ class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
     tileEither.value
   }
 
-  val routes: HttpRoutes[F] = tileEndpoints.tileEndpoint.get.toRoutes {
-    case (tileRequest) => {
-      getTile(tileRequest)
+  def getCollectionFootprintTile(
+      tileRequest: MapboxVectorTileFootprintRequest
+  ): F[Either[NF, Array[Byte]]] =
+    for {
+      mvt <- StacCollectionDao.getCollectionFootprintTile(tileRequest).transact(xa)
+    } yield {
+      Either.fromOption(
+        mvt,
+        NF(s"Could not produce tile for bounds: ${tileRequest.z}/${tileRequest.x}/${tileRequest.y}")
+      )
     }
-  }
+
+  val routes: HttpRoutes[F] = tileEndpoints.itemRasterTileEndpoint.toRoutes(getItemRasterTile) <+>
+    tileEndpoints.collectionFootprintTileEndpoint.toRoutes(getCollectionFootprintTile)
 }
