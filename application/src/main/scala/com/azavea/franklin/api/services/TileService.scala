@@ -26,7 +26,7 @@ class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
 
   val tileEndpoints = new TileEndpoints(enableTiles)
 
-  def getTile(tileRequest: TileRequest): F[Either[NF, Array[Byte]]] = {
+  def getTile(tileRequest: RasterTileRequest): F[Either[NF, Array[Byte]]] = {
     val assetKey     = tileRequest.asset
     val collectionId = tileRequest.collection
     val itemId       = tileRequest.item

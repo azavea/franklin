@@ -9,7 +9,7 @@ import sttp.tapir.json.circe._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-case class TileRequest(
+case class RasterTileRequest(
     collectionRaw: String,
     itemRaw: String,
     z: Int,
@@ -48,7 +48,7 @@ class TileEndpoints(enableTiles: Boolean) {
   val tilePath: EndpointInput[(String, String, Int, Int, Int)] =
     (basePath / path[String] / "items" / path[String] / "WebMercatorQuad" / zxyPath)
 
-  val tileParameters: EndpointInput[TileRequest] =
+  val tileParameters: EndpointInput[RasterTileRequest] =
     tilePath
       .and(query[String]("asset"))
       .and(query[Option[Int]]("redBand"))
@@ -56,9 +56,9 @@ class TileEndpoints(enableTiles: Boolean) {
       .and(query[Option[Int]]("blueBand"))
       .and(query[Option[Quantile]]("upperQuantile"))
       .and(query[Option[Quantile]]("lowerQuantile"))
-      .mapTo(TileRequest)
+      .mapTo(RasterTileRequest)
 
-  val tileEndpoint: Endpoint[TileRequest, NotFound, Array[Byte], Nothing] =
+  val tileEndpoint: Endpoint[RasterTileRequest, NotFound, Array[Byte], Nothing] =
     endpoint.get
       .in(tileParameters)
       .out(binaryBody[Array[Byte]])
