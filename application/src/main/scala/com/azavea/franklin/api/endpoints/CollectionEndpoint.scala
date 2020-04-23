@@ -6,7 +6,7 @@ import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
-object CollectionEndpoints {
+class CollectionEndpoints(enableTiles: Boolean) {
 
   val base = endpoint.in("collections")
 
@@ -24,5 +24,16 @@ object CollectionEndpoints {
       .description("A single collection")
       .name("collectionUnique")
 
-  val endpoints = List(collectionsList, collectionUnique)
+  val collectionTiles: Endpoint[String, NotFound, (Json, String), Nothing] =
+    base.get
+      .in(path[String] / "tiles")
+      .out(jsonBody[Json])
+      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
+      .out(header[String]("ETag"))
+      .description("A collection's tile endpoints")
+      .name("collectionTiles")
+
+  val endpoints = List(collectionsList, collectionUnique) ++ {
+    if (enableTiles) List(collectionTiles) else Nil
+  }
 }

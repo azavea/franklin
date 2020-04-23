@@ -19,8 +19,9 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-class CollectionsService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: ContextShift[F])
-    extends Http4sDsl[F] {
+class CollectionsService[F[_]: Sync](xa: Transactor[F], enableTiles: Boolean)(
+    implicit contextShift: ContextShift[F]
+) extends Http4sDsl[F] {
 
   def listCollections(): F[Either[Unit, Json]] = {
     for {
@@ -45,9 +46,18 @@ class CollectionsService[F[_]: Sync](xa: Transactor[F])(implicit contextShift: C
     }
   }
 
-  val routes: HttpRoutes[F] =
-    CollectionEndpoints.collectionsList.toRoutes(_ => listCollections()) <+> CollectionEndpoints.collectionUnique
+  val collectionEndpoints = new CollectionEndpoints(enableTiles)
+
+  val routesList = List(
+    collectionEndpoints.collectionsList.toRoutes(_ => listCollections()),
+    collectionEndpoints.collectionUnique
       .toRoutes {
         case collectionId => getCollectionUnique(collectionId)
       }
+  ) ++ (if (enableTiles) {
+          List(collectionEndpoints.collectionTiles.toRoutes(???))
+        } else Nil)
+
+  val routes = routesList.foldK
+
 }
