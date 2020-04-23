@@ -16,6 +16,9 @@ import io.circe.parser.decode
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
 
   implicit val cs     = IO.contextShift(global)
@@ -32,7 +35,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
     val prefix       = getPrefix(from)
     val prefixSplit  = prefix.split("/")
     val relPathSplit = relPath.split("/")
-    val up           = relPathSplit.filter(_ == "..").size
+    val up           = relPathSplit.count(_ == "..")
     // safe because String.split always returns an array with an element
     (prefixSplit.dropRight(up) :+ (if (up > 0) relPathSplit.drop(up)
                                    else relPathSplit.drop(1)).mkString("/")) mkString ("/")
@@ -65,7 +68,32 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
 
   private def readRoot: IO[StacCatalog] = readPath[StacCatalog](catalogRoot)
 
-  private def readItem(path: String): IO[StacItem] = readPath[StacItem](path)
+  private def readItem(path: String, rewriteSourceIfPresent: Boolean): IO[StacItem] = {
+    val readIO = readPath[StacItem](path)
+    if (!rewriteSourceIfPresent) readIO
+    else {
+      for {
+        item <- readItem(path, false)
+        sourceLinkO = item.links.find(_.rel == StacLinkType.Source)
+        sourceItemO <- sourceLinkO traverse { link =>
+          val sourcePath = makeAbsPath(path, link.href)
+          readItem(sourcePath, rewriteSourceIfPresent = false)
+        }
+      } yield {
+        (sourceLinkO, sourceItemO, sourceItemO flatMap { _.collection }).tupled map {
+          case (link, sourceItem, collectionId) =>
+            val encodedSourceItemId =
+              URLEncoder.encode(sourceItem.id, StandardCharsets.UTF_8.toString)
+            val encodedCollectionId =
+              URLEncoder.encode(collectionId, StandardCharsets.UTF_8.toString)
+            val newSourceLink = link.copy(href =
+              s"${serverHost.value}/collections/$encodedCollectionId/items/$encodedSourceItemId"
+            )
+            item.copy(links = newSourceLink :: item.links.filter(_.rel != StacLinkType.Source))
+        } getOrElse { item }
+      }
+    }
+  }
 
   private def insertCollection(
       collection: CollectionWrapper
@@ -86,13 +114,15 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
   ): IO[CollectionWrapper] = {
     for {
       stacCollection <- readPath[StacCollection](path)
-      _              <- logger.info(s"Read STAC Collection : ${stacCollection.title}")
+      _              <- logger.info(s"Read STAC Collection : ${stacCollection.title getOrElse path}")
       itemLinks     = stacCollection.links.filter(link => link.rel == Item)
       childrenLinks = stacCollection.links.filter(link => link.rel == Child)
       children <- childrenLinks.traverse(link =>
         readCollectionWrapper(makeAbsPath(path, link.href), None)
       )
-      items <- itemLinks.traverse(link => readItem(makeAbsPath(path, link.href)))
+      items <- itemLinks.traverse(link =>
+        readItem(makeAbsPath(path, link.href), rewriteSourceIfPresent = true)
+      )
     } yield {
       val collection      = CollectionWrapper(stacCollection, parent, children, items)
       val updatedChildren = collection.children.map(child => child.copy(parent = Some(collection)))
