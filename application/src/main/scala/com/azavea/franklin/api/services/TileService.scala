@@ -21,10 +21,6 @@ import sttp.tapir.server.http4s._
 import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
 import com.azavea.franklin.database.StacCollectionDao
 
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
-
-
 class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
     implicit cs: ContextShift[F],
     csIO: ContextShift[IO]
