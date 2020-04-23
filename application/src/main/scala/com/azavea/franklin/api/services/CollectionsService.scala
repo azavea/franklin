@@ -2,8 +2,8 @@ package com.azavea.franklin.api.services
 
 import cats.effect._
 import cats.implicits._
-import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
+import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.datamodel.{CollectionsResponse, TileInfo}
 import com.azavea.franklin.error.{NotFound => NF}

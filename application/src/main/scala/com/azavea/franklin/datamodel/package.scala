@@ -1,9 +1,9 @@
 package com.azavea.franklin
 
-import eu.timepit.refined.types.string.NonEmptyString
 import eu.timepit.refined._
 import eu.timepit.refined.api._
 import eu.timepit.refined.numeric._
+import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.refined._
 import io.circe.{Decoder, Encoder}
 

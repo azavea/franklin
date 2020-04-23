@@ -1,13 +1,14 @@
 package com.azavea.franklin.api.services
 
-import com.azavea.franklin.datamodel.{ItemRasterTileRequest}
-
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.endpoints._
+import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
+import com.azavea.franklin.datamodel.{ItemRasterTileRequest}
 import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.tile._
 import doobie._
@@ -18,8 +19,6 @@ import geotrellis.server._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
-import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
-import com.azavea.franklin.database.StacCollectionDao
 
 class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
     implicit cs: ContextShift[F],
