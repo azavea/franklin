@@ -5,6 +5,7 @@ import doobie.postgres.pgisimplicits._
 import doobie.util.invariant.InvalidObjectMapping
 import geotrellis.vector._
 import geotrellis.vector.io.wkt.WKT
+import org.postgis.GeometryBuilder
 import org.postgis.PGgeometry
 
 import scala.reflect.ClassTag
@@ -21,7 +22,7 @@ trait GeotrellisWktMeta {
       implicit A: ClassTag[A]
   ): Meta[Projected[A]] =
     PGgeometryType.timap[Projected[A]](pgGeom => {
-      val split = PGgeometry.splitSRID(pgGeom.getValue)
+      val split = GeometryBuilder.splitSRID(pgGeom.getValue)
       val srid  = split(0).splitAt(5)._2.toInt
       val geom  = WKT.read(split(1))
       try Projected[A](A.runtimeClass.cast(geom).asInstanceOf[A], srid)
@@ -31,7 +32,7 @@ trait GeotrellisWktMeta {
       }
     })(geom => {
       val wkt    = s"SRID=${geom.srid};" + WKT.write(geom)
-      val pgGeom = PGgeometry.geomFromString(wkt)
+      val pgGeom = GeometryBuilder.geomFromString(wkt)
       new PGgeometry(pgGeom)
     })
 
