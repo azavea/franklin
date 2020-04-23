@@ -40,18 +40,20 @@ object StacCollectionDao {
   def getCollectionFootprintTile(
       request: MapboxVectorTileFootprintRequest
   ): ConnectionIO[Option[Array[Byte]]] = {
-    fr"""
+    val fragment = fr"""
     WITH mvtgeom AS
       (
         SELECT
           ST_AsMVTGeom(geom, ST_TileEnvelope(${request.z},${request.x},${request.y})) AS geom,
           item -> 'properties'
         FROM collection_items
-        WHERE ST_Intersects(geom, ST_TileEnvelope(${request.z},${request.x},${request.y})
+        WHERE ST_Intersects(geom, ST_TileEnvelope(${request.z},${request.x},${request.y}))
       )
     SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom;
     """
-    .query[Array[Byte]]
-    .option
+    println(s"Query is:\n$fragment")
+    fragment
+      .query[Array[Byte]]
+      .option
   }
 }
