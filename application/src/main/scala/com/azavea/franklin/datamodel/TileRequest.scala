@@ -7,6 +7,10 @@ sealed trait TileMatrixRequest {
   val z: Int
   val x: Int
   val y: Int
+  val collection: String
+
+  def urlDecode(rawString: String): String =
+    URLDecoder.decode(rawString, StandardCharsets.UTF_8.toString)
 }
 
 case class ItemRasterTileRequest(
@@ -23,8 +27,8 @@ case class ItemRasterTileRequest(
     lowerQuantileOption: Option[Quantile]
 ) extends TileMatrixRequest {
 
-  val collection = URLDecoder.decode(collectionRaw, StandardCharsets.UTF_8.toString)
-  val item       = URLDecoder.decode(itemRaw, StandardCharsets.UTF_8.toString)
+  val collection = urlDecode(collectionRaw)
+  val item       = urlDecode(itemRaw)
 
   val redBand   = redBandOption.getOrElse(0)
   val greenBand = greenBandOption.getOrElse(1)
@@ -45,4 +49,6 @@ case class MapboxVectorTileFootprintRequest(
     z: Int,
     x: Int,
     y: Int
-) extends TileMatrixRequest
+) extends TileMatrixRequest {
+  val collection = urlDecode(collectionRaw)
+}
