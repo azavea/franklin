@@ -104,6 +104,6 @@ object TileJson {
     TileJson(
       collection.title,
       Some(collection.description),
-      List(s"$serverHost/tiles/collections/${collection.id}/footprint/WebMercatorQuad/{z}/{x}/{y}")
+      List(s"$serverHost/tiles/collections/${collection.id}/footprint/WebMercatorQuad/{z}/{y}/{x}")
     )
 }
