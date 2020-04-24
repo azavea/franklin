@@ -36,6 +36,8 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
   private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("/")
 
   private def makeAbsPath(from: String, relPath: String): String = {
+    // don't try to relativize links that start with s3 -- the string splitting
+    // does _weird_ stuff :(
     if (relPath.startsWith("s3://")) {
       relPath
     } else {
@@ -60,7 +62,6 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
   }
 
   private def readPath[T: Decoder](path: String): IO[T] = {
-    println(s"About to read: $path")
     val str = if (path.startsWith("s3://")) {
       readFromS3(path)
     } else {
