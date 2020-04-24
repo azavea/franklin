@@ -122,5 +122,7 @@ class TileService[F[_]: Sync: LiftIO](
   }
 
   val routes: HttpRoutes[F] = tileEndpoints.itemRasterTileEndpoint.toRoutes(getItemRasterTile) <+>
-    tileEndpoints.collectionFootprintTileEndpoint.toRoutes(getCollectionFootprintTile)
+    tileEndpoints.collectionFootprintTileEndpoint.toRoutes(getCollectionFootprintTile) <+>
+    tileEndpoints.collectionFootprintTileJson.toRoutes(getCollectionFootprintTileJson)
+
 }
