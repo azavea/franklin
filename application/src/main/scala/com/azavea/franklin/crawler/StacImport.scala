@@ -10,6 +10,8 @@ import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.string.NonEmptyString
+import geotrellis.vector.io.json._
+import geotrellis.vector.io.json.Implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
 import io.circe.parser.decode
@@ -18,6 +20,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import io.circe.JsonObject
+import geotrellis.vector.{Feature, Geometry}
 
 class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
 
@@ -68,16 +72,20 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
 
   private def readRoot: IO[StacCatalog] = readPath[StacCatalog](catalogRoot)
 
-  private def readItem(path: String, rewriteSourceIfPresent: Boolean): IO[StacItem] = {
+  private def readItem(
+      path: String,
+      rewriteSourceIfPresent: Boolean,
+      inCollection: StacCollection
+  ): IO[StacItem] = {
     val readIO = readPath[StacItem](path)
     if (!rewriteSourceIfPresent) readIO
     else {
       for {
-        item <- readItem(path, false)
-        sourceLinkO = item.links.find(_.rel == StacLinkType.Source)
+        item <- readIO
+        sourceLinkO = item.links.find(_.rel === StacLinkType.Source)
         sourceItemO <- sourceLinkO traverse { link =>
           val sourcePath = makeAbsPath(path, link.href)
-          readItem(sourcePath, rewriteSourceIfPresent = false)
+          readItem(sourcePath, rewriteSourceIfPresent = false, inCollection)
         }
       } yield {
         (sourceLinkO, sourceItemO, sourceItemO flatMap { _.collection }).tupled map {
@@ -92,6 +100,44 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
             item.copy(links = newSourceLink :: item.links.filter(_.rel != StacLinkType.Source))
         } getOrElse { item }
       }
+    }
+  }
+
+  private def createCollectionForGeoJsonAsset(
+      forItem: StacItem,
+      inCollection: StacCollection,
+      fromPath: String
+  ): IO[List[CollectionWrapper]] = {
+    val geojsonAssets = forItem.assets.toList.filter {
+      case (_, asset) => asset._type === Some(`application/geo+json`)
+    }
+    geojsonAssets.zipWithIndex traverse {
+      case ((assetKey, asset), idx) =>
+        readPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
+          featureCollection =>
+            val labelCollection = StacCollection(
+              "0.9.0",
+              Nil,
+              s"${forItem.id}-labels-$idx",
+              Some(s"${forItem.id} Labels"),
+              s"Labels for ${forItem.id}'s ${assetKey} asset",
+              Nil,
+              Proprietary(),
+              Nil,
+              inCollection.extent.copy(spatial = SpatialExtent(List(forItem.bbox))),
+              forItem.properties,
+              Nil // todo -- add links
+            )
+            val featureItems = featureCollection.getAllFeatures[Feature[Geometry, JsonObject]] map {
+              feature => FeatureExtractor.toItem(feature, forItem, inCollection, serverHost)
+            }
+            CollectionWrapper(
+              labelCollection,
+              None,
+              Nil,
+              featureItems.toList
+            )
+        }
     }
   }
 
@@ -120,12 +166,27 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
       children <- childrenLinks.traverse(link =>
         readCollectionWrapper(makeAbsPath(path, link.href), None)
       )
-      items <- itemLinks.traverse(link =>
-        readItem(makeAbsPath(path, link.href), rewriteSourceIfPresent = true)
+      itemsWithCollections <- itemLinks.traverse(link =>
+        for {
+          item <- readItem(
+            makeAbsPath(path, link.href),
+            rewriteSourceIfPresent = true,
+            inCollection = stacCollection
+          )
+          labelCollectionO <- createCollectionForGeoJsonAsset(
+            item,
+            stacCollection,
+            makeAbsPath(path, link.href)
+          )
+        } yield (item, labelCollectionO)
       )
     } yield {
-      val collection      = CollectionWrapper(stacCollection, parent, children, items)
-      val updatedChildren = collection.children.map(child => child.copy(parent = Some(collection)))
+      val collection =
+        CollectionWrapper(stacCollection, parent, children, itemsWithCollections map { _._1 })
+      val itemLabelCollections = itemsWithCollections flatMap { _._2 }
+      val updatedChildren = (collection.children ++ itemLabelCollections).map(child =>
+        child.copy(parent = Some(collection))
+      )
       val updatedItems = collection.items.map { item =>
         val links = filterLinks(item.links)
         item.copy(links = links)
