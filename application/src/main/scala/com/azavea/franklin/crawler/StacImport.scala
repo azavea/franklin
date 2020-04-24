@@ -143,7 +143,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
             val labelCollection = StacCollection(
               "0.9.0",
               Nil,
-              s"${forItem.id}-labels-$idx",
+              s"${forItem.id}-labels-${idx + 1}",
               Some(s"${forItem.id} Labels"),
               s"Labels for ${forItem.id}'s ${assetKey} asset",
               Nil,
@@ -165,7 +165,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
             }
 
             val newAsset = Map(
-              s"Label collection $idx" -> StacItemAsset(
+              s"Label collection ${idx + 1}" -> StacItemAsset(
                 s"$serverHost/collections/${URLEncoder
                   .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
                 None,
