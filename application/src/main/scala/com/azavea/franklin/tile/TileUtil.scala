@@ -19,3 +19,5 @@ trait TileUtil {
     for (zoom <- 0 to 64) yield scheme.levelForZoom(zoom).layout
   }.toArray
 }
+
+object TileUtil extends TileUtil

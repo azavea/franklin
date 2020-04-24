@@ -42,4 +42,21 @@ package object implicits {
     }
   }
 
+  implicit class StacCollectionWithTiles(collection: StacCollection) {
+
+    def addTilesLink(apiHost: String): StacCollection = {
+      val tileLink = StacLink(
+        s"$apiHost/collections/${collection.id}/tiles",
+        StacLinkType.VendorLinkType("tiles"),
+        Some(`application/json`),
+        Some("Tile URLs for Collection"),
+        List.empty
+      )
+      collection.copy(links = tileLink :: collection.links)
+    }
+
+    def maybeAddTilesLink(enableTiles: Boolean, apiHost: String) =
+      if (enableTiles) addTilesLink(apiHost) else collection
+  }
+
 }

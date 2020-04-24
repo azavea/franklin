@@ -79,15 +79,20 @@ $$$$
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       )
-      allEndpoints = LandingPageEndpoints.endpoints ++ CollectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints ++ new TileEndpoints(
+      collectionEndpoints = new CollectionEndpoints(
+        apiConfig.enableTiles
+      )
+      allEndpoints = LandingPageEndpoints.endpoints ++ collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints ++ new TileEndpoints(
         apiConfig.enableTiles
       ).endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes = new LandingPageService[IO](apiConfig).routes
       searchRoutes      = new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-      tileRoutes        = new TileService[IO](apiConfig.enableTiles, xa).routes
-      collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[IO](
+      tileRoutes        = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+      collectionRoutes = new CollectionsService[IO](xa, apiConfig.apiHost, apiConfig.enableTiles).routes <+> new CollectionItemsService[
+        IO
+      ](
         xa,
         apiConfig.apiHost,
         apiConfig.enableTransactions,

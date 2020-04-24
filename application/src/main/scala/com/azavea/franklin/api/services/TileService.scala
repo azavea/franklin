@@ -5,19 +5,35 @@ import cats.data._
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.endpoints._
+import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.datamodel.{
+  ItemRasterTileRequest,
+  MapboxVectorTileFootprintRequest,
+  TileJson
+}
 import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.tile._
 import doobie._
 import doobie.implicits._
-import geotrellis.raster._
+import eu.timepit.refined.types.string.NonEmptyString
+import geotrellis.raster.{io => _, _}
 import geotrellis.server.LayerTms
 import geotrellis.server._
+import io.circe.Json
+import io.circe.syntax._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
-class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+
+class TileService[F[_]: Sync: LiftIO](
+    serverHost: NonEmptyString,
+    enableTiles: Boolean,
+    xa: Transactor[F]
+)(
     implicit cs: ContextShift[F],
     csIO: ContextShift[IO]
 ) extends Http4sDsl[F] {
@@ -26,7 +42,7 @@ class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
 
   val tileEndpoints = new TileEndpoints(enableTiles)
 
-  def getTile(tileRequest: TileRequest): F[Either[NF, Array[Byte]]] = {
+  def getItemRasterTile(tileRequest: ItemRasterTileRequest): F[Either[NF, Array[Byte]]] = {
     val assetKey     = tileRequest.asset
     val collectionId = tileRequest.collection
     val itemId       = tileRequest.item
@@ -78,9 +94,36 @@ class TileService[F[_]: Sync: LiftIO](enableTiles: Boolean, xa: Transactor[F])(
     tileEither.value
   }
 
-  val routes: HttpRoutes[F] = tileEndpoints.tileEndpoint.get.toRoutes {
-    case (tileRequest) => {
-      getTile(tileRequest)
+  def getCollectionFootprintTile(
+      tileRequest: MapboxVectorTileFootprintRequest
+  ): F[Either[NF, Array[Byte]]] =
+    for {
+      mvt <- StacCollectionDao.getCollectionFootprintTile(tileRequest).transact(xa)
+    } yield {
+      Either.fromOption(
+        mvt,
+        NF(s"Could not produce tile for bounds: ${tileRequest.z}/${tileRequest.x}/${tileRequest.y}")
+      )
+    }
+
+  def getCollectionFootprintTileJson(
+      collectionId: String
+  ): F[Either[NF, Json]] = {
+    val decoded = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
+    for {
+      collectionO <- StacCollectionDao.getCollectionUnique(decoded).transact(xa)
+    } yield {
+      Either.fromOption(
+        collectionO map { collection =>
+          TileJson.fromStacCollection(collection, serverHost).asJson
+        },
+        NF(s"Could not produce tile json for collection: $decoded")
+      )
     }
   }
+
+  val routes: HttpRoutes[F] = tileEndpoints.itemRasterTileEndpoint.toRoutes(getItemRasterTile) <+>
+    tileEndpoints.collectionFootprintTileEndpoint.toRoutes(getCollectionFootprintTile) <+>
+    tileEndpoints.collectionFootprintTileJson.toRoutes(getCollectionFootprintTileJson)
+
 }
