@@ -113,7 +113,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
       forItem: StacItem,
       inCollection: StacCollection,
       fromPath: String
-  ): IO[List[CollectionWrapper]] = {
+  ): IO[List[(Map[String, StacItemAsset], CollectionWrapper)]] = {
     val geojsonAssets = forItem.assets.toList.filter {
       case (_, asset) => asset._type === Some(`application/geo+json`)
     }
@@ -163,11 +163,25 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
                   serverHost
                 )
             }
-            CollectionWrapper(
-              labelCollection,
-              None,
-              Nil,
-              featureItems.toList
+
+            val newAsset = Map(
+              s"Label collection $idx" -> StacItemAsset(
+                s"$serverHost/collections/${URLEncoder
+                  .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
+                None,
+                Some("Collection containing items for this item's label geojson asset"),
+                List(StacAssetRole.Data),
+                Some(`application/json`)
+              )
+            )
+            (
+              newAsset,
+              CollectionWrapper(
+                labelCollection,
+                None,
+                Nil,
+                featureItems.toList
+              )
             )
         }
     }
@@ -205,12 +219,19 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
             rewriteSourceIfPresent = true,
             inCollection = stacCollection
           )
-          labelCollections <- createCollectionForGeoJsonAsset(
+          assetsWithCollections <- createCollectionForGeoJsonAsset(
             item,
             stacCollection,
             makeAbsPath(path, link.href)
           )
-        } yield (item, labelCollections)
+        } yield {
+          val labelCollectionAssets = (assetsWithCollections map { _._1 }).foldK
+          val collections           = assetsWithCollections map { _._2 }
+          val updatedItem = item.copy(
+            assets = item.assets ++ labelCollectionAssets
+          )
+          (updatedItem, collections)
+        }
       )
     } yield {
       val collection =
