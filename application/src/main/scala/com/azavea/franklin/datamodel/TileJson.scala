@@ -1,9 +1,9 @@
 package com.azavea.franklin.datamodel
 
-import com.azavea.stac4s.TwoDimBbox
-import io.circe.generic.JsonCodec
 import com.azavea.stac4s.StacCollection
+import com.azavea.stac4s.TwoDimBbox
 import eu.timepit.refined.types.string.NonEmptyString
+import io.circe.generic.JsonCodec
 
 /** Product representation of the TileJson specification:
   *

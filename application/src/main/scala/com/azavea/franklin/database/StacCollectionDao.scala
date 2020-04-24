@@ -61,7 +61,6 @@ object StacCollectionDao {
       )
     SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom;
     """
-    println(s"Query is:\n$fragment")
     fragment
       .query[Array[Byte]]
       .option

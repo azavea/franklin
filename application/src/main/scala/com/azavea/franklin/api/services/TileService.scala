@@ -16,6 +16,7 @@ import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.tile._
 import doobie._
 import doobie.implicits._
+import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.raster.{io => _, _}
 import geotrellis.server.LayerTms
 import geotrellis.server._
@@ -24,9 +25,9 @@ import io.circe.syntax._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
+
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import eu.timepit.refined.types.string.NonEmptyString
 
 class TileService[F[_]: Sync: LiftIO](
     serverHost: NonEmptyString,
