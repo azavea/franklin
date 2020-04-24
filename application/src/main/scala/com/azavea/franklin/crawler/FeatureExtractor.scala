@@ -1,17 +1,16 @@
 package com.azavea.franklin.crawler
 
+import com.azavea.stac4s.StacLink
+import com.azavea.stac4s.TwoDimBbox
 import com.azavea.stac4s._
-import io.circe.JsonObject
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.vector.{Feature, Geometry}
 import geotrellis.vector.methods.Implicits._
+import geotrellis.vector.{Feature, Geometry}
+import io.circe.JsonObject
 
 import java.net.URLEncoder
-import com.azavea.stac4s.StacLink
-
-import java.util.UUID
-import com.azavea.stac4s.TwoDimBbox
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 
 object FeatureExtractor {
 

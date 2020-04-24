@@ -10,18 +10,18 @@ import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.vector.io.json._
 import geotrellis.vector.io.json.Implicits._
+import geotrellis.vector.io.json._
+import geotrellis.vector.{Feature, Geometry}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
+import io.circe.JsonObject
 import io.circe.parser.decode
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import io.circe.JsonObject
-import geotrellis.vector.{Feature, Geometry}
 
 class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
 
