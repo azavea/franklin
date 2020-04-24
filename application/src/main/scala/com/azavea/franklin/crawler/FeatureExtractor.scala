@@ -18,20 +18,20 @@ object FeatureExtractor {
   def toItem(
       feature: Feature[Geometry, JsonObject],
       forItem: StacItem,
+      forItemCollection: String,
       inCollection: StacCollection,
       serverHost: NonEmptyString
   ): StacItem = {
-    val newItemId = s"${UUID.randomUUID}"
-
     val collectionHref =
       s"$serverHost/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
+    val encodedSourceItemCollectionId =
+      URLEncoder.encode(forItemCollection, StandardCharsets.UTF_8.toString)
     val sourceItemHref =
-      s"$collectionHref/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
-    val selfHref = s"$collectionHref/items/$newItemId"
+      s"$serverHost/collections/$encodedSourceItemCollectionId/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
 
     val collectionLink = StacLink(
       collectionHref,
-      StacLinkType.Parent,
+      StacLinkType.Collection,
       Some(`application/json`),
       title = Some("Source item's original collection"),
       Nil
@@ -39,15 +39,7 @@ object FeatureExtractor {
 
     val sourceItemLink = StacLink(
       sourceItemHref,
-      StacLinkType.Source,
-      Some(`application/json`),
-      title = Some("Source item"),
-      Nil
-    )
-
-    val selfLink = StacLink(
-      selfHref,
-      StacLinkType.Self,
+      StacLinkType.VendorLinkType("derived_from"),
       Some(`application/json`),
       None,
       Nil
@@ -62,7 +54,7 @@ object FeatureExtractor {
       "Feature",
       feature.geom,
       TwoDimBbox(featureExtent.xmin, featureExtent.ymin, featureExtent.xmax, featureExtent.ymax),
-      links = List(collectionLink, sourceItemLink, selfLink),
+      links = List(collectionLink, sourceItemLink),
       assets = Map.empty,
       collection = Some(inCollection.id),
       properties = feature.data

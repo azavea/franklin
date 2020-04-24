@@ -36,13 +36,17 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
   private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("/")
 
   private def makeAbsPath(from: String, relPath: String): String = {
-    val prefix       = getPrefix(from)
-    val prefixSplit  = prefix.split("/")
-    val relPathSplit = relPath.split("/")
-    val up           = relPathSplit.count(_ == "..")
-    // safe because String.split always returns an array with an element
-    (prefixSplit.dropRight(up) :+ (if (up > 0) relPathSplit.drop(up)
-                                   else relPathSplit.drop(1)).mkString("/")) mkString ("/")
+    if (relPath.startsWith("s3://")) {
+      relPath
+    } else {
+      val prefix       = getPrefix(from)
+      val prefixSplit  = prefix.split("/")
+      val relPathSplit = relPath.split("/")
+      val up           = relPathSplit.count(_ == "..")
+      // safe because String.split always returns an array with an element
+      (prefixSplit.dropRight(up) :+ (if (up > 0) relPathSplit.drop(up)
+                                     else relPathSplit.drop(1)).mkString("/")) mkString ("/")
+    }
   }
 
   private def readFromS3(path: String): IO[String] = {
@@ -56,6 +60,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
   }
 
   private def readPath[T: Decoder](path: String): IO[T] = {
+    println(s"About to read: $path")
     val str = if (path.startsWith("s3://")) {
       readFromS3(path)
     } else {
@@ -115,6 +120,25 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
       case ((assetKey, asset), idx) =>
         readPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
           featureCollection =>
+            val parentCollectionHref =
+              s"$serverHost/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
+            val derivedFromItemHref =
+              s"$parentCollectionHref/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
+            val parentCollectionLink = StacLink(
+              parentCollectionHref,
+              StacLinkType.Collection,
+              Some(`application/json`),
+              None,
+              Nil
+            )
+            val derivedFromItemLink =
+              StacLink(
+                derivedFromItemHref,
+                StacLinkType.VendorLinkType("derived_from"),
+                Some(`application/json`),
+                None,
+                Nil
+              )
             val labelCollection = StacCollection(
               "0.9.0",
               Nil,
@@ -126,10 +150,17 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
               Nil,
               inCollection.extent.copy(spatial = SpatialExtent(List(forItem.bbox))),
               forItem.properties,
-              Nil // todo -- add links
+              List(parentCollectionLink, derivedFromItemLink)
             )
             val featureItems = featureCollection.getAllFeatures[Feature[Geometry, JsonObject]] map {
-              feature => FeatureExtractor.toItem(feature, forItem, inCollection, serverHost)
+              feature =>
+                FeatureExtractor.toItem(
+                  feature,
+                  forItem,
+                  inCollection.id,
+                  labelCollection,
+                  serverHost
+                )
             }
             CollectionWrapper(
               labelCollection,
@@ -173,12 +204,12 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
             rewriteSourceIfPresent = true,
             inCollection = stacCollection
           )
-          labelCollectionO <- createCollectionForGeoJsonAsset(
+          labelCollections <- createCollectionForGeoJsonAsset(
             item,
             stacCollection,
             makeAbsPath(path, link.href)
           )
-        } yield (item, labelCollectionO)
+        } yield (item, labelCollections)
       )
     } yield {
       val collection =
@@ -198,10 +229,17 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
   def runIO(xa: Transactor[IO]): IO[Unit] = {
     for {
       catalog <- readRoot
+      _       <- IO { println("Read catalog") }
       collections <- catalog.links
         .filter(_.rel == StacLinkType.Child)
         .traverse(c => readCollectionWrapper(makeAbsPath(catalogRoot, c.href), None))
-      _ <- collections.traverse(c => insertCollection(c.updateLinks(serverHost))).transact(xa)
+      _ <- collections
+        .traverse(c => {
+          insertCollection(c.updateLinks(serverHost)) map { _ =>
+            println(s"Inserted collection: ${c.value.id}")
+          }
+        })
+        .transact(xa)
     } yield ()
   }
 }
