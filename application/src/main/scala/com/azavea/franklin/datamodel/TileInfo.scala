@@ -54,19 +54,33 @@ object TileInfo {
   def fromStacCollection(host: String, collection: StacCollection): TileInfo = {
     val mvtHref =
       s"$host/tiles/collections/${collection.id}/footprint/{tileMatrixSetId}/{tileMatrix}/{tileCol}/{tileRow}"
+    val tileEndpointLink = TileSetLink(
+      mvtHref,
+      StacLinkType.VendorLinkType("tiles"),
+      Some(VendorMediaType("application/vnd.mapbox-vector-tile")),
+      Some(s"${collection.id} -- Footprints"),
+      Some(true)
+    )
+
+    val tileJsonHref =
+      s"$host/tiles/collections/${collection.id}/footprint/tile-json"
+
+    val tileJsonLink = TileSetLink(
+      tileJsonHref,
+      StacLinkType.VendorLinkType("tile-json"),
+      Some(`application/json`),
+      Some(s"${collection.id} -- Footprints TileJSON"),
+      Some(false)
+    )
+
     TileInfo(
       collection.extent,
       collection.title map { title => s"$title - MVT" },
       Some("Mapbox Vector Tile representation of item footprints for this collection"),
       List(webMercatorQuadLink),
       List(
-        TileSetLink(
-          mvtHref,
-          StacLinkType.VendorLinkType("tiles"),
-          Some(VendorMediaType("application/vnd.mapbox-vector-tile")),
-          Some(s"${collection.id} -- Footprints"),
-          Some(true)
-        )
+        tileEndpointLink,
+        tileJsonLink
       )
     )
   }

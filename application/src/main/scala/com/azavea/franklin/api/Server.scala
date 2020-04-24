@@ -89,7 +89,7 @@ $$$$
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes = new LandingPageService[IO](apiConfig).routes
       searchRoutes      = new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-      tileRoutes        = new TileService[IO](apiConfig.enableTiles, xa).routes
+      tileRoutes        = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
       collectionRoutes = new CollectionsService[IO](xa, apiConfig.apiHost, apiConfig.enableTiles).routes <+> new CollectionItemsService[
         IO
       ](

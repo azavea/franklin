@@ -6,6 +6,7 @@ import com.azavea.franklin.datamodel.{
   Quantile
 }
 import com.azavea.franklin.error.NotFound
+import io.circe.Json
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
@@ -21,6 +22,9 @@ class TileEndpoints(enableTiles: Boolean) {
 
   val collectionFootprintTilePath: EndpointInput[(String, Int, Int, Int)] =
     (basePath / path[String] / "footprint" / "WebMercatorQuad" / zxyPath)
+
+  val collectionFootprintTileJsonPath: EndpointInput[String] =
+    (basePath / path[String] / "footprint" / "tile-json")
 
   val itemRasterTileParameters: EndpointInput[ItemRasterTileRequest] =
     itemRasterTilePath
@@ -51,8 +55,17 @@ class TileEndpoints(enableTiles: Boolean) {
       .description("MVT endpoint for a collection's footprint")
       .name("collectionFootprintTiles")
 
+  val collectionFootprintTileJson: Endpoint[String, NotFound, Json, Nothing] =
+    endpoint.get
+      .in(collectionFootprintTileJsonPath)
+      .out(jsonBody[Json])
+      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
+      .description("TileJSON representation of this collection's footprint tiles")
+      .name("collectionFootprintTileJSON")
+
   val endpoints = enableTiles match {
-    case true => List(itemRasterTileEndpoint, collectionFootprintTileEndpoint)
-    case _    => List.empty
+    case true =>
+      List(itemRasterTileEndpoint, collectionFootprintTileEndpoint, collectionFootprintTileJson)
+    case _ => List.empty
   }
 }
