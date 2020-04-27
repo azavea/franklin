@@ -88,3 +88,18 @@ nav.navbar {
   display: block;
   margin: 0 10 5;
 }
+
+.collection-item:hover {
+  background-color: transparent;
+  color: #0BB671;
+  cursor: pointer;
+}
+
+.section {
+  padding-bottom: 10px;
+  padding-top: 10px;
+}
+
+.title {
+ color: #104E64;
+}
