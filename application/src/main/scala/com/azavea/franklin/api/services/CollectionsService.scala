@@ -19,6 +19,9 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import com.azavea.franklin.api.endpoints.AcceptHeader
+import com.azavea.franklin.api._
+import com.azavea.franklin
 
 class CollectionsService[F[_]: Sync](
     xa: Transactor[F],
@@ -28,27 +31,33 @@ class CollectionsService[F[_]: Sync](
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
 
-  def listCollections(): F[Either[Unit, Json]] = {
+  def listCollections(acceptHeader: AcceptHeader): F[Either[Unit, JsonOrHtmlOutput]] = {
+
     for {
       collections <- StacCollectionDao.listCollections().transact(xa)
       updated = collections map { _.maybeAddTilesLink(enableTiles, apiHost) }
     } yield {
-      Either.right(CollectionsResponse(updated).asJson)
+      val collectionResponse = CollectionsResponse(updated)
+      val html = franklin.html.collections(collectionResponse)
+      handleOutput(html.body, collectionResponse.asJson, acceptHeader)
     }
-
   }
 
-  def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
+  def getCollectionUnique(acceptHeader: AcceptHeader, rawCollectionId: String): F[Either[NF, JsonOrHtmlOutput]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionOption <- StacCollectionDao
         .getCollectionUnique(collectionId)
         .transact(xa)
     } yield {
-      Either.fromOption(
-        collectionOption map { _.maybeAddTilesLink(enableTiles, apiHost).asJson },
-        NF(s"Collection $collectionId not found")
-      )
+      collectionOption match {
+        case Some(collection) => {
+          val updatedCollection = collection.maybeAddTilesLink(enableTiles, apiHost)
+          val collectionHtml = franklin.html.collectionItem(updatedCollection).body
+          handleOutput[NF](collectionHtml, updatedCollection.asJson, acceptHeader)
+        }
+        case _                => Either.left(NF(s"Collection $collectionId not found"))
+      }
     }
   }
 
@@ -74,10 +83,10 @@ class CollectionsService[F[_]: Sync](
   val collectionEndpoints = new CollectionEndpoints(enableTiles)
 
   val routesList = List(
-    collectionEndpoints.collectionsList.toRoutes(_ => listCollections()),
+    collectionEndpoints.collectionsList.toRoutes(acceptHeader => listCollections(acceptHeader)),
     collectionEndpoints.collectionUnique
       .toRoutes {
-        case collectionId => getCollectionUnique(collectionId)
+        case (acceptHeader, collectionId) => getCollectionUnique(acceptHeader, collectionId)
       }
   ) ++ (if (enableTiles) {
           List(collectionEndpoints.collectionTiles.toRoutes(getCollectionTiles))

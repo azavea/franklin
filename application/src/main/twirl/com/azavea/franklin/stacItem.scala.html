@@ -1,0 +1,20 @@
+@import _root_.com.azavea.stac4s.StacItem
+
+@(item: StacItem)
+
+<html>
+<body>
+<h1>@item.id</h1>
+
+<p>Links:</p>
+
+<ul>
+@for(link <- item.links) {
+  <li>
+    <a href=@link.href>@link.title.getOrElse(link.href)</a>
+  </li>
+}
+</ul>
+
+</body>
+</html>

@@ -52,6 +52,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
   }
 
   private def readPath[T: Decoder](path: String): IO[T] = {
+    println(s"Reading $path")
     val str = if (path.startsWith("s3://")) {
       readFromS3(path)
     } else {
@@ -59,6 +60,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
     }
 
     str.flatMap { s =>
+      println(s)
       decode[T](s) match {
         case Left(e)  => IO.raiseError(e)
         case Right(t) => IO.pure(t)

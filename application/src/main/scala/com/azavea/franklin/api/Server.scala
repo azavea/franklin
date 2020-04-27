@@ -32,6 +32,25 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 
+import cats.effect._
+import org.http4s._
+import org.http4s.dsl.Http4sDsl
+
+import scala.concurrent.ExecutionContext
+
+class StaticService[F[_]: Sync](blocker: Blocker)(implicit cs: ContextShift[F])
+    extends Http4sDsl[F] {
+
+  val routes: HttpRoutes[F] = HttpRoutes.of[F] {
+
+    case req @ GET -> path =>
+      // assume everything else is a static file
+      StaticFile
+        .fromResource(s"/assets$path", blocker, Some(req))
+        .getOrElseF(NotFound())
+  }
+}
+
 object Server extends IOApp {
 
   val franklinIO: ContextShift[IO] = IO.contextShift(
@@ -89,6 +108,7 @@ $$$$
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes = new LandingPageService[IO](apiConfig).routes
       searchRoutes      = new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+      staticService     = new StaticService[IO](Blocker.liftExecutionContext(transactionEc))
       tileRoutes        = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
       collectionRoutes = new CollectionsService[IO](xa, apiConfig.apiHost, apiConfig.enableTiles).routes <+> new CollectionItemsService[
         IO
@@ -102,7 +122,8 @@ $$$$
         Router(
           "/" -> ResponseLogger.httpRoutes(false, false)(
             landingPageRoutes <+> collectionRoutes <+> searchRoutes <+> tileRoutes <+> docRoutes
-          )
+          ),
+          "/assets" -> staticService.routes
         )
       ).orNotFound
       server <- {

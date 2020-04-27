@@ -13,7 +13,10 @@ case class TileInfo(
     description: Option[String],
     tileMatrixSetLinks: List[TileMatrixSetLink],
     links: List[TileSetLink]
-)
+) {
+  val minX = extent.spatial.bbox(0).xmin
+  val minY = extent.spatial.bbox(0).ymin
+}
 
 object TileInfo {
 
@@ -40,9 +43,9 @@ object TileInfo {
         val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
         val encodedKey    = URLEncoder.encode(key, StandardCharsets.UTF_8.toString)
         val href =
-          s"$host/tiles/collections/$collectionId/items/$encodedItemId/{tileMatrixSetId}/{tileMatrix}/{tileCol}/{tileRow}/?asset=$encodedKey"
+          s"$host/tiles/collections/$collectionId/items/$encodedItemId/WebMercatorQuad/{z}/{x}/{y}/?asset=$encodedKey"
         val mediaType = Some(`image/png`)
-        TileSetLink(href, StacLinkType.Item, mediaType, None, Some(true))
+        TileSetLink(href, StacLinkType.Item, mediaType, Some(key), Some(true))
     }
     cogTileLinks.isEmpty match {
       case false =>

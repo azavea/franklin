@@ -1,0 +1,61 @@
+@import _root_.com.azavea.franklin.datamodel.TileInfo
+
+@(tileInfo: TileInfo)
+
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@@master/en/v6.3.1/css/ol.css" type="text/css">
+    <link rel="stylesheet" href="https://unpkg.com/ol-layerswitcher@@3.5.0/src/ol-layerswitcher.css" />
+
+    <style>
+      .map {
+        height: 400px;
+        width: 100%;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@@master/en/v6.3.1/build/ol.js"></script>
+    <script src="https://unpkg.com/ol-layerswitcher@@3.5.0"></script>
+
+    <title>Franklin Tiles Map</title>
+  </head>
+  <body>
+    <h2>Franklin Tiles Map</h2>
+    <div id="map" class="map"></div>
+    <script type="text/javascript">
+      var map = new ol.Map({
+          target: 'map',
+          layers: [
+              new ol.layer.Group({'title': 'Base Map', layers: [
+              new ol.layer.Tile({
+                  source: new ol.source.OSM()
+              })
+              ]}),
+              new ol.layer.Group({'title': 'Asset Tiles', layers: [
+                  @for(link <- tileInfo.links) {
+                      new ol.layer.Tile({
+                          title: "@link.title",
+                          source: new ol.source.XYZ({
+                              url: "@link.href"
+                          })
+                      }),
+                  }
+              ]})
+          ],
+          view: new ol.View({
+              center: ol.proj.fromLonLat([@tileInfo.minX, @tileInfo.minY]),
+              zoom: 10
+          })
+      });
+      var layerSwitcher = new ol.control.LayerSwitcher();
+      map.addControl(layerSwitcher);
+    </script>
+    <ul>
+      @for(link <- tileInfo.links) {
+                   <li>
+                     <a href=@link.href>@link.href</a>
+                   </li>
+                   }
+    </ul>
+
+  </body>
+</html>

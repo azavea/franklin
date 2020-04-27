@@ -1,0 +1,20 @@
+@import _root_.com.azavea.stac4s.StacCollection
+
+@(collection: StacCollection)
+
+<html>
+<body>
+<h1>@collection.title.getOrElse(collection.id)</h1>
+
+<p>Links:</p>
+
+<ul>
+@for(link <- collection.links) {
+  <li>
+    <a href=@link.href>@link.title.getOrElse(link.href)</a>
+  </li>
+}
+</ul>
+
+</body>
+</html>

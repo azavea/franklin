@@ -14,34 +14,43 @@ import sttp.model.StatusCode
 import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.json.circe._
+import com.azavea.franklin.api._
 
 class CollectionItemEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
 
   val base = endpoint.in("collections")
 
-  val collectionItemsList: Endpoint[String, Unit, Json, Nothing] =
+  val collectionItemsList: Endpoint[(String, AcceptHeader), Unit, JsonOrHtmlOutput, Nothing] =
     base.get
       .in(path[String])
+      .in(acceptHeaderInput)
       .in("items")
-      .out(jsonBody[Json])
+      .out(header[String]("content-type"))
+      .out(jsonBody[Option[Json]])
+      .out(plainBody[Option[String]])
       .description("A feature collection of collection items")
       .name("collectionItems")
 
-  val collectionItemsUnique: Endpoint[(String, String), NotFound, (Json, String), Nothing] =
+  val collectionItemsUnique: Endpoint[(String, String, AcceptHeader), NotFound, (String, Option[Json], Option[String], String), Nothing] =
     base.get
       .in(path[String] / "items" / path[String])
-      .out(jsonBody[Json])
+      .in(acceptHeaderInput)
+      .out(header[String]("content-type"))
+      .out(jsonBody[Option[Json]])
+      .out(plainBody[Option[String]])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .out(header[String]("ETag"))
       .description("A single feature")
       .name("collectionItemUnique")
 
-  val collectionItemTiles: Endpoint[(String, String), NotFound, (Json, String), Nothing] =
+  val collectionItemTiles: Endpoint[(String, String, AcceptHeader), NotFound, JsonOrHtmlOutput, Nothing] =
     base.get
       .in(path[String] / "items" / path[String] / "tiles")
-      .out(jsonBody[Json])
+      .in(acceptHeaderInput)
+      .out(header[String]("content-type"))
+      .out(jsonBody[Option[Json]])
+      .out(plainBody[Option[String]])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
-      .out(header[String]("ETag"))
       .description("An item's tile endpoints")
       .name("collectionItemTiles")
 

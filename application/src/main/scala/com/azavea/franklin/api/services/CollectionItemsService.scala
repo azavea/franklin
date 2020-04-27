@@ -32,6 +32,10 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import com.azavea.franklin.api._
+import com.azavea.franklin
+import com.azavea.franklin.api.endpoints.AcceptHeader
+import shapeless.syntax.std.tuple._
 
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
@@ -42,26 +46,29 @@ class CollectionItemsService[F[_]: Sync](
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
 
-  def listCollectionItems(collectionId: String): F[Either[Unit, Json]] = {
+  def listCollectionItems(collectionId: String, acceptHeader: AcceptHeader): F[Either[Unit, JsonOrHtmlOutput]] = {
     for {
       items <- StacItemDao.query
         .filter(StacItemDao.collectionFilter(collectionId))
         .list
         .transact(xa)
     } yield {
-      val response = Json.obj(
+      val jsonResponse = Json.obj(
         ("type", Json.fromString("FeatureCollection")),
         ("features", items.asJson)
       )
-      Either.right(response)
+
+      val html = franklin.html.stacItemList(items, collectionId).body
+      handleOutput(html, jsonResponse, acceptHeader)
     }
 
   }
 
   def getCollectionItemUnique(
       rawCollectionId: String,
-      rawItemId: String
-  ): F[Either[NF, (Json, String)]] = {
+    rawItemId: String,
+    acceptHeader: AcceptHeader
+  ): F[Either[NF, (String, Option[Json], Option[String], String)]] = {
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
 
@@ -71,8 +78,9 @@ class CollectionItemsService[F[_]: Sync](
       Either.fromOption(
         itemOption map { item =>
           val updatedItem = (if (enableTiles) { item.addTilesLink(apiHost, collectionId, itemId) }
-                             else { item })
-          (updatedItem.asJson, item.##.toString)
+          else { item })
+          val output = handleOutputRaw(franklin.html.stacItem(updatedItem).body, updatedItem.asJson, acceptHeader)
+          output :+ item.##.toString
         },
         NF(s"Item $itemId in collection $collectionId not found")
       )
@@ -81,8 +89,9 @@ class CollectionItemsService[F[_]: Sync](
 
   def getCollectionItemTileInfo(
       rawCollectionId: String,
-      rawItemId: String
-  ): F[Either[NF, (Json, String)]] = {
+    rawItemId: String,
+    acceptHeader: AcceptHeader
+  ): F[Either[NF, JsonOrHtmlOutput]] = {
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
 
@@ -94,7 +103,7 @@ class CollectionItemsService[F[_]: Sync](
           Either.fromOption(
             TileInfo
               .fromStacItem(apiHost, collectionId, item)
-              .map(info => (info.asJson, info.##.toString)),
+              .map(info => handleOutputRaw(franklin.html.stacItemTiles(info).body, info.asJson, acceptHeader)),
             NF(
               s"Unable to construct tile info object for item $itemId in collection $collectionId. Is there at least one COG asset?"
             )
@@ -198,7 +207,7 @@ class CollectionItemsService[F[_]: Sync](
   val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions, enableTiles)
 
   val collectionItemTileRoutes = collectionItemEndpoints.collectionItemTiles.toRoutes {
-    case (collectionId, itemId) => getCollectionItemTileInfo(collectionId, itemId)
+    case (collectionId, itemId, acceptHeader) => getCollectionItemTileInfo(collectionId, itemId, acceptHeader)
   }
 
   val transactionRoutes: List[HttpRoutes[F]] = List(
@@ -218,11 +227,13 @@ class CollectionItemsService[F[_]: Sync](
   )
 
   val routesList: NonEmptyList[HttpRoutes[F]] = NonEmptyList.of(
-    collectionItemEndpoints.collectionItemsList.toRoutes { collectionId =>
-      listCollectionItems(collectionId)
+    collectionItemEndpoints.collectionItemsList.toRoutes { case (collectionId, acceptHeader) =>
+      listCollectionItems(collectionId, acceptHeader)
     },
     collectionItemEndpoints.collectionItemsUnique.toRoutes {
-      case (collectionId, itemId) => getCollectionItemUnique(collectionId, itemId)
+      case (collectionId, itemId, acceptHeader) => {
+        getCollectionItemUnique(collectionId, itemId, acceptHeader)
+      }
     }
   ) ++ (if (enableTransactions) {
           transactionRoutes

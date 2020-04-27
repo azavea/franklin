@@ -5,21 +5,28 @@ import io.circe._
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.json.circe._
+import com.azavea.franklin.api._
 
 class CollectionEndpoints(enableTiles: Boolean) {
 
   val base = endpoint.in("collections")
 
-  val collectionsList: Endpoint[Unit, Unit, Json, Nothing] =
+  val collectionsList: Endpoint[AcceptHeader, Unit, JsonOrHtmlOutput, Nothing] =
     base.get
-      .out(jsonBody[Json])
+      .in(acceptHeaderInput)
+      .out(header[String]("content-type"))
+      .out(jsonBody[Option[Json]])
+      .out(plainBody[Option[String]])
       .description("A list of collections")
       .name("collections")
 
-  val collectionUnique: Endpoint[String, NotFound, Json, Nothing] =
+  val collectionUnique: Endpoint[(AcceptHeader, String), NotFound, JsonOrHtmlOutput, Nothing] =
     base.get
+      .in(acceptHeaderInput)
       .in(path[String])
-      .out(jsonBody[Json])
+      .out(header[String]("content-type"))
+      .out(jsonBody[Option[Json]])
+      .out(plainBody[Option[String]])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .description("A single collection")
       .name("collectionUnique")

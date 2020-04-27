@@ -1,0 +1,20 @@
+@import _root_.com.azavea.stac4s.StacItem
+
+@(itemList: List[StacItem], collectionId: String)
+
+<html>
+<body>
+<h1>@collectionId</h1>
+
+<p>Links:</p>
+
+<ul>
+@for(item <- itemList) {
+  <li>
+    <a href="/collections/@collectionId/items/@item.id">@item.id</a>
+  </li>
+}
+</ul>
+
+</body>
+</html>

@@ -7,6 +7,7 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.12.10",
   scapegoatVersion in ThisBuild := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
+  scalacOptions ~= filterConsoleScalacOptions,
   externalResolvers := Seq(
     DefaultMavenRepository,
     Resolver.sonatypeRepo("snapshots"),
@@ -49,6 +50,8 @@ lazy val commonSettings = Seq(
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
 scalafixDependencies in ThisBuild +=
   "com.nequissimus" %% "sort-imports" % "0.3.2"
+
+TwirlKeys.templateImports := Seq()
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
@@ -120,6 +123,7 @@ lazy val applicationDependencies = Seq(
   "org.http4s"                  %% "http4s-core"              % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-dsl"               % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-server"            % Versions.Http4sVersion,
+  "org.http4s"                  %% "http4s-twirl"             % Versions.Http4sVersion,
   "org.locationtech.geotrellis" %% "geotrellis-layer"         % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis" %% "geotrellis-proj4"         % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis" %% "geotrellis-raster"        % Versions.GeoTrellisVersion,
@@ -151,6 +155,7 @@ lazy val application = (project in file("application"))
   .settings({
     libraryDependencies ++= applicationDependencies
   })
+  .enablePlugins(SbtTwirl)
 
 //////////
 // DOCS //
