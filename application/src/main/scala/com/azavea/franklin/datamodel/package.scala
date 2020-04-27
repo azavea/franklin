@@ -3,10 +3,11 @@ package com.azavea.franklin
 import eu.timepit.refined._
 import eu.timepit.refined.api._
 import eu.timepit.refined.numeric._
+
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.refined._
 import io.circe._
-import com.azavea.stac4s._
+import com.azavea.stac4s.{Interval => _, _}
 import io.circe.syntax._
 import geotrellis.vector.MultiPolygon
 
@@ -16,6 +17,11 @@ import geotrellis.vector.io.json.Implicits._
 import geotrellis.vector.Polygon
 
 import io.circe.generic.JsonCodec
+
+import sttp.tapir._
+import io.circe._
+import sttp.tapir.json.circe._
+import com.azavea.franklin.api.JsonOrHtmlOutput
 
 package object datamodel {
 
@@ -38,6 +44,8 @@ package object datamodel {
       }).asJson.noSpaces
     }
 
+    def extentMap = collections.map(c => (c.id -> c.extent.extent)).toMap
+
     def extent = {
       collections.flatMap(_.extent.spatial.bbox.flatMap(l => l.toExtent match {
         case Left(_) => None
@@ -54,6 +62,7 @@ package object datamodel {
         case l => Some(l.min)
       }
     }
+
     def endTime = {
       stacExtent.temporal.interval.flatMap(_.value.lift(1)).flatten match {
         case l if l.isEmpty => None
@@ -75,5 +84,4 @@ package object datamodel {
       }))
     }
   }
->>>>>>> WIP
 }

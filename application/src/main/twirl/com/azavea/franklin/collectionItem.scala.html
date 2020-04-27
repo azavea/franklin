@@ -1,20 +1,79 @@
 @import _root_.com.azavea.stac4s.StacCollection
 
+@import _root_.com.azavea.franklin.datamodel._
+@import _root_.geotrellis.vector.io.json.Implicits._
+@import _root_.io.circe.syntax._
+
 @(collection: StacCollection)
 
+<!DOCTYPE html>
 <html>
-<body>
-<h1>@collection.title.getOrElse(collection.id)</h1>
 
-<p>Links:</p>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Franklin OGC API - Features, Tiles, and STAC Server</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
+    <!-- Bulma Version 0.8.x-->
+    <link rel="stylesheet" href="https://unpkg.com/bulma@@0.8.0/css/bulma.min.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/franklin.css">
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@@master/en/v6.3.1/build/ol.js"></script>
+    <script src="/assets/main.bundle.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@@master/en/v6.3.1/css/ol.css">
+    <link href='https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css' rel='stylesheet' />
+  </head>
 
-<ul>
-@for(link <- collection.links) {
-  <li>
-    <a href=@link.href>@link.title.getOrElse(link.href)</a>
-  </li>
-}
-</ul>
+  <body>
 
-</body>
+    <!-- START NAV -->
+    @navbar()
+    <!-- END NAV -->
+    <div class="container">
+      <div class="columns">
+        @sidebar("")
+        <div class="column is-9">
+          <section class="section">
+            <article class="cards events-card box message">
+              <p class="title">
+                @collection.title.getOrElse(collection.id)
+              </p>
+              <p class="subtitle">
+                @collection.description
+              </p>
+            </article>
+          </section>
+          <section class="section">
+            <div style="height: 300px" id="map" class="map"></div>
+          </section>
+          <section class="section">
+            <div class="card events-card box">
+              <p class="title">Basic Information</p>
+              <div>
+                <div class="content">
+                  @if(collection.stacExtensions.isEmpty) {
+                  <p>Extensions: None</p>
+                  } else {
+                  <p>Extensions: @collection.stacExtensions</p>
+                  }
+                  @if(collection.keywords.nonEmpty){
+                  <p>Keywords: @collection.keywords</p>
+                  }
+                  <p>Temporal Extent: @collection.extent.startTime - @collection.extent.endTime</p>
+                  @if(collection.providers.nonEmpty){
+                  <p>Providers: @collection.providers</p>
+                  }
+                  <p>License: @collection.license.name</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+    <script>
+      var map = franklin.createMap();
+    </script>
+  </body>
 </html>

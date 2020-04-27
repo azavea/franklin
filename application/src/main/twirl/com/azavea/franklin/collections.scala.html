@@ -33,7 +33,7 @@
         @sidebar("collections")
         <div class="column is-9">
           <section class="section">
-            <div style="height: 500px" id="map" class="map"></div>
+            <div style="height: 300px" id="map" class="map"></div>
           </section>
           <section class="section">
             <div class="card events-card box">
@@ -50,7 +50,7 @@
                         <th></th>
                       </tr>
                       @for(collection <- collections.collections) {
-                                         <tr>
+                                         <tr data-collection="@collection.id" class="collection-item">
                                            <td>@collection.title.getOrElse(collection.id)</td>
                                            <td>@collection.license.name</td>
                                            <td>@collection.extent.startTime.getOrElse("")</td>
@@ -69,9 +69,11 @@
     <script>
       var map = franklin.createMap();
       var features = @Html(collections.collections.toGeoJson);
+      var extents = @Html(collections.collections.extentMap.asJson.noSpaces);
       franklin.addGeoJson(map, features);
       var collectionsExtent = @Html(collections.collections.extent.asJson.noSpaces);
       franklin.fitToBounds(map, collectionsExtent);
+      franklin.addEventListener(map, extents);
     </script>
   </body>
 </html>
