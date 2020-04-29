@@ -43,9 +43,10 @@ class CollectionItemsService[F[_]: Sync](
 ) extends Http4sDsl[F] {
 
   def listCollectionItems(collectionId: String): F[Either[Unit, Json]] = {
+    val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
       items <- StacItemDao.query
-        .filter(StacItemDao.collectionFilter(collectionId))
+        .filter(StacItemDao.collectionFilter(decodedId))
         .list
         .transact(xa)
     } yield {
