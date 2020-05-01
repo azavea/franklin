@@ -6,12 +6,12 @@ import com.azavea.franklin.datamodel.{
   Quantile
 }
 import com.azavea.franklin.error.NotFound
+import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.Json
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.json.circe._
-import eu.timepit.refined.types.numeric.NonNegInt
 
 class TileEndpoints(enableTiles: Boolean) {
 

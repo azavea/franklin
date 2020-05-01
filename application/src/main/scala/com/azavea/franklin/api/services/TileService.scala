@@ -17,9 +17,10 @@ import com.azavea.franklin.tile._
 import doobie._
 import doobie.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.raster.{io => _, _}
-import geotrellis.raster.render.{Implicits => RenderImplicits}
+import geotrellis.raster.geotiff.GeoTiffRasterSource
 import geotrellis.raster.render.ColorRamps.greyscale
+import geotrellis.raster.render.{Implicits => RenderImplicits}
+import geotrellis.raster.{io => _, _}
 import geotrellis.server.LayerTms
 import geotrellis.server._
 import io.circe.Json
@@ -30,7 +31,6 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import geotrellis.raster.geotiff.GeoTiffRasterSource
 
 class TileService[F[_]: Sync: LiftIO](
     serverHost: NonEmptyString,
