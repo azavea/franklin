@@ -103,7 +103,7 @@ class TileService[F[_]: Sync: LiftIO](
               val greyscaleRamp = greyscale(255)
               val hist          = histograms(0)
               val breaks        = hist.quantileBreaks(100)
-              greyscaleRamp.toColorMap(Vector(breaks(0), breaks(99)))
+              greyscaleRamp.toColorMap(Vector(breaks.min, breaks.max))
             }
             val renderedTile = cmap.render(mbt.band(0))
             Either.right(renderedTile.renderPng.bytes)
