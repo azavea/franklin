@@ -18,6 +18,8 @@ import doobie._
 import doobie.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.raster.{io => _, _}
+import geotrellis.raster.render.{Implicits => RenderImplicits}
+import geotrellis.raster.render.ColorRamps.greyscale
 import geotrellis.server.LayerTms
 import geotrellis.server._
 import io.circe.Json
@@ -28,6 +30,7 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import geotrellis.raster.geotiff.GeoTiffRasterSource
 
 class TileService[F[_]: Sync: LiftIO](
     serverHost: NonEmptyString,
@@ -36,7 +39,8 @@ class TileService[F[_]: Sync: LiftIO](
 )(
     implicit cs: ContextShift[F],
     csIO: ContextShift[IO]
-) extends Http4sDsl[F] {
+) extends Http4sDsl[F]
+    with RenderImplicits {
 
   import CogAssetNodeImplicits._
 
@@ -59,15 +63,22 @@ class TileService[F[_]: Sync: LiftIO](
       )
       cogAssetNode = CogAssetNode(
         cogAsset,
-        tileRequest.bands
+        tileRequest.singleBand map { sb =>
+          List(sb.value)
+        } getOrElse {
+          tileRequest.bands
+        }
       )
       histograms <- EitherT.liftF[F, NF, List[Histogram[Int]]](
         LiftIO[F].liftIO(cogAssetNode.getHistograms)
       )
+      rs <- EitherT.liftF[F, NF, GeoTiffRasterSource] {
+        LiftIO[F].liftIO(cogAssetNode.getRasterSource)
+      }
       tile <- EitherT {
         val eval = LayerTms.identity(cogAssetNode)
         LiftIO[F].liftIO(eval(z, x, y).map {
-          case Valid(mbt: MultibandTile) => {
+          case Valid(mbt: MultibandTile) if mbt.bandCount > 1 => {
             Either.right {
               val bands = mbt.bands.zip(histograms).map {
                 case (tile, histogram) =>
@@ -87,6 +98,15 @@ class TileService[F[_]: Sync: LiftIO](
                 .bytes
             }
           }
+          case Valid(mbt: MultibandTile) if mbt.bandCount == 1 =>
+            val cmap = rs.tiff.options.colorMap getOrElse {
+              val greyscaleRamp = greyscale(255)
+              val hist          = histograms(0)
+              val breaks        = hist.quantileBreaks(100)
+              greyscaleRamp.toColorMap(Vector(breaks(0), breaks(99)))
+            }
+            val renderedTile = cmap.render(mbt.band(0))
+            Either.right(renderedTile.renderPng.bytes)
           case Invalid(e) => Either.left(NF(s"Could not produce tile: $e"))
         })
       }

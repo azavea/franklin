@@ -11,6 +11,7 @@ import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.json.circe._
+import eu.timepit.refined.types.numeric.NonNegInt
 
 class TileEndpoints(enableTiles: Boolean) {
 
@@ -34,6 +35,7 @@ class TileEndpoints(enableTiles: Boolean) {
       .and(query[Option[Int]]("blueBand"))
       .and(query[Option[Quantile]]("upperQuantile"))
       .and(query[Option[Quantile]]("lowerQuantile"))
+      .and(query[Option[NonNegInt]]("singleBand"))
       .mapTo(ItemRasterTileRequest)
 
   val itemRasterTileEndpoint: Endpoint[ItemRasterTileRequest, NotFound, Array[Byte], Nothing] =

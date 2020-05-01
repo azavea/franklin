@@ -1,5 +1,7 @@
 package com.azavea.franklin.datamodel
 
+import eu.timepit.refined.types.numeric.NonNegInt
+
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -24,7 +26,8 @@ case class ItemRasterTileRequest(
     greenBandOption: Option[Int],
     blueBandOption: Option[Int],
     upperQuantileOption: Option[Quantile],
-    lowerQuantileOption: Option[Quantile]
+    lowerQuantileOption: Option[Quantile],
+    singleBand: Option[NonNegInt]
 ) extends TileMatrixRequest {
 
   val collection = urlDecode(collectionRaw)
