@@ -9,4 +9,4 @@ COPY ./target/scala-2.12/franklin-api-assembly.jar /var/lib/franklin/
 USER franklin
 WORKDIR /var/lib/franklin
 
-ENTRYPOINT ["java", "-jar", "franklin-api-assembly.jar"]
+ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-jar", "franklin-api-assembly.jar"]
