@@ -50,9 +50,14 @@ class CollectionItemsService[F[_]: Sync](
         .list
         .transact(xa)
     } yield {
+      val updatedItems = enableTiles match {
+        case true =>
+          items map { item => item.addTilesLink(apiHost, collectionId, item.id) }
+        case _ => items
+      }
       val response = Json.obj(
         ("type", Json.fromString("FeatureCollection")),
-        ("features", items.asJson)
+        ("features", updatedItems.asJson)
       )
       Either.right(response)
     }
