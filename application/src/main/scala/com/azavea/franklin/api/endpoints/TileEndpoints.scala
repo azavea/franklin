@@ -6,6 +6,7 @@ import com.azavea.franklin.datamodel.{
   Quantile
 }
 import com.azavea.franklin.error.NotFound
+import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.Json
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
@@ -34,6 +35,7 @@ class TileEndpoints(enableTiles: Boolean) {
       .and(query[Option[Int]]("blueBand"))
       .and(query[Option[Quantile]]("upperQuantile"))
       .and(query[Option[Quantile]]("lowerQuantile"))
+      .and(query[Option[NonNegInt]]("singleBand"))
       .mapTo(ItemRasterTileRequest)
 
   val itemRasterTileEndpoint: Endpoint[ItemRasterTileRequest, NotFound, Array[Byte], Nothing] =
