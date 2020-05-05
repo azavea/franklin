@@ -107,7 +107,7 @@ class CollectionItemsService[F[_]: Sync](
 
   def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, (Json, String)]] = {
     val fallbackCollectionLink = StacLink(
-      s"$apiHost/api/collections/$collectionId",
+      s"$apiHost/collections/$collectionId",
       StacLinkType.Parent,
       Some(`application/json`),
       Some("Parent collection"),
