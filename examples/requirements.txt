@@ -1,0 +1,4 @@
+boto3==1.13.0
+jupyter==1.0.0
+requests==2.23.0
+-e git+https://github.com/azavea/pystac.git@rde/update-to-0.9#egg=pystac
