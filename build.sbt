@@ -48,7 +48,7 @@ lazy val commonSettings = Seq(
 
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
 scalafixDependencies in ThisBuild +=
-  "com.nequissimus" %% "sort-imports" % "0.4.1"
+  "com.nequissimus" %% "sort-imports" % "0.5.0"
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
@@ -142,6 +142,7 @@ lazy val applicationDependencies = Seq(
   "org.tpolecat"                %% "doobie-scalatest"         % Versions.DoobieVersion % "test",
   "org.tpolecat"                %% "doobie-specs2"            % Versions.DoobieVersion % "test",
   "org.typelevel"               %% "cats-core"                % Versions.CatsVersion,
+  "org.typelevel"               %% "cats-kernel"              % Versions.CatsVersion,
   "org.typelevel"               %% "cats-effect"              % Versions.CatsEffectVersion,
   "org.typelevel"               %% "cats-free"                % Versions.CatsVersion
 )

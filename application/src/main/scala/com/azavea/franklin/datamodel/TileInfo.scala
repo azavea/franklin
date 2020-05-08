@@ -1,5 +1,6 @@
 package com.azavea.franklin.datamodel
 
+import cats.implicits._
 import com.azavea.stac4s._
 import io.circe.generic.JsonCodec
 
@@ -26,17 +27,8 @@ object TileInfo {
     val spatialExtent = SpatialExtent(List(item.bbox))
     val stacExtent    = StacExtent(spatialExtent, Interval(List.empty))
 
-    // TODO: just `collect` this
-    val cogAssets = item.assets.filter {
-      case (_, asset) =>
-        asset._type match {
-          case Some(`image/cog`) => true
-          case _                 => false
-        }
-    }
-
-    val cogTileLinks = cogAssets.map {
-      case (key, _) =>
+    val cogTileLinks = item.assets.collect {
+      case (key, asset) if asset._type === Some(`image/cog`) =>
         val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
         val encodedKey    = URLEncoder.encode(key, StandardCharsets.UTF_8.toString)
         val href =
@@ -44,6 +36,7 @@ object TileInfo {
         val mediaType = Some(`image/png`)
         TileSetLink(href, StacLinkType.Item, mediaType, None, Some(true))
     }
+
     cogTileLinks.isEmpty match {
       case false =>
         Some(TileInfo(stacExtent, None, None, List(webMercatorQuadLink), cogTileLinks.toList))

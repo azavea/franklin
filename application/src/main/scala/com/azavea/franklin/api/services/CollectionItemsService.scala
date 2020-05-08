@@ -43,15 +43,21 @@ class CollectionItemsService[F[_]: Sync](
 ) extends Http4sDsl[F] {
 
   def listCollectionItems(collectionId: String): F[Either[Unit, Json]] = {
+    val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
       items <- StacItemDao.query
-        .filter(StacItemDao.collectionFilter(collectionId))
+        .filter(StacItemDao.collectionFilter(decodedId))
         .list
         .transact(xa)
     } yield {
+      val updatedItems = enableTiles match {
+        case true =>
+          items map { item => item.addTilesLink(apiHost, collectionId, item.id) }
+        case _ => items
+      }
       val response = Json.obj(
         ("type", Json.fromString("FeatureCollection")),
-        ("features", items.asJson)
+        ("features", updatedItems.asJson)
       )
       Either.right(response)
     }
@@ -106,7 +112,7 @@ class CollectionItemsService[F[_]: Sync](
 
   def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, (Json, String)]] = {
     val fallbackCollectionLink = StacLink(
-      s"$apiHost/api/collections/$collectionId",
+      s"$apiHost/collections/$collectionId",
       StacLinkType.Parent,
       Some(`application/json`),
       Some("Parent collection"),
