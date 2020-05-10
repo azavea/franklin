@@ -14,7 +14,7 @@ object Versions {
   val GeoTrellisVersion       = "3.3.0"
   val GeotrellisServerVersion = "4.1.0"
   val GuavaVersion            = "23.0"
-  val HikariVersion           = "3.4.4"
+  val HikariVersion           = "3.4.5"
   val Http4sVersion           = "0.21.3"
   val JtsVersion              = "1.16.1"
   val Log4CatsVersion         = "1.0.1"
