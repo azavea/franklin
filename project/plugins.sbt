@@ -1,4 +1,4 @@
-addSbtPlugin("ch.epfl.scala"             % "sbt-bloop"                 % "1.4.0-RC1")
+addSbtPlugin("ch.epfl.scala"             % "sbt-bloop"                 % "1.4.0")
 addSbtPlugin("org.lyranthe.sbt"          % "partial-unification"       % "1.1.0")
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"              % "0.1.11")
 addSbtPlugin("io.spray"                  % "sbt-revolver"              % "0.9.1")
