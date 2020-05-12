@@ -7,14 +7,17 @@ import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,
   CollectionItemEndpoints,
   LandingPageEndpoints,
-  SearchEndpoints
+  SearchEndpoints,
+  TileEndpoints
 }
 import com.azavea.franklin.api.services.{
   CollectionItemsService,
   CollectionsService,
   LandingPageService,
-  SearchService
+  SearchService,
+  TileService
 }
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import org.http4s.implicits._
@@ -25,7 +28,21 @@ import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
+import scala.concurrent.ExecutionContext
+
+import java.util.concurrent.Executors
+
 object Server extends IOApp {
+
+  val franklinIO: ContextShift[IO] = IO.contextShift(
+    ExecutionContext.fromExecutor(
+      Executors.newCachedThreadPool(
+        new ThreadFactoryBuilder().setNameFormat("raster-io-%d").build()
+      )
+    )
+  )
+
+  override implicit val contextShift: ContextShift[IO] = franklinIO
 
   private val banner: List[String] =
     """
@@ -62,12 +79,20 @@ $$$$
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       )
-      allEndpoints      = LandingPageEndpoints.endpoints ++ CollectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints
+      collectionEndpoints = new CollectionEndpoints(
+        apiConfig.enableTiles
+      )
+      allEndpoints = LandingPageEndpoints.endpoints ++ collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints ++ new TileEndpoints(
+        apiConfig.enableTiles
+      ).endpoints
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes = new LandingPageService[IO](apiConfig).routes
       searchRoutes      = new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-      collectionRoutes = new CollectionsService[IO](xa).routes <+> new CollectionItemsService[IO](
+      tileRoutes        = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+      collectionRoutes = new CollectionsService[IO](xa, apiConfig.apiHost, apiConfig.enableTiles).routes <+> new CollectionItemsService[
+        IO
+      ](
         xa,
         apiConfig.apiHost,
         apiConfig.enableTransactions,
@@ -76,13 +101,14 @@ $$$$
       router = CORS(
         Router(
           "/" -> ResponseLogger.httpRoutes(false, false)(
-            landingPageRoutes <+> collectionRoutes <+> searchRoutes <+> docRoutes
+            landingPageRoutes <+> collectionRoutes <+> searchRoutes <+> tileRoutes <+> docRoutes
           )
         )
       ).orNotFound
       server <- {
         BlazeServerBuilder[IO]
           .bindHttp(apiConfig.internalPort.value, "0.0.0.0")
+          .withConnectorPoolSize(128)
           .withBanner(banner)
           .withHttpApp(router)
           .resource

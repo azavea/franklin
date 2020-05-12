@@ -43,7 +43,7 @@ class CollectionItemEndpoints(enableTransactions: Boolean, enableTiles: Boolean)
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .out(header[String]("ETag"))
       .description("An item's tile endpoints")
-      .name("collectionItemUnique")
+      .name("collectionItemTiles")
 
   val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Nothing] =
     base.post
