@@ -105,8 +105,9 @@ $$$$
           )
         )
       ).orNotFound
+      serverBuilderBlocker <- Blocker[IO]
       server <- {
-        BlazeServerBuilder[IO]
+        BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)
           .bindHttp(apiConfig.internalPort.value, "0.0.0.0")
           .withConnectorPoolSize(128)
           .withBanner(banner)

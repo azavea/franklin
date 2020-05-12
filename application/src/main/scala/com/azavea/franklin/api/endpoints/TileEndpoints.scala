@@ -41,7 +41,7 @@ class TileEndpoints(enableTiles: Boolean) {
   val itemRasterTileEndpoint: Endpoint[ItemRasterTileRequest, NotFound, Array[Byte], Nothing] =
     endpoint.get
       .in(itemRasterTileParameters)
-      .out(binaryBody[Array[Byte]])
+      .out(rawBinaryBody[Array[Byte]])
       .out(header("content-type", "image/png"))
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .description("Raster Tile endpoint for Collection Item")
@@ -51,7 +51,7 @@ class TileEndpoints(enableTiles: Boolean) {
       : Endpoint[MapboxVectorTileFootprintRequest, NotFound, Array[Byte], Nothing] =
     endpoint.get
       .in(collectionFootprintTilePath.mapTo(MapboxVectorTileFootprintRequest))
-      .out(binaryBody[Array[Byte]])
+      .out(rawBinaryBody[Array[Byte]])
       .out(header("content-type", "application/vnd.mapbox-vector-tile"))
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .description("MVT endpoint for a collection's footprint")

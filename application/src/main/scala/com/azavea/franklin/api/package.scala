@@ -2,6 +2,7 @@ package com.azavea.franklin.api
 
 import cats.implicits._
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
+import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
 import geotrellis.vector.Geometry
 import io.circe.{Encoder, Json}
@@ -18,6 +19,9 @@ package object schemas {
   )
   implicit val schemaForGeometry: Schema[Geometry] = Schema(schemaForCirceJson.schemaType)
 
+  implicit val schemaForStacItem: Schema[StacItem]         = Schema(schemaForCirceJson.schemaType)
+  implicit val schemaForInvalidPatch: Schema[InvalidPatch] = Schema(schemaForCirceJson.schemaType)
+
   def decode(s: String): DecodeResult[TemporalExtent] = {
     temporalExtentFromString(s) match {
       case Left(e)  => DecodeResult.Mismatch("valid timestamp", e)
@@ -26,7 +30,7 @@ package object schemas {
   }
 
   // or, using the type alias for codecs in the TextPlain format and String as the raw value:
-  implicit val teCodec: PlainCodec[TemporalExtent] = Codec.stringPlainCodecUtf8
+  implicit val teCodec: PlainCodec[TemporalExtent] = Codec.string
     .mapDecode(decode)(temporalExtentToString)
 
   def bboxFromString(s: String): DecodeResult[Bbox] = {
@@ -52,14 +56,14 @@ package object schemas {
   }
 
   implicit val bboxCodec: PlainCodec[Bbox] =
-    Codec.stringPlainCodecUtf8.mapDecode(bboxFromString)(bboxToString)
+    Codec.string.mapDecode(bboxFromString)(bboxToString)
 
   def commaSeparatedStrings(s: String): DecodeResult[List[String]] =
     DecodeResult.Value(s.split(",").toList)
   def listToCSV(collections: List[String]): String = collections.mkString(",")
 
   implicit val csvListCodec: PlainCodec[List[String]] =
-    Codec.stringPlainCodecUtf8.mapDecode(commaSeparatedStrings)(listToCSV)
+    Codec.string.mapDecode(commaSeparatedStrings)(listToCSV)
 
   def decStacItem(json: Json): DecodeResult[StacItem] = json.as[StacItem] match {
     case Left(err) => DecodeResult.Error(err.getMessage, err)
