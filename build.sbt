@@ -90,7 +90,6 @@ lazy val applicationDependencies = Seq(
   "com.monovore"                %% "decline"                  % Versions.DeclineVersion,
   "com.monovore"                %% "decline-refined"          % Versions.DeclineVersion,
   "com.propensive"              %% "magnolia"                 % Versions.MagnoliaVersion,
-  "com.propensive"              %% "mercator"                 % Versions.MercatorVersion,
   "com.softwaremill.sttp.model" %% "core"                     % Versions.SttpModelVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-core"               % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-http4s-server"      % Versions.TapirVersion,

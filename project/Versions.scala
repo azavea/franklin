@@ -20,7 +20,6 @@ object Versions {
   val Log4CatsVersion         = "1.0.1"
   val MagnoliaVersion         = "0.16.0"
   val MamlVersion             = "0.6.0"
-  val MercatorVersion         = "0.3.0"
   val Postgis                 = "2.5.0"
   val PureConfig              = "0.12.1"
   val Refined                 = "0.9.14"
