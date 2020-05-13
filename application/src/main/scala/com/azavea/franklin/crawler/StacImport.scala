@@ -254,7 +254,23 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
       _       <- IO { println("Read catalog") }
       collections <- catalog.links
         .filter(_.rel == StacLinkType.Child)
-        .traverse(c => readCollectionWrapper(makeAbsPath(catalogRoot, c.href), None))
+        .traverse { c =>
+          def links(path: String): IO[List[StacLink]] =
+            readPath[StacCollection](path).map(_ => List(c)) orElse {
+              readPath[StacCatalog](path)
+                .flatMap {
+                  _.links
+                    .filter(_.rel == StacLinkType.Child)
+                    .traverse { c => links(makeAbsPath(catalogRoot, c.href)) }
+                    .map(_.flatten)
+                }
+            }
+
+          links(makeAbsPath(catalogRoot, c.href))
+        }
+        .flatMap {
+          _.flatten.traverse(c => readCollectionWrapper(makeAbsPath(catalogRoot, c.href), None))
+        }
       _ <- collections
         .traverse(c => {
           insertCollection(c.updateLinks(serverHost)) map { _ =>
