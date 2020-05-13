@@ -255,22 +255,16 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
       collections <- catalog.links
         .filter(_.rel == StacLinkType.Child)
         .traverse { c =>
-          def links(path: String): IO[List[StacLink]] = {
-            // lets check if it is a collection
-            readPath[StacCollection](path).attempt.flatMap {
-              // if that is a collection => do nothing
-              case Right(_) => IO.pure(List(c))
-              // if that is not a collection, than mb it is a catalog?
-              case Left(_) =>
-                readPath[StacCatalog](path)
-                  .flatMap {
-                    _.links
-                      .filter(_.rel == StacLinkType.Child)
-                      .traverse { c => links(makeAbsPath(catalogRoot, c.href)) }
-                      .map(_.flatten)
-                  }
+          def links(path: String): IO[List[StacLink]] =
+            readPath[StacCollection](path).map(_ => List(c)) orElse {
+              readPath[StacCatalog](path)
+                .flatMap {
+                  _.links
+                    .filter(_.rel == StacLinkType.Child)
+                    .traverse { c => links(makeAbsPath(catalogRoot, c.href)) }
+                    .map(_.flatten)
+                }
             }
-          }
 
           links(makeAbsPath(catalogRoot, c.href))
         }
