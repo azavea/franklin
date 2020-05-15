@@ -30,6 +30,8 @@ object SearchEndpoints {
             Option[String]
         )) => {
           val (temporalExtent, bbox, collections, ids, limit, next) = tup
+          // query is empty here because entering query extension fields in url params is
+          // completely insane
           SearchFilters(
             bbox,
             temporalExtent,
@@ -37,7 +39,8 @@ object SearchEndpoints {
             collections getOrElse Nil,
             ids getOrElse Nil,
             limit,
-            next
+            next,
+            Map.empty
           )
         }
       )(sf => (sf.datetime, sf.bbox, Some(sf.collections), Some(sf.items), sf.limit, sf.next))

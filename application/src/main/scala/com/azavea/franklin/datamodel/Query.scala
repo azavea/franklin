@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
+import io.circe.syntax._
 
 sealed abstract class Query
 
@@ -26,35 +27,78 @@ object Query {
   private def fromString(s: String, f: NonEmptyString => Query) =
     NonEmptyString.from(s).toOption.map(f)
 
-  def queriesFromMap(unparsed: Map[String, Json]) = unparsed flatMap {
-    case ("eq", json) =>
-      json.asString map { fromString(_, EqualsString.apply) } orElse {
-        json.asNumber map { num => EqualsNumber(num.toDouble) }
-      }
-    case ("neq", json) =>
-      json.asString map { fromString(_, NotEqualToString.apply) } orElse {
-        json.asNumber map { num => NotEqualToNumber(num.toDouble) }
-      }
-    case ("lt", json)         => json.asNumber map { num => LessThan(num.toDouble) }
-    case ("lte", json)        => json.asNumber map { num => LessThanEqual(num.toDouble) }
-    case ("gt", json)         => json.asNumber map { num => GreaterThan(num.toDouble) }
-    case ("gte", json)        => json.asNumber map { num => GreaterThanEqual(num.toDouble) }
-    case ("startsWith", json) => json.asString flatMap { fromString(_, StartsWith.apply) }
-    case ("endsWith", json)   => json.asString flatMap { fromString(_, EndsWith.apply) }
-    case ("contains", json)   => json.asString flatMap { fromString(_, Contains.apply) }
-    case ("in", json) =>
-      json.asArray flatMap { vec =>
-        // maybe it's a non-empty list of strings
-        (vec traverse { js =>
-          js.asString flatMap { NonEmptyString.from(_).toOption }
-        } flatMap { _.toNev } map { vec =>
-          InStrings(vec.toNonEmptyList)
-        }) orElse
-          // or maybe it's a non-empty list of numbers
-          (vec traverse { js =>
-            js.asNumber map { _.toDouble }
-          } flatMap { _.toNev } map { vec => InNumbers(vec.toNonEmptyList) })
-      }
-    case _ => None
+  private def errMessage(operator: String, json: Json): String =
+    s"Cannot construct `$operator` query with $json"
+
+  def queriesFromMap(unparsed: Map[String, Json]): Either[String, List[Query]] =
+    (unparsed.toList traverse {
+      case (op @ "eq", json) =>
+        Either.fromOption(json.asString flatMap { fromString(_, EqualsString.apply) } orElse {
+          json.asNumber map { num => EqualsNumber(num.toDouble) }
+        }, errMessage(op, json))
+      case (op @ "neq", json) =>
+        Either.fromOption(json.asString flatMap { fromString(_, NotEqualToString.apply) } orElse {
+          json.asNumber map { num => NotEqualToNumber(num.toDouble) }
+        }, errMessage(op, json))
+      case (op @ "lt", json) =>
+        Either.fromOption(json.asNumber map { num => LessThan(num.toDouble) }, errMessage(op, json))
+      case (op @ "lte", json) =>
+        Either.fromOption(
+          json.asNumber map { num => LessThanEqual(num.toDouble) },
+          errMessage(op, json)
+        )
+      case (op @ "gt", json) =>
+        Either.fromOption(
+          json.asNumber map { num => GreaterThan(num.toDouble) },
+          errMessage(op, json)
+        )
+      case (op @ "gte", json) =>
+        Either.fromOption(
+          json.asNumber map { num => GreaterThanEqual(num.toDouble) },
+          errMessage(op, json)
+        )
+      case (op @ "startsWith", json) =>
+        Either.fromOption(
+          json.asString flatMap { fromString(_, StartsWith.apply) },
+          errMessage(op, json)
+        )
+      case (op @ "endsWith", json) =>
+        Either.fromOption(
+          json.asString flatMap { fromString(_, EndsWith.apply) },
+          errMessage(op, json)
+        )
+      case (op @ "contains", json) =>
+        Either.fromOption(
+          json.asString flatMap { fromString(_, Contains.apply) },
+          errMessage(op, json)
+        )
+      case (op @ "in", json) =>
+        Either.fromOption(
+          json.asArray flatMap { vec =>
+            // maybe it's a non-empty list of strings
+            (vec traverse { js =>
+              js.asString flatMap { NonEmptyString.from(_).toOption }
+            } flatMap { _.toNev } map { vec =>
+              InStrings(vec.toNonEmptyList)
+            }) orElse
+              // or maybe it's a non-empty list of numbers
+              (vec traverse { js =>
+                js.asNumber map { _.toDouble }
+              } flatMap { _.toNev } map { vec => InNumbers(vec.toNonEmptyList) })
+          },
+          errMessage(op, json)
+        )
+      case (k, _) => Left(s"$k is not a valid operator")
+    })
+
+  implicit val encQuery: Encoder[List[Query]] = new Encoder[List[Query]] {
+
+    def apply(queries: List[Query]): Json = queries match {
+      case _ => ().asJson
+    }
+  }
+
+  implicit val decQueries: Decoder[List[Query]] = Decoder[JsonObject].emap { jsonObj =>
+    queriesFromMap(jsonObj.toMap)
   }
 }
