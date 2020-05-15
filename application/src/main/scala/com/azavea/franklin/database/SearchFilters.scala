@@ -2,7 +2,6 @@ package com.azavea.franklin.database
 
 import com.azavea.franklin.datamodel.Query
 import com.azavea.stac4s.{Bbox, TemporalExtent}
-
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
 import io.circe.generic.semiauto._
