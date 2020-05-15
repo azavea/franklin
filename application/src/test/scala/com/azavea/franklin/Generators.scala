@@ -4,6 +4,7 @@ import java.time.Instant
 
 import org.scalacheck.cats.implicits._
 import cats.implicits._
+import com.azavea.franklin.datamodel._
 import com.azavea.franklin.database.SearchFilters
 import org.scalacheck._
 import com.azavea.stac4s._
@@ -69,7 +70,8 @@ trait Generators {
       Gen.const(List.empty[String]),
       Gen.const(List.empty[String]),
       Gen.option(Gen.choose(1, 20)),
-      Gen.const[Option[String]](None)
+      Gen.const[Option[String]](None),
+      Gen.const(Map.empty[String, List[Query]])
     ).mapN(SearchFilters.apply)
   }
 
