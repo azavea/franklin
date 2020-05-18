@@ -139,6 +139,7 @@ lazy val applicationDependencies = Seq(
   "org.tpolecat"                %% "doobie-hikari"            % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-postgres"          % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-postgres-circe"    % Versions.DoobieVersion,
+  "org.tpolecat"                %% "doobie-refined"           % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-scalatest"         % Versions.DoobieVersion % "test",
   "org.tpolecat"                %% "doobie-specs2"            % Versions.DoobieVersion % "test",
   "org.typelevel"               %% "cats-core"                % Versions.CatsVersion,

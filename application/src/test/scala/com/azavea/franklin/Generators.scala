@@ -2,12 +2,14 @@ package com.azavea.franklin
 
 import java.time.Instant
 
+import cats.data.NonEmptyList
 import org.scalacheck.cats.implicits._
 import cats.implicits._
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.database.SearchFilters
 import org.scalacheck._
 import com.azavea.stac4s._
+import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.{Geometry, Point, Polygon}
 import org.scalacheck.Arbitrary.arbitrary
 import com.azavea.franklin.api.schemas._
@@ -58,6 +60,31 @@ trait Generators {
       }
   }
 
+  private def nonEmptyAlphaStringGen: Gen[String] =
+    Gen.nonEmptyListOf(Gen.alphaChar) map { _.mkString("") }
+
+  private def nonEmptyAlphaRefinedStringGen: Gen[NonEmptyString] =
+    nonEmptyAlphaStringGen map NonEmptyString.unsafeFrom
+
+  private def nonEmptyListGen[T](g: Gen[T]): Gen[NonEmptyList[T]] =
+    Gen.nonEmptyListOf(g) map { NonEmptyList.fromListUnsafe }
+
+  private def queryGen: Gen[Query] = Gen.oneOf(
+    nonEmptyAlphaRefinedStringGen map EqualsString.apply,
+    arbitrary[Double] map EqualsNumber.apply,
+    nonEmptyAlphaRefinedStringGen map NotEqualToString.apply,
+    arbitrary[Double] map NotEqualToNumber.apply,
+    arbitrary[Double] map GreaterThan.apply,
+    arbitrary[Double] map GreaterThanEqual.apply,
+    arbitrary[Double] map LessThan.apply,
+    arbitrary[Double] map LessThanEqual.apply,
+    nonEmptyAlphaRefinedStringGen map StartsWith.apply,
+    nonEmptyAlphaRefinedStringGen map EndsWith.apply,
+    nonEmptyAlphaRefinedStringGen map Contains.apply,
+    nonEmptyListGen(nonEmptyAlphaRefinedStringGen) map InStrings.apply,
+    nonEmptyListGen(arbitrary[Double]) map InNumbers.apply
+  )
+
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary { instantGen }
 
   implicit val arbGeometry: Arbitrary[Geometry] = Arbitrary { rectangleGen }
@@ -71,7 +98,7 @@ trait Generators {
       Gen.const(List.empty[String]),
       Gen.option(Gen.choose(1, 20)),
       Gen.const[Option[String]](None),
-      Gen.const(Map.empty[String, List[Query]])
+      Gen.mapOf((nonEmptyAlphaStringGen, Gen.nonEmptyListOf(queryGen)).tupled)
     ).mapN(SearchFilters.apply)
   }
 

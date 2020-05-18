@@ -35,6 +35,7 @@ object SearchFilters {
         next              <- c.downField("next").as[Option[String]]
         query             <- c.get[Map[String, List[Query]]]("query")
       } yield {
+        println(s"Query is: $query")
         SearchFilters(
           bbox,
           datetime,
