@@ -1,13 +1,12 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel._
-
 import cats.implicits._
+import com.azavea.franklin.datamodel._
 import com.azavea.stac4s.TemporalExtent
-import doobie.{Query => _, _}
 import doobie.implicits._
 import doobie.implicits.legacy.instant._
 import doobie.refined.implicits._
+import doobie.{Query => _, _}
 import geotrellis.vector.Projected
 
 trait FilterHelpers {
