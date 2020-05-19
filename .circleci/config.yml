@@ -14,7 +14,7 @@ jobs:
       - image: circleci/openjdk:11-jdk
         environment:
           - POSTGRES_URL=jdbc:postgresql://database.service.internal/
-      - image: quay.io/azavea/postgis:2.3-postgres9.6-slim
+      - image: quay.io/azavea/postgis:3-postgres12.2-slim
         name: database.service.internal
         environment:
           - POSTGRES_USER=franklin
