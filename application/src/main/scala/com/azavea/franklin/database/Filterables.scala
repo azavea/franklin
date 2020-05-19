@@ -32,7 +32,7 @@ trait FilterHelpers {
 
     def toFilterFragment(field: String) = {
       val fieldFragment        = Fragment.const(s"item -> 'properties' ->> '$field'")
-      val numericFieldFragment = fieldFragment ++ fr":: float8"
+      val numericFieldFragment = fr"(" ++ fieldFragment ++ fr"):: float8"
       query match {
         case EqualsString(value) =>
           fieldFragment ++ fr"= $value"
@@ -45,7 +45,7 @@ trait FilterHelpers {
         case GreaterThan(floor) =>
           numericFieldFragment ++ fr"> $floor"
         case GreaterThanEqual(floor) =>
-          numericFieldFragment ++ fr"$floor"
+          numericFieldFragment ++ fr">= $floor"
         case LessThan(ceiling) =>
           numericFieldFragment ++ fr"< $ceiling"
         case LessThanEqual(ceiling) =>
