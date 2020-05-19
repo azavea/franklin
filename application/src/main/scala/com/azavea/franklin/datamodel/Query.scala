@@ -93,9 +93,24 @@ object Query {
 
   implicit val encQuery: Encoder[List[Query]] = new Encoder[List[Query]] {
 
-    def apply(queries: List[Query]): Json = queries match {
-      case _ => ().asJson
-    }
+    def apply(queries: List[Query]): Json =
+      Map(
+        (queries map {
+          case EqualsString(value)     => "eq"         -> value.asJson
+          case EqualsNumber(value)     => "eq"         -> value.asJson
+          case NotEqualToString(value) => "neq"        -> value.asJson
+          case NotEqualToNumber(value) => "neq"        -> value.asJson
+          case GreaterThan(floor)      => "gt"         -> floor.asJson
+          case GreaterThanEqual(floor) => "gte"        -> floor.asJson
+          case LessThan(ceiling)       => "lt"         -> ceiling.asJson
+          case LessThanEqual(ceiling)  => "lte"        -> ceiling.asJson
+          case StartsWith(prefix)      => "startsWith" -> prefix.asJson
+          case EndsWith(postfix)       => "endsWith"   -> postfix.asJson
+          case Contains(substring)     => "contains"   -> substring.asJson
+          case InStrings(values)       => "in"         -> values.asJson
+          case InNumbers(values)       => "in"         -> values.asJson
+        }): _*
+      ).asJson
   }
 
   implicit val decQueries: Decoder[List[Query]] = Decoder[JsonObject].emap { jsonObj =>
