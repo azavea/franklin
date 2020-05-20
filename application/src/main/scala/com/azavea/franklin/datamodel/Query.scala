@@ -8,16 +8,17 @@ import io.circe.syntax._
 
 sealed abstract class Query
 
-case class Equals(value: Json)                 extends Query
-case class NotEqualTo(value: Json)             extends Query
-case class GreaterThan(floor: Json)            extends Query
-case class GreaterThanEqual(floor: Json)       extends Query
-case class LessThan(ceiling: Json)             extends Query
-case class LessThanEqual(ceiling: Json)        extends Query
-case class StartsWith(prefix: NonEmptyString)  extends Query
-case class EndsWith(postfix: NonEmptyString)   extends Query
-case class Contains(substring: NonEmptyString) extends Query
-case class In(values: NonEmptyVector[Json])    extends Query
+case class Equals(value: Json)                    extends Query
+case class NotEqualTo(value: Json)                extends Query
+case class GreaterThan(floor: Json)               extends Query
+case class GreaterThanEqual(floor: Json)          extends Query
+case class LessThan(ceiling: Json)                extends Query
+case class LessThanEqual(ceiling: Json)           extends Query
+case class StartsWith(prefix: NonEmptyString)     extends Query
+case class EndsWith(postfix: NonEmptyString)      extends Query
+case class Contains(substring: NonEmptyString)    extends Query
+case class In(values: NonEmptyVector[Json])       extends Query
+case class Superset(values: NonEmptyVector[Json]) extends Query
 
 object Query {
 
@@ -73,6 +74,11 @@ object Query {
           json.asArray flatMap { _.toNev } map { vec => In(vec) },
           errMessage(op, json)
         )
+      case (op @ "superset", json) =>
+        Either.fromOption(
+          json.asArray flatMap { _.toNev } map { vec => Superset(vec) },
+          errMessage(op, json)
+        )
       case (k, _) => Left(s"$k is not a valid operator")
     })
 
@@ -91,6 +97,7 @@ object Query {
           case EndsWith(postfix)       => "endsWith"   -> postfix.asJson
           case Contains(substring)     => "contains"   -> substring.asJson
           case In(values)              => "in"         -> values.asJson
+          case Superset(values)        => "superset"   -> values.asJson
         }): _*
       ).asJson
   }

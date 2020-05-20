@@ -94,7 +94,13 @@ trait Generators {
       (nonEmptyAlphaStringGen, nonEmptyAlphaStringGen).tupled.map({
         case (k, v) => Map(k -> v).asJson
       })
-    ) map In.apply
+    ) map In.apply,
+    nonEmptyVectorGen(arbitrary[Int] map { _.asJson }) map Superset.apply,
+    nonEmptyVectorGen(
+      (nonEmptyAlphaStringGen, nonEmptyAlphaStringGen).tupled.map({
+        case (k, v) => Map(k -> v).asJson
+      })
+    ) map Superset.apply
   )
 
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary { instantGen }
