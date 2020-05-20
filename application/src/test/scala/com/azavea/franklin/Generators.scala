@@ -2,7 +2,7 @@ package com.azavea.franklin
 
 import java.time.Instant
 
-import cats.data.NonEmptyList
+import cats.data.NonEmptyVector
 import org.scalacheck.cats.implicits._
 import cats.implicits._
 import com.azavea.franklin.datamodel._
@@ -10,6 +10,7 @@ import com.azavea.franklin.database.SearchFilters
 import org.scalacheck._
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString
+import io.circe.syntax._
 import geotrellis.vector.{Geometry, Point, Polygon}
 import org.scalacheck.Arbitrary.arbitrary
 import com.azavea.franklin.api.schemas._
@@ -66,23 +67,34 @@ trait Generators {
   private def nonEmptyAlphaRefinedStringGen: Gen[NonEmptyString] =
     nonEmptyAlphaStringGen map NonEmptyString.unsafeFrom
 
-  private def nonEmptyListGen[T](g: Gen[T]): Gen[NonEmptyList[T]] =
-    Gen.nonEmptyListOf(g) map { NonEmptyList.fromListUnsafe }
+  private def nonEmptyVectorGen[T](g: Gen[T]): Gen[NonEmptyVector[T]] =
+    Gen.nonEmptyContainerOf[Vector, T](g) map { NonEmptyVector.fromVectorUnsafe }
 
   private def queryGen: Gen[Query] = Gen.oneOf(
-    nonEmptyAlphaRefinedStringGen map EqualsString.apply,
-    arbitrary[Double] map EqualsNumber.apply,
-    nonEmptyAlphaRefinedStringGen map NotEqualToString.apply,
-    arbitrary[Double] map NotEqualToNumber.apply,
-    arbitrary[Double] map GreaterThan.apply,
-    arbitrary[Double] map GreaterThanEqual.apply,
-    arbitrary[Double] map LessThan.apply,
-    arbitrary[Double] map LessThanEqual.apply,
+    nonEmptyAlphaRefinedStringGen map { s => Equals(s.asJson) },
+    arbitrary[Int] map { n => Equals(n.asJson) },
+    nonEmptyAlphaRefinedStringGen map { s => NotEqualTo(s.asJson) },
+    arbitrary[Int] map { n => NotEqualTo(n.asJson) },
+    Gen.const(Map("field" -> "value").asJson) map Equals.apply,
+    Gen.const(Map("field" -> "value").asJson) map NotEqualTo.apply,
+    arbitrary[Double] map { n => GreaterThan(n.asJson) },
+    arbitrary[Double] map { n => GreaterThanEqual(n.asJson) },
+    arbitrary[Double] map { n => LessThan(n.asJson) },
+    arbitrary[Double] map { n => LessThanEqual(n.asJson) },
+    nonEmptyAlphaStringGen map { s => GreaterThan(s.asJson) },
+    nonEmptyAlphaStringGen map { s => GreaterThanEqual(s.asJson) },
+    nonEmptyAlphaStringGen map { s => LessThan(s.asJson) },
+    nonEmptyAlphaStringGen map { s => LessThanEqual(s.asJson) },
     nonEmptyAlphaRefinedStringGen map StartsWith.apply,
     nonEmptyAlphaRefinedStringGen map EndsWith.apply,
     nonEmptyAlphaRefinedStringGen map Contains.apply,
-    nonEmptyListGen(nonEmptyAlphaRefinedStringGen) map InStrings.apply,
-    nonEmptyListGen(arbitrary[Double]) map InNumbers.apply
+    nonEmptyVectorGen(nonEmptyAlphaRefinedStringGen map { _.asJson }) map In.apply,
+    nonEmptyVectorGen(arbitrary[Int] map { _.asJson }) map In.apply,
+    nonEmptyVectorGen(
+      (nonEmptyAlphaStringGen, nonEmptyAlphaStringGen).tupled.map({
+        case (k, v) => Map(k -> v).asJson
+      })
+    ) map In.apply
   )
 
   implicit val arbInstant: Arbitrary[Instant] = Arbitrary { instantGen }

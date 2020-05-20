@@ -111,6 +111,7 @@ lazy val applicationDependencies = Seq(
   "io.circe"                    %% "circe-numbers"            % Versions.CirceVersion,
   "io.circe"                    %% "circe-parser"             % Versions.CirceVersion,
   "io.circe"                    %% "circe-refined"            % Versions.CirceVersion,
+  "io.circe"                    %% "circe-testing"            % Versions.CirceVersion % "test",
   "net.postgis"                 % "postgis-jdbc"              % Versions.Postgis,
   "net.postgis"                 % "postgis-geometry"          % Versions.Postgis,
   "org.flywaydb"                % "flyway-core"               % Versions.Flyway,

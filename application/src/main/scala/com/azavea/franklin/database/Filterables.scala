@@ -5,6 +5,7 @@ import com.azavea.franklin.datamodel._
 import com.azavea.stac4s.TemporalExtent
 import doobie.implicits._
 import doobie.implicits.legacy.instant._
+import doobie.postgres.circe.jsonb.implicits._
 import doobie.refined.implicits._
 import doobie.{Query => _, _}
 import geotrellis.vector.Projected
@@ -31,33 +32,27 @@ trait FilterHelpers {
   implicit class QueryWithFilter(query: Query) {
 
     def toFilterFragment(field: String) = {
-      val fieldFragment        = Fragment.const(s"item -> 'properties' ->> '$field'")
-      val numericFieldFragment = fr"(" ++ fieldFragment ++ fr"):: float8"
+      val fieldFragment = Fragment.const(s"item -> 'properties' -> '$field'")
       query match {
-        case EqualsString(value) =>
+        case Equals(value) =>
           fieldFragment ++ fr"= $value"
-        case EqualsNumber(value) =>
-          numericFieldFragment ++ fr"= $value"
-        case NotEqualToString(value) =>
+        case NotEqualTo(value) =>
           fieldFragment ++ fr"<> $value"
-        case NotEqualToNumber(value) =>
-          numericFieldFragment ++ fr"<> $value"
         case GreaterThan(floor) =>
-          numericFieldFragment ++ fr"> $floor"
+          fieldFragment ++ fr"> $floor"
         case GreaterThanEqual(floor) =>
-          numericFieldFragment ++ fr">= $floor"
+          fieldFragment ++ fr">= $floor"
         case LessThan(ceiling) =>
-          numericFieldFragment ++ fr"< $ceiling"
+          fieldFragment ++ fr"< $ceiling"
         case LessThanEqual(ceiling) =>
-          numericFieldFragment ++ fr"<= $ceiling"
+          fieldFragment ++ fr"<= $ceiling"
         case StartsWith(prefix) =>
           Fragment.const(s"starts_with(item ->> '$field', '$prefix')")
         case EndsWith(postfix) =>
           Fragment.const(s"right(item ->> '$field', ${postfix.value.length})") ++ fr"= $postfix"
         case Contains(substring) =>
           Fragment.const(s"strpos(item ->> '$field', '$substring') > 0")
-        case InStrings(values) => Fragments.in(fieldFragment, values)
-        case InNumbers(values) => Fragments.in(numericFieldFragment, values)
+        case In(values) => Fragments.in(fieldFragment, values)
       }
     }
   }
