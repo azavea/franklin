@@ -20,7 +20,7 @@ class SearchServiceSpec
   def is = s2"""
   This specification verifies that the Search Service can run without crashing
 
-  The model service should:
+  The search service should:
     - search with POST search filters         $postSearchFiltersExpectation
     - search with GET search filters          $getSearchFiltersExpectation
 """
