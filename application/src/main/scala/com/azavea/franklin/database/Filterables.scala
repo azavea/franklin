@@ -8,8 +8,8 @@ import doobie.implicits.legacy.instant._
 import doobie.postgres.circe.jsonb.implicits._
 import doobie.refined.implicits._
 import doobie.{Query => _, _}
-import io.circe.syntax._
 import geotrellis.vector.Projected
+import io.circe.syntax._
 
 trait FilterHelpers {
 
@@ -53,7 +53,7 @@ trait FilterHelpers {
           Fragment.const(s"right(item ->> '$field', ${postfix.value.length})") ++ fr"= $postfix"
         case Contains(substring) =>
           Fragment.const(s"strpos(item ->> '$field', '$substring') > 0")
-        case In(values) => Fragments.in(fieldFragment, values)
+        case In(values)       => Fragments.in(fieldFragment, values)
         case Superset(values) => fieldFragment ++ fr"@> ${values.asJson}"
       }
     }
