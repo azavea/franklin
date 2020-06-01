@@ -26,16 +26,14 @@ case class CollectionWrapper(
       s"${serverHost.value}/collections/$encodedCollectionId/items/$encodedItemId",
       StacLinkType.Self,
       Some(`application/geo+json`),
-      Some(item.id),
-      List.empty
+      Some(item.id)
     )
 
     val parentLink = StacLink(
       s"${serverHost.value}/collections/$encodedCollectionId/",
       StacLinkType.Parent,
       Some(`application/json`),
-      collection.title,
-      List.empty
+      collection.title
     )
 
     val collectionLink = parentLink.copy(rel = StacLinkType.Collection)
@@ -53,8 +51,7 @@ case class CollectionWrapper(
       s"${serverHost.value}/",
       StacLinkType.StacRoot,
       None,
-      None,
-      List.empty
+      None
     )
 
     val collectionId = URLEncoder.encode(value.id, StandardCharsets.UTF_8.toString)
@@ -66,8 +63,7 @@ case class CollectionWrapper(
         s"${serverHost.value}/collections/$collectionId/items/$itemId",
         StacLinkType.Item,
         Some(`application/geo+json`),
-        Some(item.id),
-        List.empty
+        Some(item.id)
       )
     }
 
@@ -77,8 +73,7 @@ case class CollectionWrapper(
         s"${serverHost.value}/collections/$encodedChildId/",
         StacLinkType.Child,
         Some(`application/json`),
-        child.value.title,
-        List.empty
+        child.value.title
       )
     }
 
@@ -89,8 +84,7 @@ case class CollectionWrapper(
           s"${serverHost.value}/collections/$encodedParentId/",
           StacLinkType.Parent,
           Some(`application/json`),
-          p.value.title,
-          List.empty
+          p.value.title
         )
       )
     }
@@ -99,8 +93,7 @@ case class CollectionWrapper(
       s"${serverHost.value}/collections/$collectionId/",
       StacLinkType.Self,
       Some(`application/json`),
-      value.title,
-      List.empty
+      value.title
     )
     val updatedLinks =
       selfLink :: rootLink :: filterLinks(value.links) ++ childrenLinks ++ itemLinks ++ parentLink

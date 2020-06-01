@@ -115,8 +115,7 @@ class CollectionItemsService[F[_]: Sync](
       s"$apiHost/collections/$collectionId",
       StacLinkType.Parent,
       Some(`application/json`),
-      Some("Parent collection"),
-      Nil
+      Some("Parent collection")
     )
     item.collection match {
       case Some(collId) =>

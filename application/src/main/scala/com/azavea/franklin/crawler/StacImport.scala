@@ -17,6 +17,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.Decoder
 import io.circe.JsonObject
 import io.circe.parser.decode
+import io.circe.syntax._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -129,16 +130,14 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
               parentCollectionHref,
               StacLinkType.Collection,
               Some(`application/json`),
-              None,
-              Nil
+              None
             )
             val derivedFromItemLink =
               StacLink(
                 derivedFromItemHref,
                 StacLinkType.VendorLinkType("derived_from"),
                 Some(`application/json`),
-                None,
-                Nil
+                None
               )
             val labelCollection = StacCollection(
               "0.9.0",
@@ -150,6 +149,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
               Proprietary(),
               Nil,
               inCollection.extent.copy(spatial = SpatialExtent(List(forItem.bbox))),
+              ().asJsonObject,
               forItem.properties,
               List(parentCollectionLink, derivedFromItemLink)
             )
@@ -170,7 +170,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
                   .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
                 None,
                 Some("Collection containing items for this item's label geojson asset"),
-                List(StacAssetRole.Data),
+                Set(StacAssetRole.Data),
                 Some(`application/json`)
               )
             )

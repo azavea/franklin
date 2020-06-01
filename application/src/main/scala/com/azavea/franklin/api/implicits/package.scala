@@ -31,8 +31,7 @@ package object implicits {
             s"$apiHost/collections/$collectionId/items/$encodedItemId/tiles",
             StacLinkType.VendorLinkType("tiles"),
             Some(`application/json`),
-            Some("Tile URLs for Item"),
-            List.empty
+            Some("Tile URLs for Item")
           )
           tileLink :: item.links
         }
@@ -49,8 +48,7 @@ package object implicits {
         s"$apiHost/collections/${collection.id}/tiles",
         StacLinkType.VendorLinkType("tiles"),
         Some(`application/json`),
-        Some("Tile URLs for Collection"),
-        List.empty
+        Some("Tile URLs for Collection")
       )
       collection.copy(links = tileLink :: collection.links)
     }
