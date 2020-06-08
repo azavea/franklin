@@ -47,7 +47,7 @@ object StacCollectionDao {
             ST_Transform(geom, 3857),
             ST_TileEnvelope(${request.z},${request.x},${request.y})
           ) AS geom,
-          item -> 'properties'
+          item -> 'properties' ->> 'class' as class
         FROM collection_items
         WHERE
           ST_Intersects(

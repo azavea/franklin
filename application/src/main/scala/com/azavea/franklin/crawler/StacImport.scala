@@ -1,5 +1,6 @@
 package com.azavea.franklin.crawler
 
+import cats.data.Validated.Invalid
 import cats.effect.IO
 import cats.implicits._
 import com.amazonaws.services.s3.{AmazonS3ClientBuilder, AmazonS3URI}
@@ -120,75 +121,79 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
     val geojsonAssets = forItem.assets.toList.filter {
       case (_, asset) => asset._type === Some(`application/geo+json`)
     }
-    println(
-      s"Extension decode result for path $fromPath:\n${forItem.getExtensionFields[LabelItemExtension]}"
-    )
-    println(s"GeoJSON assets are:\n${geojsonAssets}")
-    geojsonAssets.zipWithIndex traverse {
-      case ((assetKey, asset), idx) =>
-        readPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
-          featureCollection =>
-            val parentCollectionHref =
-              s"$serverHost/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
-            val derivedFromItemHref =
-              s"$parentCollectionHref/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
-            val parentCollectionLink = StacLink(
-              parentCollectionHref,
-              StacLinkType.Collection,
-              Some(`application/json`),
-              None
-            )
-            val derivedFromItemLink =
-              StacLink(
-                derivedFromItemHref,
-                StacLinkType.VendorLinkType("derived_from"),
-                Some(`application/json`),
-                None
-              )
-            val labelCollection = StacCollection(
-              "0.9.0",
-              Nil,
-              s"${forItem.id}-labels-${idx + 1}",
-              Some(s"${forItem.id} Labels"),
-              s"Labels for ${forItem.id}'s ${assetKey} asset",
-              Nil,
-              Proprietary(),
-              Nil,
-              inCollection.extent.copy(spatial = SpatialExtent(List(forItem.bbox))),
-              ().asJsonObject,
-              forItem.properties,
-              List(parentCollectionLink, derivedFromItemLink)
-            )
-            val featureItems = featureCollection.getAllFeatures[Feature[Geometry, JsonObject]] map {
-              feature =>
-                FeatureExtractor.toItem(
-                  feature,
-                  forItem,
-                  inCollection.id,
-                  labelCollection,
-                  serverHost
+    (geojsonAssets.nonEmpty, forItem.getExtensionFields[LabelItemExtension]) match {
+      case (true, Invalid(errs)) =>
+        logger.warn(
+          s"""$forItem is not a valid label item, so skipping geojson import.\n${errs.toList
+            .mkString("\n")}"""
+        ) map { _ => List.empty }
+      case _ =>
+        geojsonAssets.zipWithIndex traverse {
+          case ((assetKey, asset), idx) =>
+            readPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
+              featureCollection =>
+                val parentCollectionHref =
+                  s"$serverHost/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
+                val derivedFromItemHref =
+                  s"$parentCollectionHref/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
+                val parentCollectionLink = StacLink(
+                  parentCollectionHref,
+                  StacLinkType.Collection,
+                  Some(`application/json`),
+                  None
+                )
+                val derivedFromItemLink =
+                  StacLink(
+                    derivedFromItemHref,
+                    StacLinkType.VendorLinkType("derived_from"),
+                    Some(`application/json`),
+                    None
+                  )
+                val labelCollection = StacCollection(
+                  "0.9.0",
+                  Nil,
+                  s"${forItem.id}-labels-${idx + 1}",
+                  Some(s"${forItem.id} Labels"),
+                  s"Labels for ${forItem.id}'s ${assetKey} asset",
+                  Nil,
+                  Proprietary(),
+                  Nil,
+                  inCollection.extent.copy(spatial = SpatialExtent(List(forItem.bbox))),
+                  ().asJsonObject,
+                  forItem.properties,
+                  List(parentCollectionLink, derivedFromItemLink)
+                )
+                val featureItems =
+                  featureCollection.getAllFeatures[Feature[Geometry, JsonObject]] map { feature =>
+                    FeatureExtractor.toItem(
+                      feature,
+                      forItem,
+                      inCollection.id,
+                      labelCollection,
+                      serverHost
+                    )
+                  }
+
+                val newAsset = Map(
+                  s"Label collection ${idx + 1}" -> StacItemAsset(
+                    s"$serverHost/collections/${URLEncoder
+                      .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
+                    None,
+                    Some("Collection containing items for this item's label geojson asset"),
+                    Set(StacAssetRole.VendorAsset("data-collection")),
+                    Some(`application/json`)
+                  )
+                )
+                (
+                  newAsset,
+                  CollectionWrapper(
+                    labelCollection,
+                    None,
+                    Nil,
+                    featureItems.toList
+                  )
                 )
             }
-
-            val newAsset = Map(
-              s"Label collection ${idx + 1}" -> StacItemAsset(
-                s"$serverHost/collections/${URLEncoder
-                  .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
-                None,
-                Some("Collection containing items for this item's label geojson asset"),
-                Set(StacAssetRole.VendorAsset("data-collection")),
-                Some(`application/json`)
-              )
-            )
-            (
-              newAsset,
-              CollectionWrapper(
-                labelCollection,
-                None,
-                Nil,
-                featureItems.toList
-              )
-            )
         }
     }
   }
