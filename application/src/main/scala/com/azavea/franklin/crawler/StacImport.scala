@@ -6,6 +6,8 @@ import com.amazonaws.services.s3.{AmazonS3ClientBuilder, AmazonS3URI}
 import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 import com.azavea.stac4s.StacLinkType._
 import com.azavea.stac4s._
+import com.azavea.stac4s.extensions.label.LabelItemExtension
+import com.azavea.stac4s.syntax._
 import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -118,6 +120,10 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
     val geojsonAssets = forItem.assets.toList.filter {
       case (_, asset) => asset._type === Some(`application/geo+json`)
     }
+    println(
+      s"Extension decode result for path $fromPath:\n${forItem.getExtensionFields[LabelItemExtension]}"
+    )
+    println(s"GeoJSON assets are:\n${geojsonAssets}")
     geojsonAssets.zipWithIndex traverse {
       case ((assetKey, asset), idx) =>
         readPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
@@ -170,7 +176,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
                   .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
                 None,
                 Some("Collection containing items for this item's label geojson asset"),
-                Set(StacAssetRole.Data),
+                Set(StacAssetRole.VendorAsset("data-collection")),
                 Some(`application/json`)
               )
             )
