@@ -7,6 +7,7 @@ import com.azavea.franklin.datamodel.{
 }
 import com.azavea.franklin.error.NotFound
 import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.Json
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
@@ -23,6 +24,9 @@ class TileEndpoints(enableTiles: Boolean) {
 
   val collectionFootprintTilePath: EndpointInput[(String, Int, Int, Int)] =
     (basePath / path[String] / "footprint" / "WebMercatorQuad" / zxyPath)
+
+  val collectionFootprintTileParameters: EndpointInput[(String, Int, Int, Int, NonEmptyString)] =
+    collectionFootprintTilePath.and(query[NonEmptyString]("colorField"))
 
   val collectionFootprintTileJsonPath: EndpointInput[String] =
     (basePath / path[String] / "footprint" / "tile-json")
@@ -50,7 +54,7 @@ class TileEndpoints(enableTiles: Boolean) {
   val collectionFootprintTileEndpoint
       : Endpoint[MapboxVectorTileFootprintRequest, NotFound, Array[Byte], Nothing] =
     endpoint.get
-      .in(collectionFootprintTilePath.mapTo(MapboxVectorTileFootprintRequest))
+      .in(collectionFootprintTileParameters.mapTo(MapboxVectorTileFootprintRequest))
       .out(rawBinaryBody[Array[Byte]])
       .out(header("content-type", "application/vnd.mapbox-vector-tile"))
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))

@@ -5,6 +5,7 @@ import com.azavea.stac4s._
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
+import doobie.refined.implicits._
 
 object StacCollectionDao {
 
@@ -47,7 +48,8 @@ object StacCollectionDao {
             ST_Transform(geom, 3857),
             ST_TileEnvelope(${request.z},${request.x},${request.y})
           ) AS geom,
-          item -> 'properties' ->> 'class' as class
+          item -> 'properties' ->> ${request.colorField} as color,
+          item -> 'properties' as item_properties
         FROM collection_items
         WHERE
           ST_Intersects(

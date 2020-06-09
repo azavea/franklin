@@ -1,6 +1,7 @@
 package com.azavea.franklin.datamodel
 
 import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.string.NonEmptyString
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -51,7 +52,8 @@ case class MapboxVectorTileFootprintRequest(
     collectionRaw: String,
     z: Int,
     x: Int,
-    y: Int
+    y: Int,
+    colorField: NonEmptyString
 ) extends TileMatrixRequest {
   val collection = urlDecode(collectionRaw)
 }
