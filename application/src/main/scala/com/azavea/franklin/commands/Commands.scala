@@ -5,10 +5,10 @@ import cats.implicits._
 import com.azavea.franklin.crawler.StacImport
 import com.monovore.decline._
 import doobie.Transactor
-import eu.timepit.refined.types.numeric.PosInt
-import org.flywaydb.core.Flyway
 import doobie.free.connection.{rollback, setAutoCommit, unit}
 import doobie.util.transactor.Strategy
+import eu.timepit.refined.types.numeric.PosInt
+import org.flywaydb.core.Flyway
 
 object Commands {
 
