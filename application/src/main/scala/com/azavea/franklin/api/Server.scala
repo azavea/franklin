@@ -80,6 +80,7 @@ $$$$
         apiConfig.enableTiles
       )
       collectionEndpoints = new CollectionEndpoints(
+        apiConfig.enableTransactions,
         apiConfig.enableTiles
       )
       allEndpoints = LandingPageEndpoints.endpoints ++ collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints ++ new TileEndpoints(
@@ -90,7 +91,12 @@ $$$$
       landingPageRoutes = new LandingPageService[IO](apiConfig).routes
       searchRoutes      = new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
       tileRoutes        = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-      collectionRoutes = new CollectionsService[IO](xa, apiConfig.apiHost, apiConfig.enableTiles).routes <+> new CollectionItemsService[
+      collectionRoutes = new CollectionsService[IO](
+        xa,
+        apiConfig.apiHost,
+        apiConfig.enableTransactions,
+        apiConfig.enableTiles
+      ).routes <+> new CollectionItemsService[
         IO
       ](
         xa,
