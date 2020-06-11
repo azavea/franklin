@@ -19,17 +19,15 @@ object SearchEndpoints {
       .and(query[Option[List[String]]]("collections"))
       .and(query[Option[List[String]]]("ids"))
       .and(query[Option[Int]]("limit"))
-      .and(query[Option[String]]("next"))
       .map(
         (tup: (
             Option[TemporalExtent],
             Option[Bbox],
             Option[List[String]],
             Option[List[String]],
-            Option[Int],
-            Option[String]
+            Option[Int]
         )) => {
-          val (temporalExtent, bbox, collections, ids, limit, next) = tup
+          val (temporalExtent, bbox, collections, ids, limit) = tup
           // query is empty here because entering query extension fields in url params is
           // completely insane
           SearchFilters(
@@ -39,11 +37,10 @@ object SearchEndpoints {
             collections getOrElse Nil,
             ids getOrElse Nil,
             limit,
-            next,
             Map.empty
           )
         }
-      )(sf => (sf.datetime, sf.bbox, Some(sf.collections), Some(sf.items), sf.limit, sf.next))
+      )(sf => (sf.datetime, sf.bbox, Some(sf.collections), Some(sf.items), sf.limit))
 
   val searchGet: Endpoint[SearchFilters, Unit, Json, Nothing] =
     base.get

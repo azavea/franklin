@@ -7,7 +7,6 @@ import com.azavea.stac4s._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
-import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Projected
 import io.circe.syntax._
 import io.circe.{Error, Json}
@@ -32,16 +31,11 @@ object StacItemDao extends Dao[StacItem] {
   }
 
   def getSearchResult(searchFilters: SearchFilters): ConnectionIO[StacSearchCollection] = {
-    val page = searchFilters.page
     for {
-      items   <- query.filter(searchFilters).list(searchFilters.page)
+      items   <- query.filter(searchFilters).list
       matched <- query.filter(searchFilters).count
     } yield {
-      val next =
-        if ((items.length + page.offset) < matched)
-          page.nextPage.next.flatMap(s => NonEmptyString.from(s).toOption)
-        else None
-      val metadata = Context(next, items.length, page.limit, matched)
+      val metadata = Context(items.length, matched)
       StacSearchCollection(metadata, items)
     }
   }

@@ -14,11 +14,8 @@ final case class SearchFilters(
     collections: List[String],
     items: List[String],
     limit: Option[Int],
-    next: Option[String],
     query: Map[String, List[Query]]
-) {
-  val page = Page(limit, next)
-}
+)
 
 object SearchFilters {
 
@@ -32,7 +29,6 @@ object SearchFilters {
         collectionsOption <- c.downField("collections").as[Option[List[String]]]
         itemsOption       <- c.downField("items").as[Option[List[String]]]
         limit             <- c.downField("limit").as[Option[Int]]
-        next              <- c.downField("next").as[Option[String]]
         query             <- c.get[Map[String, List[Query]]]("query")
       } yield {
         SearchFilters(
@@ -42,7 +38,6 @@ object SearchFilters {
           collectionsOption.getOrElse(List.empty),
           itemsOption.getOrElse(List.empty),
           limit,
-          next,
           query
         )
       }
