@@ -6,13 +6,33 @@ import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
 import geotrellis.vector.Geometry
 import io.circe.{Encoder, Json}
+import io.circe.parser._
+import io.circe.syntax._
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, DecodeResult, Schema}
 
 import scala.util.Try
 
+import java.util.Base64
+import com.azavea.franklin.datamodel.PaginationToken
+
 package object schemas {
+
+  implicit class ToTapirDecodeResult[T](circeResult: Either[io.circe.Error, T]) {
+
+    def toDecodeResult: DecodeResult[T] = {
+      circeResult match {
+        case Left(err) =>
+          DecodeResult.Error(err.getMessage, err)
+        case Right(value) =>
+          DecodeResult.Value(value)
+      }
+    }
+  }
+
+  val b64Encoder = Base64.getEncoder()
+  val b64Decoder = Base64.getDecoder()
 
   implicit val schemaForTemporalExtent: Schema[TemporalExtent] = Schema(
     schemaForCirceJson.schemaType
@@ -76,4 +96,19 @@ package object schemas {
   implicit val codecStacItem: Codec.JsonCodec[StacItem] =
     jsonCodec.mapDecode(decStacItem)(encStacItem)
 
+  def encPaginationToken(token: PaginationToken): String = b64Encoder.encodeToString(
+    token.asJson.noSpaces.getBytes
+  )
+
+  def decPaginationToken(encoded: String): DecodeResult[PaginationToken] = {
+    val jsonString: String = new String(b64Decoder.decode(encoded))
+    val circeResult = for {
+      js      <- parse(jsonString)
+      decoded <- js.as[PaginationToken]
+    } yield decoded
+    circeResult.toDecodeResult
+  }
+
+  implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
+    Codec.string.mapDecode(decPaginationToken)(encPaginationToken)
 }

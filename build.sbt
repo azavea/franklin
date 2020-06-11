@@ -88,8 +88,8 @@ lazy val applicationDependencies = Seq(
   "com.lightbend"               %% "emoji"                    % Versions.EmojiVersion,
   "com.lihaoyi"                 %% "sourcecode"               % Versions.SourceCodeVersion,
   "com.lihaoyi"                 %% "sourcecode"               % Versions.SourceCodeVersion,
-  "com.monovore"                %% "decline"                  % Versions.DeclineVersion,
   "com.monovore"                %% "decline-refined"          % Versions.DeclineVersion,
+  "com.monovore"                %% "decline"                  % Versions.DeclineVersion,
   "com.propensive"              %% "magnolia"                 % Versions.MagnoliaVersion,
   "com.softwaremill.sttp.model" %% "core"                     % Versions.SttpModelVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-core"               % Versions.TapirVersion,
@@ -102,6 +102,7 @@ lazy val applicationDependencies = Seq(
   "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s"  % Versions.TapirVersion,
   "com.typesafe.scala-logging"  %% "scala-logging"            % Versions.ScalaLoggingVersion,
   "com.zaxxer"                  % "HikariCP"                  % Versions.HikariVersion,
+  "eu.timepit"                  %% "refined-scalacheck"       % Versions.Refined % "test",
   "eu.timepit"                  %% "refined"                  % Versions.Refined,
   "io.chrisdavenport"           %% "cats-scalacheck"          % Versions.CatsScalacheckVersion % "test",
   "io.chrisdavenport"           %% "log4cats-core"            % Versions.Log4CatsVersion,
@@ -112,8 +113,8 @@ lazy val applicationDependencies = Seq(
   "io.circe"                    %% "circe-parser"             % Versions.CirceVersion,
   "io.circe"                    %% "circe-refined"            % Versions.CirceVersion,
   "io.circe"                    %% "circe-testing"            % Versions.CirceVersion % "test",
-  "net.postgis"                 % "postgis-jdbc"              % Versions.Postgis,
   "net.postgis"                 % "postgis-geometry"          % Versions.Postgis,
+  "net.postgis"                 % "postgis-jdbc"              % Versions.Postgis,
   "org.flywaydb"                % "flyway-core"               % Versions.Flyway,
   "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-blaze-server"      % Versions.Http4sVersion,
@@ -138,15 +139,15 @@ lazy val applicationDependencies = Seq(
   "org.tpolecat"                %% "doobie-core"              % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-free"              % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-hikari"            % Versions.DoobieVersion,
-  "org.tpolecat"                %% "doobie-postgres"          % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-postgres-circe"    % Versions.DoobieVersion,
+  "org.tpolecat"                %% "doobie-postgres"          % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-refined"           % Versions.DoobieVersion,
   "org.tpolecat"                %% "doobie-scalatest"         % Versions.DoobieVersion % "test",
   "org.tpolecat"                %% "doobie-specs2"            % Versions.DoobieVersion % "test",
   "org.typelevel"               %% "cats-core"                % Versions.CatsVersion,
-  "org.typelevel"               %% "cats-kernel"              % Versions.CatsVersion,
   "org.typelevel"               %% "cats-effect"              % Versions.CatsEffectVersion,
-  "org.typelevel"               %% "cats-free"                % Versions.CatsVersion
+  "org.typelevel"               %% "cats-free"                % Versions.CatsVersion,
+  "org.typelevel"               %% "cats-kernel"              % Versions.CatsVersion
 )
 
 lazy val application = (project in file("application"))
