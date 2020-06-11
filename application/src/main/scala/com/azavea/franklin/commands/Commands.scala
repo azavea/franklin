@@ -4,7 +4,9 @@ import cats.effect.{ContextShift, ExitCode, IO}
 import cats.implicits._
 import com.azavea.franklin.crawler.StacImport
 import com.monovore.decline._
-import doobie.util.transactor.Transactor
+import doobie.Transactor
+import doobie.free.connection.{rollback, setAutoCommit, unit}
+import doobie.util.transactor.Strategy
 import eu.timepit.refined.types.numeric.PosInt
 import org.flywaydb.core.Flyway
 
@@ -19,7 +21,8 @@ object Commands {
       externalPort: PosInt,
       apiHost: String,
       apiScheme: String,
-      config: DatabaseConfig
+      config: DatabaseConfig,
+      dryRun: Boolean
   )
 
   private def runImportOpts(implicit cs: ContextShift[IO]): Opts[RunImport] =
@@ -29,7 +32,8 @@ object Commands {
         Options.externalPort,
         Options.apiHost,
         Options.apiScheme,
-        Options.databaseConfig
+        Options.databaseConfig,
+        Options.dryRun
       ).mapN(RunImport)
     }
 
@@ -62,13 +66,25 @@ object Commands {
       externalPort: PosInt,
       apiHost: String,
       apiScheme: String,
-      config: DatabaseConfig
+      config: DatabaseConfig,
+      dryRun: Boolean
   )(
       implicit contextShift: ContextShift[IO]
   ): IO[Unit] = {
     val serverHost = getHost(externalPort, apiHost, apiScheme)
     val xa =
-      Transactor.fromDriverManager[IO](config.driver, config.jdbcUrl, config.dbUser, config.dbPass)
+      Transactor.strategy.set(
+        Transactor.fromDriverManager[IO](
+          config.driver,
+          config.jdbcUrl,
+          config.dbUser,
+          config.dbPass
+        ),
+        if (dryRun) {
+          Strategy.default.copy(before = setAutoCommit(false), after = rollback, always = unit)
+        } else { Strategy.default }
+      )
+
     new StacImport(stacCatalog, serverHost).runIO(xa)
   }
 

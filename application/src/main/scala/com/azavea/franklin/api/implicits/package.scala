@@ -26,13 +26,13 @@ package object implicits {
       }
       val updatedLinks = cogAsset match {
         case true => {
-          val encodedItemId = URLEncoder.encode(itemId, StandardCharsets.UTF_8.toString)
+          val encodedItemId       = URLEncoder.encode(itemId, StandardCharsets.UTF_8.toString)
+          val encodedCollectionId = URLEncoder.encode(collectionId, StandardCharsets.UTF_8.toString)
           val tileLink: StacLink = StacLink(
-            s"$apiHost/collections/$collectionId/items/$encodedItemId/tiles",
+            s"$apiHost/collections/$encodedCollectionId/items/$encodedItemId/tiles",
             StacLinkType.VendorLinkType("tiles"),
             Some(`application/json`),
-            Some("Tile URLs for Item"),
-            List.empty
+            Some("Tile URLs for Item")
           )
           tileLink :: item.links
         }
@@ -45,12 +45,12 @@ package object implicits {
   implicit class StacCollectionWithTiles(collection: StacCollection) {
 
     def addTilesLink(apiHost: String): StacCollection = {
+      val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
       val tileLink = StacLink(
-        s"$apiHost/collections/${collection.id}/tiles",
+        s"$apiHost/collections/$encodedCollectionId/tiles",
         StacLinkType.VendorLinkType("tiles"),
         Some(`application/json`),
-        Some("Tile URLs for Collection"),
-        List.empty
+        Some("Tile URLs for Collection")
       )
       collection.copy(links = tileLink :: collection.links)
     }

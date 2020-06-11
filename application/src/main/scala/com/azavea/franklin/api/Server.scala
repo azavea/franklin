@@ -127,8 +127,8 @@ $$$$
           .use(_ => IO.never)
           .as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
-      case RunImport(catalogRoot, externalPort, apiHost, apiScheme, dbConfig) =>
-        runImport(catalogRoot, externalPort, apiHost, apiScheme, dbConfig) map { _ =>
+      case RunImport(catalogRoot, externalPort, apiHost, apiScheme, dbConfig, dryRun) =>
+        runImport(catalogRoot, externalPort, apiHost, apiScheme, dbConfig, dryRun) map { _ =>
           ExitCode.Success
         }
     } match {
