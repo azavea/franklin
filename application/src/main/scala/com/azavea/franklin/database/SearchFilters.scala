@@ -1,6 +1,6 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel.Query
+import com.azavea.franklin.datamodel.{PaginationToken, Query}
 import com.azavea.stac4s.{Bbox, TemporalExtent}
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
@@ -14,7 +14,8 @@ final case class SearchFilters(
     collections: List[String],
     items: List[String],
     limit: Option[Int],
-    query: Map[String, List[Query]]
+    query: Map[String, List[Query]],
+    next: Option[PaginationToken]
 )
 
 object SearchFilters {
@@ -30,6 +31,7 @@ object SearchFilters {
         itemsOption       <- c.downField("items").as[Option[List[String]]]
         limit             <- c.downField("limit").as[Option[Int]]
         query             <- c.get[Map[String, List[Query]]]("query")
+        paginationToken   <- c.get[Option[PaginationToken]]("next")
       } yield {
         SearchFilters(
           bbox,
@@ -38,7 +40,8 @@ object SearchFilters {
           collectionsOption.getOrElse(List.empty),
           itemsOption.getOrElse(List.empty),
           limit,
-          query
+          query,
+          paginationToken
         )
       }
   }

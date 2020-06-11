@@ -57,7 +57,7 @@ $             $$ |   $$ |     /$$$$$$$ |$$ |  $$ |$$$$$$  \ $$ |$$ |$$ |  $$ |
 $$$$$$        $$ |   $$ |     $$    $$ |$$ |  $$ |$$ | $$  |$$ |$$ |$$ |  $$ |
 $$$$$         $$/    $$/       $$$$$$$/ $$/   $$/ $$/   $$/ $$/ $$/ $$/   $$/
 $$$$
-
+ala
 """.split("\n").toList
 
   private def createServer(
@@ -76,6 +76,7 @@ $$$$
         Blocker.liftExecutionContext(transactionEc)
       )
       collectionItemEndpoints = new CollectionItemEndpoints(
+        apiConfig.defaultLimit,
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       )
@@ -101,6 +102,7 @@ $$$$
       ](
         xa,
         apiConfig.apiHost,
+        apiConfig.defaultLimit,
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       ).routes

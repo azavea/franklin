@@ -23,6 +23,7 @@ import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
+import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
@@ -36,13 +37,18 @@ import java.nio.charset.StandardCharsets
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
     apiHost: NonEmptyString,
+    defaultLimit: NonNegInt,
     enableTransactions: Boolean,
     enableTiles: Boolean
 )(
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
 
-  def listCollectionItems(collectionId: String): F[Either[Unit, Json]] = {
+  def listCollectionItems(
+      collectionId: String,
+      token: Option[PaginationToken],
+      limit: Option[NonNegInt]
+  ): F[Either[Unit, Json]] = {
     val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
       items <- StacItemDao.query
@@ -200,7 +206,8 @@ class CollectionItemsService[F[_]: Sync](
         Right((updated.asJson, updated.##.toString))
     }
 
-  val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions, enableTiles)
+  val collectionItemEndpoints =
+    new CollectionItemEndpoints(defaultLimit, enableTransactions, enableTiles)
 
   val collectionItemTileRoutes = collectionItemEndpoints.collectionItemTiles.toRoutes {
     case (collectionId, itemId) => getCollectionItemTileInfo(collectionId, itemId)
@@ -223,8 +230,8 @@ class CollectionItemsService[F[_]: Sync](
   )
 
   val routesList: NonEmptyList[HttpRoutes[F]] = NonEmptyList.of(
-    collectionItemEndpoints.collectionItemsList.toRoutes { collectionId =>
-      listCollectionItems(collectionId)
+    collectionItemEndpoints.collectionItemsList.toRoutes { query =>
+      Function.tupled(listCollectionItems _)(query)
     },
     collectionItemEndpoints.collectionItemsUnique.toRoutes {
       case (collectionId, itemId) => getCollectionItemUnique(collectionId, itemId)
