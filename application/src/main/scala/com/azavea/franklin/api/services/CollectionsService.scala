@@ -7,6 +7,7 @@ import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.datamodel.{CollectionsResponse, TileInfo}
 import com.azavea.franklin.error.{NotFound => NF}
+import com.azavea.stac4s._
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -23,6 +24,7 @@ import java.nio.charset.StandardCharsets
 class CollectionsService[F[_]: Sync](
     xa: Transactor[F],
     apiHost: NonEmptyString,
+    enableTransactions: Boolean,
     enableTiles: Boolean
 )(
     implicit contextShift: ContextShift[F]
@@ -71,9 +73,36 @@ class CollectionsService[F[_]: Sync](
     }
   }
 
-  val collectionEndpoints = new CollectionEndpoints(enableTiles)
+  def createCollection(collection: StacCollection): F[Either[Unit, Json]] = {
+    val newCollection = collection.copy(links =
+      collection.links.filter({ link =>
+        !Set[StacLinkType](StacLinkType.Item, StacLinkType.StacRoot, StacLinkType.Self)
+          .contains(link.rel)
+      }) ++
+        List(
+          StacLink(
+            s"$apiHost/collections/${collection.id}",
+            StacLinkType.Self,
+            Some(`application/json`),
+            collection.title
+          ),
+          StacLink(
+            s"$apiHost",
+            StacLinkType.StacRoot,
+            Some(`application/json`),
+            None
+          )
+        )
+    )
+    for {
+      inserted <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
+    } yield Right(inserted.asJson)
+  }
+
+  val collectionEndpoints = new CollectionEndpoints(enableTransactions, enableTiles)
 
   val routesList = List(
+    collectionEndpoints.createCollection.toRoutes(collection => createCollection(collection)),
     collectionEndpoints.collectionsList.toRoutes(_ => listCollections()),
     collectionEndpoints.collectionUnique
       .toRoutes {
