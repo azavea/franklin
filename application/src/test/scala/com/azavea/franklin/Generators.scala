@@ -127,21 +127,6 @@ trait Generators extends NumericInstances {
     ).mapN(SearchFilters.apply)
   }
 
-  def searchFiltersToParams(filters: SearchFilters): String = {
-    val bboxString           = ("bbox", filters.bbox.map(bboxCodec.encode))
-    val temporalExtentString = ("datetime", filters.datetime.map(teCodec.encode))
-    val collections          = ("collections", Some(csvListCodec.encode(filters.collections)))
-    val items                = ("items", Some(csvListCodec.encode(filters.items)))
-    val limit                = ("limit", filters.limit.map(_.toString))
-
-    List(bboxString, temporalExtentString, collections, items, limit)
-      .flatMap {
-        case (k, Some(v)) => Some(s"$k=$v")
-        case _            => None
-      }
-      .mkString("&")
-  }
-
   implicit val arbSearchFilters   = Arbitrary { searchFiltersGen }
   implicit val arbPaginationToken = Arbitrary { paginationTokenGen }
 }

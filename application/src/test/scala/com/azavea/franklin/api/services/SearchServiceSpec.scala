@@ -44,7 +44,7 @@ class SearchServiceSpec
   }
 
   def getSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
-    val queryParams = searchFiltersToParams(searchFilters)
+    val queryParams = searchFilters.asQueryParameters
     val request =
       Request[IO](method = Method.GET, uri = Uri.fromString(s"/search?$queryParams").right.get)
     val result = for {
