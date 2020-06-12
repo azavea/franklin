@@ -60,7 +60,7 @@ object StacItemDao extends Dao[StacItem] {
     for {
       items     <- query.filter(searchFilters).list(limit.value)
       nextToken <- items.lastOption traverse { item => getPaginationToken(item.id) }
-      matched   <- query.filter(searchFilters).count
+      matched   <- query.filter(searchFilters.copy(next = None)).count
     } yield {
       val links = (nextToken.flatten, searchMethod, searchFilters.asQueryParameters) match {
         case (Some(token), SearchMethod.Get, "") =>
