@@ -10,13 +10,13 @@ import com.azavea.franklin.error.{
   ValidationError
 }
 import com.azavea.stac4s.StacItem
+import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.{Codec => _, _}
 import sttp.model.StatusCode
 import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.json.circe._
-import eu.timepit.refined.types.numeric.NonNegInt
 
 class CollectionItemEndpoints(
     defaultLimit: NonNegInt,

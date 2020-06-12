@@ -3,8 +3,8 @@ package com.azavea.franklin.api.commands
 import cats.implicits._
 import com.monovore.decline.Opts
 import com.monovore.decline.refined._
-import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.numeric.PosInt
 
 trait ApiOptions {
 

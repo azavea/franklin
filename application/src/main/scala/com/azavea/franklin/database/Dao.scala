@@ -2,8 +2,8 @@ package com.azavea.franklin.database
 
 import doobie.implicits._
 import doobie.postgres.implicits._
-import doobie.util.{Read, Write}
 import doobie.refined.implicits._
+import doobie.util.{Read, Write}
 import doobie.{LogHandler => _, _}
 
 import java.util.UUID

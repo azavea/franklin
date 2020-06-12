@@ -7,8 +7,9 @@ import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
 import io.circe.generic.semiauto._
-import io.circe.{Decoder, HCursor}
 import io.circe.refined._
+import io.circe.{Decoder, HCursor}
+
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 

@@ -1,23 +1,22 @@
 package com.azavea.franklin
 
+import cats.data.NonEmptyVector
+import cats.implicits._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database.SearchFilters
 import com.azavea.franklin.datamodel._
-
-import cats.data.NonEmptyVector
-import cats.implicits._
 import com.azavea.stac4s._
 import eu.timepit.refined.scalacheck.NumericInstances
+import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.{Geometry, Point, Polygon}
 import io.circe.syntax._
-import org.scalacheck._
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck._
 import org.scalacheck.cats.implicits._
 
 import java.time.Instant
-import eu.timepit.refined.types.numeric.NonNegInt
 
 trait Generators extends NumericInstances {
 

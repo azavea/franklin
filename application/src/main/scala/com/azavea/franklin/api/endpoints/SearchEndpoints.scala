@@ -2,13 +2,13 @@ package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database._
-import com.azavea.stac4s.{Bbox, TemporalExtent}
-import io.circe._
-import eu.timepit.refined.types.numeric.NonNegInt
-import sttp.tapir._
-import sttp.tapir.json.circe._
-import sttp.tapir.codec.refined._
 import com.azavea.franklin.datamodel.PaginationToken
+import com.azavea.stac4s.{Bbox, TemporalExtent}
+import eu.timepit.refined.types.numeric.NonNegInt
+import io.circe._
+import sttp.tapir._
+import sttp.tapir.codec.refined._
+import sttp.tapir.json.circe._
 
 object SearchEndpoints {
 

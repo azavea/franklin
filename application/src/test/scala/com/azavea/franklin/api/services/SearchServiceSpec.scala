@@ -1,16 +1,16 @@
 package com.azavea.franklin.api.services
 
-import com.azavea.franklin.api.commands.ApiConfig
-import com.azavea.franklin.database.{SearchFilters, TestDatabaseSpec}
-import com.azavea.franklin.datamodel.StacSearchCollection
-import eu.timepit.refined.types.numeric.PosInt
-import org.http4s.{Method, Request, Uri}
 import cats.data.OptionT
 import cats.effect.IO
 import com.azavea.franklin.Generators
+import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.database.{SearchFilters, TestDatabaseSpec}
+import com.azavea.franklin.datamodel.StacSearchCollection
 import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.numeric.PosInt
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
+import org.http4s.{Method, Request, Uri}
 import org.specs2.{ScalaCheck, Specification}
 
 class SearchServiceSpec

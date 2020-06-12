@@ -3,12 +3,12 @@ package com.azavea.franklin
 import cats.implicits._
 import com.azavea.stac4s.TemporalExtent
 import doobie.implicits.javasql._
+import doobie.util.meta.Meta
+import doobie.util.{Read, Write}
 import io.circe.{Decoder, Encoder}
 
 import java.sql.Timestamp
 import java.time.Instant
-import doobie.util.meta.Meta
-import doobie.util.{Read, Write}
 
 package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filterables {
 

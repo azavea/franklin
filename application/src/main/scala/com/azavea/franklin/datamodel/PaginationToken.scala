@@ -2,11 +2,11 @@ package com.azavea.franklin.datamodel
 
 import com.azavea.stac4s.meta._
 import eu.timepit.refined.types.numeric.PosInt
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
 import io.circe.parser._
 import io.circe.refined._
 import io.circe.syntax._
+import io.circe.{Decoder, Encoder}
 import sttp.tapir.DecodeResult
 
 import java.time.Instant

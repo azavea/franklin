@@ -69,7 +69,7 @@ trait TestDatabaseSpec extends Specification with BeforeAll with AfterAll {
   def withoutTransaction[A](p: ConnectionIO[A]): ConnectionIO[A] =
     FC.setAutoCommit(true) *> p <* FC.setAutoCommit(false)
 
-  override def beforeAll {
+  override def beforeAll: Unit = {
     // using the no-transaction transactor, drop the database in case it's hanging around for some reason
     // and then create the database
     val setupSql = (
@@ -82,7 +82,7 @@ trait TestDatabaseSpec extends Specification with BeforeAll with AfterAll {
     ()
   }
 
-  override def afterAll {
+  override def afterAll: Unit = {
     // using the no-transaction transactor, drop the db for the test suite
     val tearDownSql = (fr"DROP DATABASE IF EXISTS" ++ Fragment.const(dbName)).update.run
     withoutTransaction(tearDownSql)

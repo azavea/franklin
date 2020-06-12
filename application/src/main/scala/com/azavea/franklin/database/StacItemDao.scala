@@ -9,14 +9,14 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.implicits.javatime._
 import doobie.refined.implicits._
+import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Projected
 import io.circe.syntax._
 import io.circe.{Error, Json}
 
 import java.time.Instant
-import eu.timepit.refined.types.numeric.NonNegInt
-import eu.timepit.refined.types.string.NonEmptyString
 
 object StacItemDao extends Dao[StacItem] {
 

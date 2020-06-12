@@ -2,6 +2,7 @@ package com.azavea.franklin.api
 
 import cats.implicits._
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
+import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
 import geotrellis.vector.Geometry
@@ -11,8 +12,6 @@ import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, DecodeResult, Schema}
 
 import scala.util.Try
-
-import com.azavea.franklin.datamodel.PaginationToken
 
 package object schemas {
 

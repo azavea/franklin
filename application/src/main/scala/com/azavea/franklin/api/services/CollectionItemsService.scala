@@ -7,6 +7,7 @@ import cats.implicits._
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.Filterables._
+import com.azavea.franklin.database.Page
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.error.{
@@ -33,7 +34,6 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import com.azavea.franklin.database.Page
 
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],

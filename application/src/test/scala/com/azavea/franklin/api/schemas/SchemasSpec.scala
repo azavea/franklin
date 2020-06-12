@@ -1,7 +1,7 @@
 package com.azavea.franklin.api.schemas
 
-import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.Generators
+import com.azavea.franklin.datamodel.PaginationToken
 import org.specs2.{ScalaCheck, Specification}
 import sttp.tapir.Codec
 import sttp.tapir.CodecFormat.TextPlain
