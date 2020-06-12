@@ -7,6 +7,7 @@ import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.{SearchFilters, StacItemDao}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
@@ -14,13 +15,20 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
-class SearchService[F[_]: Sync](apiHost: NonEmptyString, enableTiles: Boolean, xa: Transactor[F])(
+class SearchService[F[_]: Sync](
+    apiHost: NonEmptyString,
+    defaultLimit: NonNegInt,
+    enableTiles: Boolean,
+    xa: Transactor[F]
+)(
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
 
   def search(searchFilters: SearchFilters): F[Either[Unit, Json]] = {
     for {
-      searchResult <- StacItemDao.getSearchResult(searchFilters).transact(xa)
+      searchResult <- StacItemDao
+        .getSearchResult(searchFilters, searchFilters.limit getOrElse defaultLimit, apiHost)
+        .transact(xa)
     } yield {
       val updatedFeatures = searchResult.features.map { item =>
         (item.collection, enableTiles) match {

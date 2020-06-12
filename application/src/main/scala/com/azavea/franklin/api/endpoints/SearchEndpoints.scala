@@ -4,8 +4,10 @@ import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database._
 import com.azavea.stac4s.{Bbox, TemporalExtent}
 import io.circe._
+import eu.timepit.refined.types.numeric.NonNegInt
 import sttp.tapir._
 import sttp.tapir.json.circe._
+import sttp.tapir.codec.refined._
 import com.azavea.franklin.datamodel.PaginationToken
 
 object SearchEndpoints {
@@ -22,7 +24,7 @@ object SearchEndpoints {
       .and(query[Option[Bbox]]("bbox"))
       .and(query[Option[List[String]]]("collections"))
       .and(query[Option[List[String]]]("ids"))
-      .and(query[Option[Int]]("limit"))
+      .and(query[Option[NonNegInt]]("limit"))
       .and(nextToken)
       .map(
         (tup: (
@@ -30,7 +32,7 @@ object SearchEndpoints {
             Option[Bbox],
             Option[List[String]],
             Option[List[String]],
-            Option[Int],
+            Option[NonNegInt],
             Option[PaginationToken]
         )) => {
           val (temporalExtent, bbox, collections, ids, limit, token) = tup

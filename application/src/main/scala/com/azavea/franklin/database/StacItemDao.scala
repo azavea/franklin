@@ -15,6 +15,8 @@ import io.circe.syntax._
 import io.circe.{Error, Json}
 
 import java.time.Instant
+import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.string.NonEmptyString
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -36,26 +38,52 @@ object StacItemDao extends Dao[StacItem] {
   }
 
   def getPaginationToken(
-      collectionId: String,
       itemId: String
   ): ConnectionIO[Option[PaginationToken]] =
     (OptionT {
       query
         .copy[(PosInt, Instant)](selectF = fr"select serial_id, created_at from " ++ tableF)
         .filter(fr"id = $itemId")
-        .filter(collectionFilter(collectionId))
         .selectOption
     } map {
       case (serialId, createdAt) => PaginationToken(createdAt, serialId)
     }).value
 
-  def getSearchResult(searchFilters: SearchFilters): ConnectionIO[StacSearchCollection] = {
+  def getSearchResult(
+      searchFilters: SearchFilters,
+      limit: NonNegInt,
+      apiHost: NonEmptyString
+  ): ConnectionIO[StacSearchCollection] = {
     for {
-      items   <- query.filter(searchFilters).list
-      matched <- query.filter(searchFilters).count
+      items     <- query.filter(searchFilters).page(Page(limit, searchFilters.next))
+      nextToken <- items.lastOption traverse { item => getPaginationToken(item.id) }
+      matched   <- query.filter(searchFilters).count
     } yield {
+      val links = (nextToken.flatten, searchFilters.asQueryParameters) match {
+        case (Some(token), "") =>
+          List(
+            StacLink(
+              href =
+                s"$apiHost/search?limit=$limit&next=${PaginationToken.encPaginationToken(token)}",
+              rel = StacLinkType.Next,
+              _type = Some(`application/json`),
+              title = None
+            )
+          )
+        case (Some(token), query) =>
+          List(
+            StacLink(
+              href =
+                s"$apiHost/search?limit=$limit&next=${PaginationToken.encPaginationToken(token)}&$query",
+              rel = StacLinkType.Next,
+              _type = Some(`application/json`),
+              title = None
+            )
+          )
+        case _ => Nil
+      }
       val metadata = Context(items.length, matched)
-      StacSearchCollection(metadata, items)
+      StacSearchCollection(metadata, items, links)
     }
   }
 

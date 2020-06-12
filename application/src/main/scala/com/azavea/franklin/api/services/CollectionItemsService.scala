@@ -6,7 +6,6 @@ import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
 import com.azavea.franklin.api.implicits._
-import com.azavea.franklin.api.schemas.encPaginationToken
 import com.azavea.franklin.database.Filterables._
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.datamodel._
@@ -58,7 +57,7 @@ class CollectionItemsService[F[_]: Sync](
         .page(Page(limit getOrElse defaultLimit, token))
         .transact(xa)
       paginationToken <- items.lastOption traverse { item =>
-        StacItemDao.getPaginationToken(decodedId, item.id).transact(xa)
+        StacItemDao.getPaginationToken(item.id).transact(xa)
       }
     } yield {
       val updatedItems = enableTiles match {
@@ -69,8 +68,8 @@ class CollectionItemsService[F[_]: Sync](
       val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
         val lim = limit getOrElse defaultLimit
         StacLink(
-          href =
-            s"$apiHost/collections/$collectionId/items?next=${encPaginationToken(token)}&limit=$lim",
+          href = s"$apiHost/collections/$collectionId/items?next=${PaginationToken
+            .encPaginationToken(token)}&limit=$lim",
           rel = StacLinkType.Next,
           _type = Some(`application/json`),
           title = None

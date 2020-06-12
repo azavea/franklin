@@ -17,6 +17,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.cats.implicits._
 
 import java.time.Instant
+import eu.timepit.refined.types.numeric.NonNegInt
 
 trait Generators extends NumericInstances {
 
@@ -121,7 +122,7 @@ trait Generators extends NumericInstances {
       Gen.option(rectangleGen),
       Gen.const(List.empty[String]),
       Gen.const(List.empty[String]),
-      Gen.option(Gen.choose(1, 20)),
+      Gen.option(arbitrary[NonNegInt]),
       Gen.mapOf((nonEmptyAlphaStringGen, Gen.nonEmptyListOf(queryGen)).tupled),
       Gen.const(None)
     ).mapN(SearchFilters.apply)

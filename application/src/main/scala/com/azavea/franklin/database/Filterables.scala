@@ -4,7 +4,6 @@ import cats.implicits._
 import com.azavea.franklin.datamodel._
 import com.azavea.stac4s.TemporalExtent
 import doobie.implicits._
-import doobie.implicits.legacy.instant._
 import doobie.postgres.circe.jsonb.implicits._
 import doobie.refined.implicits._
 import doobie.{Query => _, _}

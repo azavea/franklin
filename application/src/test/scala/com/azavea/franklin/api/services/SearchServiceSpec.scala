@@ -30,7 +30,7 @@ class SearchServiceSpec
     ApiConfig(PosInt(9090), PosInt(9090), "localhost", "http", NonNegInt(30), false, false)
 
   def service: SearchService[IO] =
-    new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, transactor)
+    new SearchService[IO](apiConfig.apiHost, NonNegInt(30), apiConfig.enableTiles, transactor)
 
   def postSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
     val request = Request[IO](method = Method.POST, uri = Uri.fromString("/search").right.get)
