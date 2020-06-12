@@ -6,6 +6,7 @@ import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
 import com.azavea.franklin.api.implicits._
+import com.azavea.franklin.api.schemas.encPaginationToken
 import com.azavea.franklin.database.Filterables._
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.datamodel._
@@ -33,6 +34,7 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import com.azavea.franklin.database.Page
 
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
@@ -53,17 +55,31 @@ class CollectionItemsService[F[_]: Sync](
     for {
       items <- StacItemDao.query
         .filter(StacItemDao.collectionFilter(decodedId))
-        .list
+        .page(Page(limit getOrElse defaultLimit, token))
         .transact(xa)
+      paginationToken <- items.lastOption traverse { item =>
+        StacItemDao.getPaginationToken(decodedId, item.id).transact(xa)
+      }
     } yield {
       val updatedItems = enableTiles match {
         case true =>
           items map { item => item.addTilesLink(apiHost, collectionId, item.id) }
         case _ => items
       }
+      val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
+        val lim = limit getOrElse defaultLimit
+        StacLink(
+          href =
+            s"$apiHost/collections/$collectionId/items?next=${encPaginationToken(token)}&limit=$lim",
+          rel = StacLinkType.Next,
+          _type = Some(`application/json`),
+          title = None
+        )
+      }
       val response = Json.obj(
-        ("type", Json.fromString("FeatureCollection")),
-        ("features", updatedItems.asJson)
+        "type"     -> Json.fromString("FeatureCollection"),
+        "features" -> updatedItems.asJson,
+        "links"    -> nextLink.toList.asJson
       )
       Either.right(response)
     }

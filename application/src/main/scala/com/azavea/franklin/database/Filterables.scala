@@ -62,7 +62,7 @@ trait FilterHelpers {
 
 trait Filterables extends GeotrellisWktMeta with FilterHelpers {
 
-  implicit val fragmentFilter: Filterable[Any, doobie.Fragment] =
+  implicit val fragmentFilter: Filterable[Any, Fragment] =
     Filterable[Any, Fragment] { fragment: Fragment => List(Some(fragment)) }
 
   implicit def maybeTFilter[T](

@@ -1,15 +1,20 @@
 package com.azavea.franklin.database
 
-import cats.data.EitherT
+import cats.data.{EitherT, OptionT}
 import cats.implicits._
-import com.azavea.franklin.datamodel.{Context, StacSearchCollection}
+import com.azavea.franklin.datamodel.{Context, PaginationToken, StacSearchCollection}
 import com.azavea.stac4s._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
+import doobie.implicits.javatime._
+import doobie.refined.implicits._
+import eu.timepit.refined.types.numeric.PosInt
 import geotrellis.vector.Projected
 import io.circe.syntax._
 import io.circe.{Error, Json}
+
+import java.time.Instant
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -29,6 +34,20 @@ object StacItemDao extends Dao[StacItem] {
     val jsonFilter = s"""{"collection": "$collectionId"}"""
     fr"item @> $jsonFilter :: jsonb"
   }
+
+  def getPaginationToken(
+      collectionId: String,
+      itemId: String
+  ): ConnectionIO[Option[PaginationToken]] =
+    (OptionT {
+      query
+        .copy[(PosInt, Instant)](selectF = fr"select serial_id, created_at from " ++ tableF)
+        .filter(fr"id = $itemId")
+        .filter(collectionFilter(collectionId))
+        .selectOption
+    } map {
+      case (serialId, createdAt) => PaginationToken(createdAt, serialId)
+    }).value
 
   def getSearchResult(searchFilters: SearchFilters): ConnectionIO[StacSearchCollection] = {
     for {
