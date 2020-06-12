@@ -8,6 +8,7 @@ import org.http4s.{Method, Request, Uri}
 import cats.data.OptionT
 import cats.effect.IO
 import com.azavea.franklin.Generators
+import eu.timepit.refined.types.numeric.NonNegInt
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.specs2.{ScalaCheck, Specification}
@@ -26,7 +27,7 @@ class SearchServiceSpec
 """
 
   val apiConfig: ApiConfig =
-    ApiConfig(PosInt(9090), PosInt(9090), "localhost", "http", false, false)
+    ApiConfig(PosInt(9090), PosInt(9090), "localhost", "http", NonNegInt(30), false, false)
 
   def service: SearchService[IO] =
     new SearchService[IO](apiConfig.apiHost, apiConfig.enableTiles, transactor)
