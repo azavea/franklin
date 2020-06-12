@@ -69,13 +69,13 @@ trait Generators extends NumericInstances {
   }
 
   private def nonEmptyAlphaStringGen: Gen[String] =
-    Gen.nonEmptyListOf(Gen.alphaChar) map { _.mkString("") }
+    Gen.listOfN(15, Gen.alphaChar) map { _.mkString("") }
 
   private def nonEmptyAlphaRefinedStringGen: Gen[NonEmptyString] =
     nonEmptyAlphaStringGen map NonEmptyString.unsafeFrom
 
   private def nonEmptyVectorGen[T](g: Gen[T]): Gen[NonEmptyVector[T]] =
-    Gen.nonEmptyContainerOf[Vector, T](g) map { NonEmptyVector.fromVectorUnsafe }
+    Gen.listOfN(3, g) map { values => NonEmptyVector.fromVectorUnsafe(values.toVector) }
 
   private def queryGen: Gen[Query] = Gen.oneOf(
     nonEmptyAlphaRefinedStringGen map { s => Equals(s.asJson) },
