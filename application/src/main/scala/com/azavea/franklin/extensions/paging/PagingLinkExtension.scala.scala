@@ -8,6 +8,9 @@ import io.circe.refined._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
 
+// https://github.com/radiantearth/stac-api-spec/blob/7a6e12868113c94b17dead8989f49d978d5dd865/api-spec.md#paging-extension
+// the method for us is always POST, since otherwise we toss the params in the query string
+// and don't use this
 final case class PagingLinkExtension(
     headers: Map[NonEmptyString, String],
     body: SearchFilters,
