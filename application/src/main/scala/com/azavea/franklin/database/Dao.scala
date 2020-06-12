@@ -2,7 +2,6 @@ package com.azavea.franklin.database
 
 import doobie.implicits._
 import doobie.postgres.implicits._
-import doobie.refined.implicits._
 import doobie.util.{Read, Write}
 import doobie.{LogHandler => _, _}
 
@@ -91,11 +90,7 @@ object Dao {
     def count: ConnectionIO[Int] = (countF ++ Fragments.whereAndOpt(filters: _*)).query[Int].unique
 
     def page(page: Page): ConnectionIO[List[Model]] = {
-      val paginationTokenFilter = page.next map { token =>
-        fr"created_at > ${token.timestampAtLeast} OR (created_at = ${token.timestampAtLeast} AND serial_id > ${token.serialIdGreaterThan})"
-      }
-
-      this.filter(paginationTokenFilter).list(page.limit.value)
+      this.filter(page.next).list(page.limit.value)
     }
 
     def selectQ: Query0[Model] =

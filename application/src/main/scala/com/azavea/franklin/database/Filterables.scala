@@ -82,6 +82,14 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
       }
     }
 
+  implicit val paginationTokenFilter: Filterable[Any, PaginationToken] =
+    Filterable[Any, PaginationToken] { paginationToken: PaginationToken =>
+      List(Some(fr"""
+        created_at > ${paginationToken.timestampAtLeast} OR
+        (created_at = ${paginationToken.timestampAtLeast} AND serial_id > ${paginationToken.serialIdGreaterThan})
+      """))
+    }
+
   implicit val searchFilter: Filterable[Any, SearchFilters] =
     Filterable[Any, SearchFilters] { searchFilters: SearchFilters =>
       val collectionsFilter: Option[Fragment] = searchFilters.collections.toNel
@@ -110,7 +118,12 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
             )
         }).toList map { Some(_) }
 
-      List(collectionsFilter, idFilter, geometryFilter, bboxFilter, temporalExtentFilter) ++ queryExtFilter
+      List(collectionsFilter, idFilter, geometryFilter, bboxFilter, temporalExtentFilter) ++ queryExtFilter ++ Filterable
+        .summon[
+          Any,
+          Option[PaginationToken]
+        ]
+        .toFilters(searchFilters.next)
     }
 }
 

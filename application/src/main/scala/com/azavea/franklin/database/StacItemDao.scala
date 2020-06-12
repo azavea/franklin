@@ -55,7 +55,7 @@ object StacItemDao extends Dao[StacItem] {
       apiHost: NonEmptyString
   ): ConnectionIO[StacSearchCollection] = {
     for {
-      items     <- query.filter(searchFilters).page(Page(limit, searchFilters.next))
+      items     <- query.filter(searchFilters).list(limit.value)
       nextToken <- items.lastOption traverse { item => getPaginationToken(item.id) }
       matched   <- query.filter(searchFilters).count
     } yield {
