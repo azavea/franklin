@@ -2,6 +2,7 @@ package com.azavea.franklin.database
 
 import cats.implicits._
 import com.azavea.franklin.datamodel.{PaginationToken, Query}
+import com.azavea.franklin.api.schemas.bboxToString
 import com.azavea.stac4s.{Bbox, TemporalExtent}
 import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
@@ -27,9 +28,7 @@ final case class SearchFilters(
   def asQueryParameters: String = {
 
     val bboxQP =
-      bbox flatMap { box =>
-        box.toExtent.toOption
-      } map { extent => s"bbox=${SearchFilters.encodeString(extent.toString)}" }
+      bbox map { box => s"bbox=${bboxToString(box)}" }
     val datetimeQP =
       datetime map { tempExtent =>
         s"datetime=${SearchFilters.encodeString(temporalExtentToString(tempExtent))}"
