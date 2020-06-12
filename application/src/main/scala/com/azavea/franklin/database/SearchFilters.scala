@@ -60,7 +60,7 @@ object SearchFilters {
         collectionsOption <- c.downField("collections").as[Option[List[String]]]
         itemsOption       <- c.downField("items").as[Option[List[String]]]
         limit             <- c.downField("limit").as[Option[NonNegInt]]
-        query             <- c.get[Map[String, List[Query]]]("query")
+        query             <- c.get[Option[Map[String, List[Query]]]]("query")
         paginationToken   <- c.get[Option[PaginationToken]]("next")
       } yield {
         SearchFilters(
@@ -70,7 +70,7 @@ object SearchFilters {
           collectionsOption.getOrElse(List.empty),
           itemsOption.getOrElse(List.empty),
           limit,
-          query,
+          query getOrElse Map.empty,
           paginationToken
         )
       }

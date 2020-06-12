@@ -2,8 +2,10 @@ package com.azavea.franklin.database
 
 import cats.data.{EitherT, OptionT}
 import cats.implicits._
-import com.azavea.franklin.datamodel.{Context, PaginationToken, StacSearchCollection}
+import com.azavea.franklin.datamodel.{Context, PaginationToken, SearchMethod, StacSearchCollection}
+import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
+import com.azavea.stac4s.syntax._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
@@ -52,15 +54,16 @@ object StacItemDao extends Dao[StacItem] {
   def getSearchResult(
       searchFilters: SearchFilters,
       limit: NonNegInt,
-      apiHost: NonEmptyString
+      apiHost: NonEmptyString,
+      searchMethod: SearchMethod
   ): ConnectionIO[StacSearchCollection] = {
     for {
       items     <- query.filter(searchFilters).list(limit.value)
       nextToken <- items.lastOption traverse { item => getPaginationToken(item.id) }
       matched   <- query.filter(searchFilters).count
     } yield {
-      val links = (nextToken.flatten, searchFilters.asQueryParameters) match {
-        case (Some(token), "") =>
+      val links = (nextToken.flatten, searchMethod, searchFilters.asQueryParameters) match {
+        case (Some(token), SearchMethod.Get, "") =>
           List(
             StacLink(
               href =
@@ -70,7 +73,7 @@ object StacItemDao extends Dao[StacItem] {
               title = None
             )
           )
-        case (Some(token), query) =>
+        case (Some(token), SearchMethod.Get, query) =>
           List(
             StacLink(
               href =
@@ -78,6 +81,21 @@ object StacItemDao extends Dao[StacItem] {
               rel = StacLinkType.Next,
               _type = Some(`application/json`),
               title = None
+            )
+          )
+        case (Some(token), SearchMethod.Post, _) =>
+          List(
+            StacLink(
+              href = s"$apiHost/search?next=${PaginationToken.encPaginationToken(token)}",
+              rel = StacLinkType.Next,
+              _type = Some(`application/json`),
+              title = None
+            ).addExtensionFields(
+              PagingLinkExtension(
+                Map.empty,
+                searchFilters.copy(next = None),
+                false
+              )
             )
           )
         case _ => Nil
