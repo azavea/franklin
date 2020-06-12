@@ -66,7 +66,7 @@ object Dao {
     }
 
     def listQ(limit: Int): Query0[Model] =
-      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"LIMIT $limit")
+      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"ORDER BY created_at asc, serial_id asc LIMIT $limit")
         .query[Model]
 
     /** Provide a list of responses */
@@ -82,7 +82,7 @@ object Dao {
 
     /** Provide a list of responses */
     def list: ConnectionIO[List[Model]] = {
-      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"ORDER BY serial_id, asc")
+      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"ORDER BY created_at asc, serial_id, asc")
         .query[Model]
         .to[List]
     }
