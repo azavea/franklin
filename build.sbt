@@ -155,6 +155,9 @@ lazy val application = (project in file("application"))
   .settings({
     libraryDependencies ++= applicationDependencies
   })
+  .settings({
+    parallelExecution in Test := false
+  })
 
 //////////
 // DOCS //
