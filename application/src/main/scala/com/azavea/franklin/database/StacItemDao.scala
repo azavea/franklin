@@ -11,6 +11,7 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.implicits.javatime._
 import doobie.refined.implicits._
+import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
@@ -58,12 +59,17 @@ object StacItemDao extends Dao[StacItem] {
       searchMethod: SearchMethod
   ): ConnectionIO[StacSearchCollection] = {
     for {
-      items     <- query.filter(searchFilters).list(limit.value)
-      nextToken <- items.lastOption traverse { item => getPaginationToken(item.id) }
-      matched   <- query.filter(searchFilters.copy(next = None)).count
+      items <- query.filter(searchFilters).list(limit.value)
+      nextToken <- items.lastOption traverse { item =>
+        getPaginationToken(item.id)
+      } map { _.flatten }
+      nextExists <- nextToken traverse { token =>
+        query.filter(searchFilters.copy(next = Some(token), limit = Some(1))).exists
+      }
+      matched <- query.filter(searchFilters.copy(next = None)).count
     } yield {
-      val links = (nextToken.flatten, searchMethod, searchFilters.asQueryParameters) match {
-        case (Some(token), SearchMethod.Get, "") =>
+      val links = (nextExists, nextToken, searchMethod, searchFilters.asQueryParameters) match {
+        case (Some(true), Some(token), SearchMethod.Get, "") =>
           List(
             StacLink(
               href =
@@ -73,7 +79,7 @@ object StacItemDao extends Dao[StacItem] {
               title = None
             )
           )
-        case (Some(token), SearchMethod.Get, query) =>
+        case (Some(true), Some(token), SearchMethod.Get, query) =>
           List(
             StacLink(
               href =
@@ -83,7 +89,7 @@ object StacItemDao extends Dao[StacItem] {
               title = None
             )
           )
-        case (Some(token), SearchMethod.Post, _) =>
+        case (Some(true), Some(token), SearchMethod.Post, _) =>
           List(
             StacLink(
               href = s"$apiHost/search?next=${PaginationToken.encPaginationToken(token)}",
