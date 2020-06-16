@@ -1,6 +1,6 @@
 package com.azavea.franklin.api.commands
 
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import eu.timepit.refined.types.string.NonEmptyString
 
 case class ApiConfig(
@@ -8,6 +8,7 @@ case class ApiConfig(
     internalPort: PosInt,
     host: String,
     scheme: String,
+    defaultLimit: NonNegInt,
     enableTransactions: Boolean,
     enableTiles: Boolean
 ) {

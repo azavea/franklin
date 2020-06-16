@@ -1,16 +1,25 @@
 package com.azavea.franklin.database
 
-import cats.data.EitherT
+import cats.data.{EitherT, OptionT}
 import cats.implicits._
-import com.azavea.franklin.datamodel.{Context, StacSearchCollection}
+import com.azavea.franklin.datamodel.{Context, PaginationToken, SearchMethod, StacSearchCollection}
+import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
+import com.azavea.stac4s.syntax._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
+import doobie.implicits.javatime._
+import doobie.refined.implicits._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Projected
 import io.circe.syntax._
 import io.circe.{Error, Json}
+
+import java.time.Instant
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -31,18 +40,74 @@ object StacItemDao extends Dao[StacItem] {
     fr"item @> $jsonFilter :: jsonb"
   }
 
-  def getSearchResult(searchFilters: SearchFilters): ConnectionIO[StacSearchCollection] = {
-    val page = searchFilters.page
+  def getPaginationToken(
+      itemId: String
+  ): ConnectionIO[Option[PaginationToken]] =
+    (OptionT {
+      query
+        .copy[(PosInt, Instant)](selectF = fr"select serial_id, created_at from " ++ tableF)
+        .filter(fr"id = $itemId")
+        .selectOption
+    } map {
+      case (serialId, createdAt) => PaginationToken(createdAt, serialId)
+    }).value
+
+  def getSearchResult(
+      searchFilters: SearchFilters,
+      limit: NonNegInt,
+      apiHost: NonEmptyString,
+      searchMethod: SearchMethod
+  ): ConnectionIO[StacSearchCollection] = {
     for {
-      items   <- query.filter(searchFilters).list(searchFilters.page)
-      matched <- query.filter(searchFilters).count
+      items <- query.filter(searchFilters).list(limit.value)
+      nextToken <- items.lastOption traverse { item =>
+        getPaginationToken(item.id)
+      } map { _.flatten }
+      nextExists <- nextToken traverse { token =>
+        query.filter(searchFilters.copy(next = Some(token), limit = Some(1))).exists
+      }
+      matched <- query.filter(searchFilters.copy(next = None)).count
     } yield {
-      val next =
-        if ((items.length + page.offset) < matched)
-          page.nextPage.next.flatMap(s => NonEmptyString.from(s).toOption)
-        else None
-      val metadata = Context(next, items.length, page.limit, matched)
-      StacSearchCollection(metadata, items)
+      val links = (nextExists, nextToken, searchMethod, searchFilters.asQueryParameters) match {
+        case (Some(true), Some(token), SearchMethod.Get, "") =>
+          List(
+            StacLink(
+              href =
+                s"$apiHost/search?limit=$limit&next=${PaginationToken.encPaginationToken(token)}",
+              rel = StacLinkType.Next,
+              _type = Some(`application/json`),
+              title = None
+            )
+          )
+        case (Some(true), Some(token), SearchMethod.Get, query) =>
+          List(
+            StacLink(
+              href =
+                s"$apiHost/search?limit=$limit&next=${PaginationToken.encPaginationToken(token)}&$query",
+              rel = StacLinkType.Next,
+              _type = Some(`application/json`),
+              title = None
+            )
+          )
+        case (Some(true), Some(token), SearchMethod.Post, _) =>
+          List(
+            StacLink(
+              href = s"$apiHost/search?next=${PaginationToken.encPaginationToken(token)}",
+              rel = StacLinkType.Next,
+              _type = Some(`application/json`),
+              title = None
+            ).addExtensionFields(
+              PagingLinkExtension(
+                Map.empty,
+                searchFilters.copy(next = None),
+                false
+              )
+            )
+          )
+        case _ => Nil
+      }
+      val metadata = Context(items.length, matched)
+      StacSearchCollection(metadata, items, links)
     }
   }
 

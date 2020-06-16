@@ -2,11 +2,19 @@ package com.azavea.franklin
 
 import cats.implicits._
 import com.azavea.stac4s.TemporalExtent
+import doobie.implicits.javasql._
+import doobie.util.meta.Meta
+import doobie.util.{Read, Write}
 import io.circe.{Decoder, Encoder}
 
+import java.sql.Timestamp
 import java.time.Instant
 
-package object database extends CirceJsonbMeta with GeotrellisWktMeta {
+package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filterables {
+
+  implicit val instantMeta: Meta[Instant]   = Meta[Timestamp].imap(_.toInstant)(Timestamp.from)
+  implicit val instantRead: Read[Instant]   = Read[Timestamp].imap(_.toInstant)(Timestamp.from)
+  implicit val instantWrite: Write[Instant] = Write[Timestamp].imap(_.toInstant)(Timestamp.from)
 
   def stringToInstant: String => Either[Throwable, Instant] =
     (s: String) => Either.catchNonFatal(Instant.parse(s))

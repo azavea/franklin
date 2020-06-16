@@ -1,6 +1,7 @@
 package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.api.schemas._
+import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.{
   CrudError,
   InvalidPatch,
@@ -9,20 +10,35 @@ import com.azavea.franklin.error.{
   ValidationError
 }
 import com.azavea.stac4s.StacItem
+import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.{Codec => _, _}
 import sttp.model.StatusCode
 import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
+import sttp.tapir.codec.refined._
 import sttp.tapir.json.circe._
 
-class CollectionItemEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
+class CollectionItemEndpoints(
+    defaultLimit: NonNegInt,
+    enableTransactions: Boolean,
+    enableTiles: Boolean
+) {
 
   val base = endpoint.in("collections")
 
-  val collectionItemsList: Endpoint[String, Unit, Json, Nothing] =
+  val collectionItemsList
+      : Endpoint[(String, Option[PaginationToken], Option[NonNegInt]), Unit, Json, Nothing] =
     base.get
       .in(path[String])
       .in("items")
+      .in(
+        query[Option[PaginationToken]]("next")
+          .description("Opaque token to retrieve the next page of items")
+      )
+      .in(
+        query[Option[NonNegInt]]("limit")
+          .description(s"How many items to return. Defaults to ${defaultLimit}")
+      )
       .out(jsonBody[Json])
       .description("A feature collection of collection items")
       .name("collectionItems")

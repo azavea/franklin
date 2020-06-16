@@ -3,6 +3,7 @@ package com.azavea.franklin.api.commands
 import cats.implicits._
 import com.monovore.decline.Opts
 import com.monovore.decline.refined._
+import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 
 trait ApiOptions {
@@ -29,6 +30,11 @@ trait ApiOptions {
       .withDefault("http")
       .validate("Scheme must be either 'http' or 'https'")(s => (s == "http" || s == "https"))
 
+  private val defaultLimit =
+    Opts
+      .option[NonNegInt]("default-limit", "Default limit for items returned in paginated responses")
+      .withDefault(NonNegInt(30))
+
   private val enableTransactions =
     Opts
       .flag(
@@ -44,6 +50,7 @@ trait ApiOptions {
     internalPort,
     apiHost,
     apiScheme,
+    defaultLimit,
     enableTransactions,
     enableTiles
   ) mapN ApiConfig

@@ -66,7 +66,7 @@ object Dao {
     }
 
     def listQ(limit: Int): Query0[Model] =
-      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"LIMIT $limit")
+      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"ORDER BY created_at asc, serial_id asc LIMIT $limit")
         .query[Model]
 
     /** Provide a list of responses */
@@ -74,34 +74,23 @@ object Dao {
       listQ(limit).to[List]
     }
 
-    def listQ(offset: Int, limit: Int): Query0[Model] =
-      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"OFFSET $offset" ++ fr"LIMIT $limit")
-        .query[Model]
-
-    def listQ(offset: Int, limit: Int, orderClause: Fragment): Query0[Model] =
-      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ orderClause ++ fr"OFFSET $offset" ++ fr"LIMIT $limit")
-        .query[Model]
+    def list(limit: Option[Int]): ConnectionIO[List[Model]] = {
+      limit map { lim =>
+        list(lim)
+      } getOrElse list
+    }
 
     /** Provide a list of responses */
     def list: ConnectionIO[List[Model]] = {
-      (selectF ++ Fragments.whereAndOpt(filters: _*))
+      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"ORDER BY created_at asc, serial_id, asc")
         .query[Model]
         .to[List]
     }
 
     def count: ConnectionIO[Int] = (countF ++ Fragments.whereAndOpt(filters: _*)).query[Int].unique
 
-    /** Provide a list of responses */
-    def list(offset: Int, limit: Int): ConnectionIO[List[Model]] = {
-      listQ(offset, limit).to[List]
-    }
-
-    def list(offset: Int, limit: Int, orderClause: Fragment): ConnectionIO[List[Model]] = {
-      listQ(offset, limit, orderClause).to[List]
-    }
-
-    def list(page: Page): ConnectionIO[List[Model]] = {
-      listQ(page.offset, page.limit.getOrElse(20)).to[List]
+    def page(page: Page): ConnectionIO[List[Model]] = {
+      this.filter(page.next).list(page.limit.value)
     }
 
     def selectQ: Query0[Model] =

@@ -1,19 +1,11 @@
 package com.azavea.franklin.database
 
+import com.azavea.franklin.datamodel.PaginationToken
+import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.generic.semiauto._
+import io.circe.refined._
 
-import scala.util.Try
-
-final case class Page(limit: Option[Int], next: Option[String]) {
-  lazy val pageInt: Option[Int] = next.flatMap(v => Try(v.toInt).toOption)
-
-  lazy val offset: Int = pageInt match {
-    case Some(offsetInt) => offsetInt * limit.getOrElse(20)
-    case _               => 0
-  }
-
-  lazy val nextPage = Page(limit, pageInt.map(v => s"${v + 1}"))
-}
+final case class Page(limit: NonNegInt, next: Option[PaginationToken])
 
 object Page {
   implicit val pageEncoder = deriveEncoder[Page]

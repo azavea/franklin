@@ -7,6 +7,7 @@ import cats.implicits._
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.Filterables._
+import com.azavea.franklin.database.Page
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.error.{
@@ -23,6 +24,7 @@ import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
+import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
@@ -36,28 +38,47 @@ import java.nio.charset.StandardCharsets
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
     apiHost: NonEmptyString,
+    defaultLimit: NonNegInt,
     enableTransactions: Boolean,
     enableTiles: Boolean
 )(
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
 
-  def listCollectionItems(collectionId: String): F[Either[Unit, Json]] = {
+  def listCollectionItems(
+      collectionId: String,
+      token: Option[PaginationToken],
+      limit: Option[NonNegInt]
+  ): F[Either[Unit, Json]] = {
     val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
       items <- StacItemDao.query
         .filter(StacItemDao.collectionFilter(decodedId))
-        .list
+        .page(Page(limit getOrElse defaultLimit, token))
         .transact(xa)
+      paginationToken <- items.lastOption traverse { item =>
+        StacItemDao.getPaginationToken(item.id).transact(xa)
+      }
     } yield {
       val updatedItems = enableTiles match {
         case true =>
           items map { item => item.addTilesLink(apiHost, collectionId, item.id) }
         case _ => items
       }
+      val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
+        val lim = limit getOrElse defaultLimit
+        StacLink(
+          href = s"$apiHost/collections/$collectionId/items?next=${PaginationToken
+            .encPaginationToken(token)}&limit=$lim",
+          rel = StacLinkType.Next,
+          _type = Some(`application/json`),
+          title = None
+        )
+      }
       val response = Json.obj(
-        ("type", Json.fromString("FeatureCollection")),
-        ("features", updatedItems.asJson)
+        "type"     -> Json.fromString("FeatureCollection"),
+        "features" -> updatedItems.asJson,
+        "links"    -> nextLink.toList.asJson
       )
       Either.right(response)
     }
@@ -200,7 +221,8 @@ class CollectionItemsService[F[_]: Sync](
         Right((updated.asJson, updated.##.toString))
     }
 
-  val collectionItemEndpoints = new CollectionItemEndpoints(enableTransactions, enableTiles)
+  val collectionItemEndpoints =
+    new CollectionItemEndpoints(defaultLimit, enableTransactions, enableTiles)
 
   val collectionItemTileRoutes = collectionItemEndpoints.collectionItemTiles.toRoutes {
     case (collectionId, itemId) => getCollectionItemTileInfo(collectionId, itemId)
@@ -223,8 +245,8 @@ class CollectionItemsService[F[_]: Sync](
   )
 
   val routesList: NonEmptyList[HttpRoutes[F]] = NonEmptyList.of(
-    collectionItemEndpoints.collectionItemsList.toRoutes { collectionId =>
-      listCollectionItems(collectionId)
+    collectionItemEndpoints.collectionItemsList.toRoutes { query =>
+      Function.tupled(listCollectionItems _)(query)
     },
     collectionItemEndpoints.collectionItemsUnique.toRoutes {
       case (collectionId, itemId) => getCollectionItemUnique(collectionId, itemId)

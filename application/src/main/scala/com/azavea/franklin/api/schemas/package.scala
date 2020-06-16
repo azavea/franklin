@@ -2,6 +2,7 @@ package com.azavea.franklin.api
 
 import cats.implicits._
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
+import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
 import geotrellis.vector.Geometry
@@ -76,4 +77,6 @@ package object schemas {
   implicit val codecStacItem: Codec.JsonCodec[StacItem] =
     jsonCodec.mapDecode(decStacItem)(encStacItem)
 
+  implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
+    Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
 }

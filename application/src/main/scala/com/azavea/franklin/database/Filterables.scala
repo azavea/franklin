@@ -4,7 +4,6 @@ import cats.implicits._
 import com.azavea.franklin.datamodel._
 import com.azavea.stac4s.TemporalExtent
 import doobie.implicits._
-import doobie.implicits.legacy.instant._
 import doobie.postgres.circe.jsonb.implicits._
 import doobie.refined.implicits._
 import doobie.{Query => _, _}
@@ -62,7 +61,7 @@ trait FilterHelpers {
 
 trait Filterables extends GeotrellisWktMeta with FilterHelpers {
 
-  implicit val fragmentFilter: Filterable[Any, doobie.Fragment] =
+  implicit val fragmentFilter: Filterable[Any, Fragment] =
     Filterable[Any, Fragment] { fragment: Fragment => List(Some(fragment)) }
 
   implicit def maybeTFilter[T](
@@ -81,6 +80,14 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
           .map(filterable.toFilters)
           .foldLeft(List.empty[Option[Fragment]])(_ ++ _)
       }
+    }
+
+  implicit val paginationTokenFilter: Filterable[Any, PaginationToken] =
+    Filterable[Any, PaginationToken] { paginationToken: PaginationToken =>
+      List(Some(fr"""
+        created_at > ${paginationToken.timestampAtLeast} OR
+        (created_at = ${paginationToken.timestampAtLeast} AND serial_id > ${paginationToken.serialIdGreaterThan})
+      """))
     }
 
   implicit val searchFilter: Filterable[Any, SearchFilters] =
@@ -111,7 +118,12 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
             )
         }).toList map { Some(_) }
 
-      List(collectionsFilter, idFilter, geometryFilter, bboxFilter, temporalExtentFilter) ++ queryExtFilter
+      List(collectionsFilter, idFilter, geometryFilter, bboxFilter, temporalExtentFilter) ++ queryExtFilter ++ Filterable
+        .summon[
+          Any,
+          Option[PaginationToken]
+        ]
+        .toFilters(searchFilters.next)
     }
 }
 

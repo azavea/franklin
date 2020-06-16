@@ -1,21 +1,27 @@
 package com.azavea.franklin
 
+import cats.data.NonEmptyVector
+import cats.implicits._
+import com.azavea.franklin.database.SearchFilters
+import com.azavea.franklin.datamodel._
+import com.azavea.stac4s._
+import eu.timepit.refined.scalacheck.NumericInstances
+import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.string.NonEmptyString
+import geotrellis.vector.{Geometry, Point, Polygon}
+import io.circe.syntax._
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck._
+import org.scalacheck.cats.implicits._
+
 import java.time.Instant
 
-import cats.data.NonEmptyVector
-import org.scalacheck.cats.implicits._
-import cats.implicits._
-import com.azavea.franklin.datamodel._
-import com.azavea.franklin.database.SearchFilters
-import org.scalacheck._
-import com.azavea.stac4s._
-import eu.timepit.refined.types.string.NonEmptyString
-import io.circe.syntax._
-import geotrellis.vector.{Geometry, Point, Polygon}
-import org.scalacheck.Arbitrary.arbitrary
-import com.azavea.franklin.api.schemas._
+trait Generators extends NumericInstances {
 
-trait Generators {
+  private def paginationTokenGen: Gen[PaginationToken] = {
+    (arbitrary[Instant], arbitrary[PosInt]).mapN(PaginationToken.apply)
+  }
 
   private def twoDimBboxGen: Gen[TwoDimBbox] = {
     (arbitrary[Double], arbitrary[Double], arbitrary[Double], arbitrary[Double])
@@ -62,13 +68,13 @@ trait Generators {
   }
 
   private def nonEmptyAlphaStringGen: Gen[String] =
-    Gen.nonEmptyListOf(Gen.alphaChar) map { _.mkString("") }
+    Gen.listOfN(15, Gen.alphaChar) map { _.mkString("") }
 
   private def nonEmptyAlphaRefinedStringGen: Gen[NonEmptyString] =
     nonEmptyAlphaStringGen map NonEmptyString.unsafeFrom
 
   private def nonEmptyVectorGen[T](g: Gen[T]): Gen[NonEmptyVector[T]] =
-    Gen.nonEmptyContainerOf[Vector, T](g) map { NonEmptyVector.fromVectorUnsafe }
+    Gen.listOfN(3, g) map { values => NonEmptyVector.fromVectorUnsafe(values.toVector) }
 
   private def queryGen: Gen[Query] = Gen.oneOf(
     nonEmptyAlphaRefinedStringGen map { s => Equals(s.asJson) },
@@ -114,26 +120,12 @@ trait Generators {
       Gen.option(rectangleGen),
       Gen.const(List.empty[String]),
       Gen.const(List.empty[String]),
-      Gen.option(Gen.choose(1, 20)),
-      Gen.const[Option[String]](None),
-      Gen.mapOf((nonEmptyAlphaStringGen, Gen.nonEmptyListOf(queryGen)).tupled)
+      Gen.option(arbitrary[NonNegInt]),
+      Gen.mapOf((nonEmptyAlphaStringGen, Gen.nonEmptyListOf(queryGen)).tupled),
+      Gen.const(None)
     ).mapN(SearchFilters.apply)
   }
 
-  def searchFiltersToParams(filters: SearchFilters): String = {
-    val bboxString           = ("bbox", filters.bbox.map(bboxCodec.encode))
-    val temporalExtentString = ("datetime", filters.datetime.map(teCodec.encode))
-    val collections          = ("collections", Some(csvListCodec.encode(filters.collections)))
-    val items                = ("items", Some(csvListCodec.encode(filters.items)))
-    val limit                = ("limit", filters.limit.map(_.toString))
-    val next                 = ("next", filters.next)
-
-    List(bboxString, temporalExtentString, collections, items, limit, next)
-      .flatMap {
-        case (k, Some(v)) => Some(s"$k=$v")
-        case _            => None
-      }
-      .mkString("&")
-  }
-  implicit val arbSearchFilters = Arbitrary { searchFiltersGen }
+  implicit val arbSearchFilters   = Arbitrary { searchFiltersGen }
+  implicit val arbPaginationToken = Arbitrary { paginationTokenGen }
 }
