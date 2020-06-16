@@ -3,7 +3,6 @@ package com.azavea.franklin.crawler
 import com.azavea.stac4s.StacLink
 import com.azavea.stac4s.TwoDimBbox
 import com.azavea.stac4s._
-import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.methods.Implicits._
 import geotrellis.vector.{Feature, Geometry}
 import io.circe.JsonObject
@@ -18,15 +17,14 @@ object FeatureExtractor {
       feature: Feature[Geometry, JsonObject],
       forItem: StacItem,
       forItemCollection: String,
-      inCollection: StacCollection,
-      serverHost: NonEmptyString
+      inCollection: StacCollection
   ): StacItem = {
     val collectionHref =
-      s"$serverHost/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
+      s"/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
     val encodedSourceItemCollectionId =
       URLEncoder.encode(forItemCollection, StandardCharsets.UTF_8.toString)
     val sourceItemHref =
-      s"$serverHost/collections/$encodedSourceItemCollectionId/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
+      s"/collections/$encodedSourceItemCollectionId/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
 
     val collectionLink = StacLink(
       collectionHref,

@@ -4,6 +4,7 @@ import cats.Applicative
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.implicits._
+import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.Filterables._
@@ -25,7 +26,6 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
-import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
 import org.http4s.HttpRoutes
@@ -37,13 +37,15 @@ import java.nio.charset.StandardCharsets
 
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
-    apiHost: NonEmptyString,
-    defaultLimit: NonNegInt,
-    enableTransactions: Boolean,
-    enableTiles: Boolean
+    apiConfig: ApiConfig
 )(
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
+
+  val apiHost            = apiConfig.apiHost
+  val defaultLimit       = apiConfig.defaultLimit
+  val enableTransactions = apiConfig.enableTransactions
+  val enableTiles        = apiConfig.enableTiles
 
   def listCollectionItems(
       collectionId: String,
@@ -77,7 +79,7 @@ class CollectionItemsService[F[_]: Sync](
       }
       val response = Json.obj(
         "type"     -> Json.fromString("FeatureCollection"),
-        "features" -> updatedItems.asJson,
+        "features" -> updatedItems.map(_.updateLinksWithHost(apiConfig)).asJson,
         "links"    -> nextLink.toList.asJson
       )
       Either.right(response)
@@ -99,7 +101,7 @@ class CollectionItemsService[F[_]: Sync](
         itemOption map { item =>
           val updatedItem = (if (enableTiles) { item.addTilesLink(apiHost, collectionId, itemId) }
                              else { item })
-          (updatedItem.asJson, item.##.toString)
+          (updatedItem.updateLinksWithHost(apiConfig).asJson, item.##.toString)
         },
         NF(s"Item $itemId in collection $collectionId not found")
       )
@@ -133,7 +135,7 @@ class CollectionItemsService[F[_]: Sync](
 
   def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, (Json, String)]] = {
     val fallbackCollectionLink = StacLink(
-      s"$apiHost/collections/$collectionId",
+      s"/collections/$collectionId",
       StacLinkType.Parent,
       Some(`application/json`),
       Some("Parent collection")
@@ -142,7 +144,7 @@ class CollectionItemsService[F[_]: Sync](
       case Some(collId) =>
         if (collectionId == collId) {
           val parentLink = item.links.filter(_.rel == StacLinkType.Parent).headOption map {
-            existingLink => existingLink.copy(href = s"$apiHost/api/collections/$collectionId")
+            existingLink => existingLink.copy(href = s"/collections/$collectionId")
           } getOrElse {
             fallbackCollectionLink
           }

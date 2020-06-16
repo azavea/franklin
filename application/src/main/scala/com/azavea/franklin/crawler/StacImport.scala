@@ -12,7 +12,6 @@ import com.azavea.stac4s.syntax._
 import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
-import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.io.json.Implicits._
 import geotrellis.vector.io.json._
 import geotrellis.vector.{Feature, Geometry}
@@ -27,7 +26,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
+class StacImport(val catalogRoot: String) {
 
   implicit val cs     = IO.contextShift(global)
   implicit def logger = Slf4jLogger.getLogger[IO]
@@ -104,9 +103,8 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
               URLEncoder.encode(sourceItem.id, StandardCharsets.UTF_8.toString)
             val encodedCollectionId =
               URLEncoder.encode(collectionId, StandardCharsets.UTF_8.toString)
-            val newSourceLink = link.copy(href =
-              s"${serverHost.value}/collections/$encodedCollectionId/items/$encodedSourceItemId"
-            )
+            val newSourceLink =
+              link.copy(href = s"/collections/$encodedCollectionId/items/$encodedSourceItemId")
             item.copy(links = newSourceLink :: item.links.filter(_.rel != StacLinkType.Source))
         } getOrElse { item }
       }
@@ -133,7 +131,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
             readPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
               featureCollection =>
                 val parentCollectionHref =
-                  s"$serverHost/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
+                  s"/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
                 val derivedFromItemHref =
                   s"$parentCollectionHref/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
                 val parentCollectionLink = StacLink(
@@ -169,14 +167,13 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
                       feature,
                       forItem,
                       inCollection.id,
-                      labelCollection,
-                      serverHost
+                      labelCollection
                     )
                   }
 
                 val newAsset = Map(
                   s"Label collection ${idx + 1}" -> StacItemAsset(
-                    s"$serverHost/collections/${URLEncoder
+                    s"/collections/${URLEncoder
                       .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
                     None,
                     Some("Collection containing items for this item's label geojson asset"),
@@ -284,7 +281,7 @@ class StacImport(val catalogRoot: String, serverHost: NonEmptyString) {
         }
       _ <- collections
         .traverse(c => {
-          insertCollection(c.updateLinks(serverHost)) map { _ =>
+          insertCollection(c.updateLinks) map { _ =>
             println(s"Inserted collection: ${c.value.id}")
           }
         })
