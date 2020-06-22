@@ -1,6 +1,7 @@
 package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.api.schemas._
+import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.{
   CrudError,
@@ -17,7 +18,6 @@ import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.json.circe._
-import cats.data.NonEmptyList
 
 class CollectionItemEndpoints(
     defaultLimit: NonNegInt,
@@ -27,8 +27,12 @@ class CollectionItemEndpoints(
 
   val base = endpoint.in("collections")
 
-  val collectionItemsList
-      : Endpoint[(String, Option[PaginationToken], Option[NonNegInt]), Unit, Json, Nothing] =
+  val collectionItemsList: Endpoint[
+    (String, Option[PaginationToken], Option[NonNegInt], List[ExtensionName]),
+    Unit,
+    Json,
+    Nothing
+  ] =
     base.get
       .in(path[String])
       .in("items")
@@ -41,7 +45,7 @@ class CollectionItemEndpoints(
           .description(s"How many items to return. Defaults to ${defaultLimit}")
       )
       .in(
-        query[Option[NonEmptyList[ExtensionName]]]("extensions")
+        query[List[ExtensionName]]("extensions")
           .description("Return only items with listed supported extensions")
       )
       .out(jsonBody[Json])

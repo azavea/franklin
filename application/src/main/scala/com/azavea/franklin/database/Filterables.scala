@@ -9,6 +9,7 @@ import doobie.refined.implicits._
 import doobie.{Query => _, _}
 import geotrellis.vector.Projected
 import io.circe.syntax._
+import com.azavea.franklin.extensions.validation.ExtensionName
 
 trait FilterHelpers {
 
@@ -124,6 +125,13 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
           Option[PaginationToken]
         ]
         .toFilters(searchFilters.next)
+    }
+
+  implicit val extensionNamesFilter: Filterable[Any, List[ExtensionName]] =
+    Filterable[Any, List[ExtensionName]] { extensions =>
+      List(
+        extensions.toNel map { extensions => fr"item -> 'stac_extensions' @> ${extensions.asJson}" }
+      )
     }
 }
 
