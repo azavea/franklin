@@ -52,9 +52,6 @@ class ValidationSpec extends Specification with ScalaCheck {
       .errors
       .toSet
 
-    println(s"Test is: ${test}")
-    println(s"Expectation is: ${expectation}")
-
     test == expectation
   }
 
