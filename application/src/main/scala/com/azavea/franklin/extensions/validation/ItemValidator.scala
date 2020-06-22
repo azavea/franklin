@@ -1,5 +1,6 @@
 package com.azavea.franklin.extensions.validation
 
+import cats.syntax.semigroup._
 import com.azavea.stac4s.StacItem
 import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.extensions.ItemExtension
@@ -22,7 +23,10 @@ object ItemValidator {
     def validate(item: StacItem) = {
       val extensionResult     = item.getExtensionFields[T]
       val validationExtension = ValidationExtension.fromResult(extensionResult, name)
-      item.addExtensionFields(validationExtension)
+      val existingValidation  = item.getExtensionFields[ValidationExtension]
+      item.addExtensionFields(existingValidation map { _ |+| validationExtension } getOrElse {
+        validationExtension
+      })
     }
   }
 

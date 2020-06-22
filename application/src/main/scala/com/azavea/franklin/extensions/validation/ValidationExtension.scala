@@ -1,5 +1,6 @@
 package com.azavea.franklin.extensions.validation
 
+import cats.Show
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import eu.timepit.refined.types.string.NonEmptyString
@@ -32,9 +33,7 @@ object ValidationExtension {
       Map(
         "validation:attemptedExtensions" -> validationExtensionFields.attemptedExtensions.asJson,
         "validation:errors" -> validationExtensionFields.errors
-          .map({
-            _.message
-          })
+          .map({ err => Show[DecodingFailure].show(err) })
           .asJson
       )
     )

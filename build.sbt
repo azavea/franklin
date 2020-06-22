@@ -84,6 +84,9 @@ lazy val applicationDependencies = Seq(
   "com.chuusai"                 %% "shapeless"                % Versions.ShapelessVersion,
   "com.github.cb372"            %% "scalacache-caffeine"      % Versions.ScalacacheVersion,
   "com.github.cb372"            %% "scalacache-core"          % Versions.ScalacacheVersion,
+  "com.github.julien-truffaut"  %% "monocle-core"             % Versions.MonocleVersion,
+    "com.github.julien-truffaut"  %% "monocle-macro"             % Versions.MonocleVersion,
+
   "com.google.guava"            % "guava"                     % Versions.GuavaVersion,
   "com.lightbend"               %% "emoji"                    % Versions.EmojiVersion,
   "com.lihaoyi"                 %% "sourcecode"               % Versions.SourceCodeVersion,

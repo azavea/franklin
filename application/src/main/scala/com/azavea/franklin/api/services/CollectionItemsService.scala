@@ -1,6 +1,6 @@
 package com.azavea.franklin.api.services
 
-import cats.Applicative
+import cats.{Applicative, Functor}
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.implicits._
@@ -10,6 +10,12 @@ import com.azavea.franklin.database.Filterables._
 import com.azavea.franklin.database.Page
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.datamodel._
+import com.azavea.franklin.extensions.validation.{
+  getItemValidator,
+  getLinkValidator,
+  linksLens,
+  ExtensionName
+}
 import com.azavea.franklin.error.{
   CrudError,
   InvalidPatch,
@@ -48,12 +54,14 @@ class CollectionItemsService[F[_]: Sync](
   def listCollectionItems(
       collectionId: String,
       token: Option[PaginationToken],
-      limit: Option[NonNegInt]
+      limit: Option[NonNegInt],
+      extensions: List[ExtensionName]
   ): F[Either[Unit, Json]] = {
     val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
       items <- StacItemDao.query
         .filter(StacItemDao.collectionFilter(decodedId))
+        .filter(extensions)
         .page(Page(limit getOrElse defaultLimit, token))
         .transact(xa)
       paginationToken <- items.lastOption traverse { item =>
@@ -65,6 +73,11 @@ class CollectionItemsService[F[_]: Sync](
           items map { item => item.addTilesLink(apiHost, collectionId, item.id) }
         case _ => items
       }
+      val validated = updatedItems map { getItemValidator(extensions) }
+      val withValidatedLinks =
+        validated map {
+          linksLens.modify(Functor[List].lift(getLinkValidator(extensions)))
+        }
       val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
         val lim = limit getOrElse defaultLimit
         StacLink(
@@ -77,7 +90,7 @@ class CollectionItemsService[F[_]: Sync](
       }
       val response = Json.obj(
         "type"     -> Json.fromString("FeatureCollection"),
-        "features" -> updatedItems.asJson,
+        "features" -> withValidatedLinks.asJson,
         "links"    -> nextLink.toList.asJson
       )
       Either.right(response)
