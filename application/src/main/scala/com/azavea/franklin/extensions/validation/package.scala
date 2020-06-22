@@ -1,10 +1,9 @@
 package com.azavea.franklin.extensions
 
 import cats.implicits._
-import com.azavea.stac4s.{StacItem, StacLink}
 import com.azavea.stac4s.extensions.label.{LabelItemExtension, LabelLinkExtension}
 import com.azavea.stac4s.extensions.layer.LayerItemExtension
-
+import com.azavea.stac4s.{StacItem, StacLink}
 import monocle.macros.GenLens
 
 package object validation {

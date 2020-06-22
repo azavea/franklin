@@ -1,10 +1,10 @@
 package com.azavea.franklin.api
 
 import cats.implicits._
-import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
+import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s._
 import geotrellis.vector.Geometry
 import io.circe.{Encoder, Json}

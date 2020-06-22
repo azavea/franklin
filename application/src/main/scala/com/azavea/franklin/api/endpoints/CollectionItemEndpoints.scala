@@ -1,7 +1,6 @@
 package com.azavea.franklin.api.endpoints
 
 import com.azavea.franklin.api.schemas._
-import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.{
   CrudError,
@@ -10,6 +9,7 @@ import com.azavea.franklin.error.{
   NotFound,
   ValidationError
 }
+import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s.StacItem
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.{Codec => _, _}

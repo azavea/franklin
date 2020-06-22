@@ -3,13 +3,13 @@ package com.azavea.franklin.extensions.validation
 import cats.Show
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
+import cats.kernel.Semigroup
+import com.azavea.stac4s.extensions.ItemAssetExtension
+import com.azavea.stac4s.extensions.{ExtensionResult, ItemExtension, LinkExtension}
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.refined._
 import io.circe.syntax._
-import com.azavea.stac4s.extensions.{ExtensionResult, ItemExtension, LinkExtension}
-import cats.kernel.Semigroup
-import com.azavea.stac4s.extensions.ItemAssetExtension
 
 final case class ValidationExtension(
     attemptedExtensions: NonEmptyList[NonEmptyString],

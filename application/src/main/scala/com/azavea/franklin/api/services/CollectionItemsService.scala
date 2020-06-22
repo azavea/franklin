@@ -1,27 +1,27 @@
 package com.azavea.franklin.api.services
 
-import cats.{Applicative, Functor}
 import cats.data.NonEmptyList
 import cats.effect._
 import cats.implicits._
+import cats.{Applicative, Functor}
 import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.Filterables._
 import com.azavea.franklin.database.Page
 import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.datamodel._
-import com.azavea.franklin.extensions.validation.{
-  getItemValidator,
-  getLinkValidator,
-  linksLens,
-  ExtensionName
-}
 import com.azavea.franklin.error.{
   CrudError,
   InvalidPatch,
   MidAirCollision,
   NotFound => NF,
   ValidationError
+}
+import com.azavea.franklin.extensions.validation.{
+  getItemValidator,
+  getLinkValidator,
+  linksLens,
+  ExtensionName
 }
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._

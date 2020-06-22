@@ -2,13 +2,13 @@ package com.azavea.franklin.extensions.validation
 
 import cats.syntax.semigroup._
 import com.azavea.stac4s.StacItem
-import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.extensions.ItemExtension
-import eu.timepit.refined.types.string.NonEmptyString
-import eu.timepit.refined.auto._
+import com.azavea.stac4s.extensions.eo.EOItemExtension
 import com.azavea.stac4s.extensions.label.LabelItemExtension
 import com.azavea.stac4s.extensions.layer.LayerItemExtension
-import com.azavea.stac4s.extensions.eo.EOItemExtension
+import com.azavea.stac4s.syntax._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.string.NonEmptyString
 
 trait ItemValidator[T] {
   def validate(item: StacItem): StacItem
