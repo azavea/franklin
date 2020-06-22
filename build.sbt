@@ -104,6 +104,7 @@ lazy val applicationDependencies = Seq(
   "com.zaxxer"                  % "HikariCP"                  % Versions.HikariVersion,
   "eu.timepit"                  %% "refined-scalacheck"       % Versions.Refined % "test",
   "eu.timepit"                  %% "refined"                  % Versions.Refined,
+  "eu.timepit"                  %% "refined-cats"             % Versions.Refined,
   "io.chrisdavenport"           %% "cats-scalacheck"          % Versions.CatsScalacheckVersion % "test",
   "io.chrisdavenport"           %% "log4cats-core"            % Versions.Log4CatsVersion,
   "io.chrisdavenport"           %% "log4cats-slf4j"           % Versions.Log4CatsVersion,

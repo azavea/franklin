@@ -17,6 +17,7 @@ import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.json.circe._
+import cats.data.NonEmptyList
 
 class CollectionItemEndpoints(
     defaultLimit: NonNegInt,
@@ -38,6 +39,10 @@ class CollectionItemEndpoints(
       .in(
         query[Option[NonNegInt]]("limit")
           .description(s"How many items to return. Defaults to ${defaultLimit}")
+      )
+      .in(
+        query[Option[NonEmptyList[ExtensionName]]]("extensions")
+          .description("Return only items with listed supported extensions")
       )
       .out(jsonBody[Json])
       .description("A feature collection of collection items")
