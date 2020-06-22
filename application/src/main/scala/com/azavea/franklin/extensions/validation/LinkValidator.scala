@@ -1,12 +1,12 @@
 package com.azavea.franklin.extensions.validation
 
 import com.azavea.stac4s.StacLink
-import com.azavea.stac4s.syntax._
-import com.azavea.stac4s.extensions.LinkExtension
-import eu.timepit.refined.types.string.NonEmptyString
-import eu.timepit.refined.auto._
-import com.azavea.stac4s.extensions.label.LabelLinkExtension
 import com.azavea.stac4s.StacLinkType
+import com.azavea.stac4s.extensions.LinkExtension
+import com.azavea.stac4s.extensions.label.LabelLinkExtension
+import com.azavea.stac4s.syntax._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.types.string.NonEmptyString
 
 trait LinkValidator[T] {
   def validate(link: StacLink): StacLink
