@@ -33,7 +33,10 @@ object ValidationExtension {
       Map(
         "validation:attemptedExtensions" -> validationExtensionFields.attemptedExtensions.asJson,
         "validation:errors" -> validationExtensionFields.errors
-          .map({ err => Show[DecodingFailure].show(err) })
+          .map({ err =>
+            println(err)
+            Show[DecodingFailure].show(err)
+          })
           .asJson
       )
     )
@@ -47,14 +50,15 @@ object ValidationExtension {
   implicit val validationExtensionAssetExtension: ItemAssetExtension[ValidationExtension] =
     ItemAssetExtension.instance
 
-  implicit val monoidValidationExtension: Semigroup[ValidationExtension] =
+  implicit val semigroupValidationExtension: Semigroup[ValidationExtension] =
     new Semigroup[ValidationExtension] {
 
-      def combine(x: ValidationExtension, y: ValidationExtension): ValidationExtension =
+      def combine(x: ValidationExtension, y: ValidationExtension): ValidationExtension = {
         ValidationExtension(
           x.attemptedExtensions.concat(y.attemptedExtensions.toList),
           x.errors ++ y.errors
         )
+      }
     }
 
   def success(name: NonEmptyString) = ValidationExtension(
