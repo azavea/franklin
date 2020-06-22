@@ -33,10 +33,7 @@ object ValidationExtension {
       Map(
         "validation:attemptedExtensions" -> validationExtensionFields.attemptedExtensions.asJson,
         "validation:errors" -> validationExtensionFields.errors
-          .map({ err =>
-            println(err)
-            Show[DecodingFailure].show(err)
-          })
+          .map({ err => Show[DecodingFailure].show(err) })
           .asJson
       )
     )
