@@ -25,8 +25,9 @@ class SearchServiceSpec
   This specification verifies that the Search Service can run without crashing
 
   The search service should:
-    - search with POST search filters         $postSearchFiltersExpectation
-    - search with GET search filters          $getSearchFiltersExpectation
+    - search with POST search filters               $postSearchFiltersExpectation
+    - search with GET search filters                $getSearchFiltersExpectation
+    - find an item with filters designed to find it $findItemWhenExpected
 """
 
   val apiConfig: ApiConfig =
