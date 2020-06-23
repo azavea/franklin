@@ -1,0 +1,75 @@
+package com.azavea.franklin.api
+
+import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService}
+
+import cats.effect.Resource
+import cats.effect.Sync
+import cats.implicits._
+import com.azavea.stac4s.{StacCollection, StacItem}
+import eu.timepit.refined.auto._
+import io.circe.syntax._
+import org.http4s.{Method, Request, Uri}
+import org.http4s.circe.CirceEntityEncoder._
+import org.http4s.circe.CirceEntityDecoder._
+import org.http4s.implicits._
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
+/** Why sync? Because CirceEntityDecoder requires it :sad-trombone:
+  *
+  * https://github.com/http4s/http4s/blob/v0.21.4/circe/src/main/scala/org/http4s/circe/CirceEntityDecoder.scala#L7-L12
+  */
+class TestClient[F[_]: Sync](
+    collectionsService: CollectionsService[F],
+    collectionItemsService: CollectionItemsService[F]
+) {
+
+  private def createCollection(collection: StacCollection): F[StacCollection] =
+    collectionsService.routes.orNotFound.run(
+      Request(
+        method = Method.POST,
+        uri = Uri.unsafeFromString("/collections")
+      ).withEntity(collection.asJson)
+    ) flatMap { _.as[StacCollection] }
+
+  private def deleteCollection(collection: StacCollection): F[Unit] =
+    Sync[F].delay(println(s"oh no can't delete collections yet: ${collection.id}"))
+
+  private def createItemInCollection(collection: StacCollection, item: StacItem): F[StacItem] = {
+    val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+    collectionItemsService.routes.orNotFound.run(
+      Request(
+        method = Method.POST,
+        uri = Uri.unsafeFromString(s"/collections/$encodedCollectionId/items")
+      ).withEntity(item)
+    ) flatMap { _.as[StacItem] }
+  }
+
+  private def deleteItemInCollection(collection: StacCollection, item: StacItem): F[Unit] = {
+    val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+    val encodedItemId       = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
+    collectionItemsService.routes.orNotFound
+      .run(
+        Request(
+          method = Method.DELETE,
+          uri = Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId")
+        )
+      )
+      .void
+  }
+
+  private def acquire(item: StacItem, collection: StacCollection): F[(StacItem, StacCollection)] =
+    for {
+      createdCollection <- createCollection(collection)
+      createdItem       <- createItemInCollection(createdCollection, item)
+    } yield (createdItem, createdCollection)
+
+  private def release(item: StacItem, collection: StacCollection): F[Unit] =
+    deleteCollection(collection) *> deleteItemInCollection(collection, item)
+
+  def getResource(
+      item: StacItem,
+      collection: StacCollection
+  ): Resource[F, (StacItem, StacCollection)] =
+    Resource.make(acquire(item, collection))(Function.tupled(release))
+}
