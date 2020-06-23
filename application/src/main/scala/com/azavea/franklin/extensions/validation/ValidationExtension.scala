@@ -1,6 +1,5 @@
 package com.azavea.franklin.extensions.validation
 
-import cats.Show
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.kernel.Semigroup
@@ -13,7 +12,7 @@ import io.circe.syntax._
 
 final case class ValidationExtension(
     attemptedExtensions: NonEmptyList[NonEmptyString],
-    errors: List[DecodingFailure]
+    errors: List[NonEmptyString]
 )
 
 object ValidationExtension {
@@ -22,9 +21,7 @@ object ValidationExtension {
     "validation:attemptedExtensions",
     "validation:errors"
   )((extensions: NonEmptyList[NonEmptyString], errors: List[NonEmptyString]) =>
-    ValidationExtension(extensions, errors map { errMessage =>
-      DecodingFailure(errMessage.value, Nil)
-    })
+    ValidationExtension(extensions, errors)
   )
 
   implicit val encValidationExtension: Encoder.AsObject[ValidationExtension] = Encoder
@@ -32,9 +29,7 @@ object ValidationExtension {
     .contramapObject((validationExtensionFields: ValidationExtension) =>
       Map(
         "validation:attemptedExtensions" -> validationExtensionFields.attemptedExtensions.asJson,
-        "validation:errors" -> validationExtensionFields.errors
-          .map({ err => Show[DecodingFailure].show(err) })
-          .asJson
+        "validation:errors"              -> validationExtensionFields.errors.asJson
       )
     )
 
@@ -64,7 +59,11 @@ object ValidationExtension {
   )
 
   def failure(name: NonEmptyString, errors: List[DecodingFailure]) =
-    ValidationExtension(NonEmptyList.of(name), errors)
+    ValidationExtension(NonEmptyList.of(name), errors map { (err: DecodingFailure) =>
+      NonEmptyString.from(CursorOp.opsToPath(err.history))
+    } collect {
+      case Right(v) => v
+    })
 
   def fromResult[T](result: ExtensionResult[T], name: NonEmptyString) = result match {
     case Invalid(errs) =>
