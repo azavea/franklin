@@ -29,13 +29,13 @@ class ValidationSpec extends Specification with ScalaCheck {
       .toSet
       .map { (s: NonEmptyString) => s.value }
     val expectation = Set(Label, Layer) map { _.repr }
-    test == expectation
+    test should beTypedEqualTo(expectation)
   }
 
   def accumulateErrorsExpectation = prop { (item: StacItem) =>
     val validateLabel    = getItemValidator(List(Label))
     val validateLayer    = getItemValidator(List(Layer))
-    val combinedValidate = getItemValidator(List(Label, Layer))
+    val combinedValidate = getItemValidator(List(Layer, Label))
 
     val labelValidated    = validateLabel(item)
     val layerValidated    = validateLayer(item)
@@ -52,7 +52,7 @@ class ValidationSpec extends Specification with ScalaCheck {
       .errors
       .toSet
 
-    test == expectation
+    test should beTypedEqualTo(expectation)
   }
 
 }
