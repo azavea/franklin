@@ -61,7 +61,10 @@ class TestClient[F[_]: Sync](
   private def acquire(item: StacItem, collection: StacCollection): F[(StacItem, StacCollection)] =
     for {
       createdCollection <- createCollection(collection)
-      createdItem       <- createItemInCollection(createdCollection, item)
+      createdItem <- createItemInCollection(
+        createdCollection,
+        item.copy(collection = Some(createdCollection.id))
+      )
     } yield (createdItem, createdCollection)
 
   private def release(item: StacItem, collection: StacCollection): F[Unit] =

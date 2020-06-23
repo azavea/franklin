@@ -2,6 +2,7 @@ package com.azavea.franklin.api.services
 
 import cats.data.OptionT
 import cats.effect.IO
+import cats.implicits._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.TestClient
 import com.azavea.franklin.api.commands.ApiConfig
@@ -22,12 +23,17 @@ class SearchServiceSpec
     with TestDatabaseSpec
     with Generators {
   def is = s2"""
-  This specification verifies that the Search Service can run without crashing
+  This specification verifies that the Search Service sensibly finds and excludes items
 
   The search service should:
     - search with POST search filters               $postSearchFiltersExpectation
     - search with GET search filters                $getSearchFiltersExpectation
     - find an item with filters designed to find it $findItemWhenExpected
+    - not find items when excluded by time          $dontFindTimeFilters
+    - not find items when excluded by bbox          $dontFindBboxFilters
+    - not find items when excluded by intersection  $dontFindGeomFilters
+    - not find items when excluded by collection    $dontFindCollectionFilters
+    - not find items when excluded by item          $dontFindItemFilters
 """
 
   val apiConfig: ApiConfig =
@@ -52,6 +58,35 @@ class SearchServiceSpec
   )
 
   val testClient = new TestClient[IO](collectionsService, collectionItemsService)
+
+  private def getExclusionTest(
+      name: String
+  )(getFilters: StacCollection => StacItem => Option[SearchFilters]) =
+    prop { (stacItem: StacItem, stacCollection: StacCollection) =>
+      val exclusiveParams = getFilters(stacCollection)(stacItem) map { _.asQueryParameters }
+      exclusiveParams.map({ params =>
+        val resource = testClient.getResource(stacItem, stacCollection)
+        val requestIO = resource.use {
+          case _ =>
+            val request =
+              Request[IO](
+                method = Method.GET,
+                uri = Uri.unsafeFromString(s"/search?$params")
+              )
+            (for {
+              resp    <- service.routes.run(request)
+              decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
+            } yield decoded).value
+        }
+
+        val result = requestIO.unsafeRunSync.get
+        !result.features.map(_.id).contains(stacItem.id) should beFalse
+
+      }) getOrElse {
+        println(s"$name did not produce filters to use");
+        true should beTrue
+      }
+    }
 
   def postSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
     val request = Request[IO](method = Method.POST, uri = Uri.fromString("/search").right.get)
@@ -93,4 +128,21 @@ class SearchServiceSpec
     val result = requestIO.unsafeRunSync.get
     result.features.head.id should beEqualTo(stacItem.id)
   }
+
+  def dontFindTimeFilters =
+    getExclusionTest("temporal extent")(_ => item => FiltersFor.timeFilterExcluding(item))
+
+  def dontFindBboxFilters =
+    getExclusionTest("bbox")(_ => item => FiltersFor.bboxFilterExcluding(item).some)
+
+  def dontFindGeomFilters =
+    getExclusionTest("geom intersection")(_ => item => FiltersFor.geomFilterExcluding(item).some)
+
+  def dontFindCollectionFilters =
+    getExclusionTest("collection ids")(collection =>
+      _ => FiltersFor.collectionFilterExcluding(collection).some
+    )
+
+  def dontFindItemFilters =
+    getExclusionTest("item ids")(_ => item => FiltersFor.itemFilterExcluding(item).some)
 }
