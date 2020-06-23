@@ -5,6 +5,7 @@ import cats.implicits._
 import com.azavea.franklin.database.SearchFilters
 import com.azavea.franklin.datamodel._
 import com.azavea.stac4s._
+import com.azavea.stac4s.testing._
 import eu.timepit.refined.scalacheck.NumericInstances
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
@@ -23,24 +24,6 @@ trait Generators extends NumericInstances {
     (arbitrary[Instant], arbitrary[PosInt]).mapN(PaginationToken.apply)
   }
 
-  private def twoDimBboxGen: Gen[TwoDimBbox] = {
-    (arbitrary[Double], arbitrary[Double], arbitrary[Double], arbitrary[Double])
-      .mapN(TwoDimBbox.apply _)
-  }
-
-  private def threeDimBboxGen: Gen[ThreeDimBbox] =
-    (
-      arbitrary[Double],
-      arbitrary[Double],
-      arbitrary[Double],
-      arbitrary[Double],
-      arbitrary[Double],
-      arbitrary[Double]
-    ).mapN(ThreeDimBbox.apply _)
-
-  private def bboxGen: Gen[Bbox] =
-    Gen.oneOf(twoDimBboxGen.widen, threeDimBboxGen.widen)
-
   private def instantGen: Gen[Instant] = arbitrary[Int] map { x =>
     Instant.now.plusMillis(x.toLong)
   }
@@ -58,14 +41,6 @@ trait Generators extends NumericInstances {
         Point(lowerX, lowerY)
       )
     }
-
-  private def temporalExtentGen: Gen[TemporalExtent] = {
-    (arbitrary[Instant], arbitrary[Instant]).tupled
-      .map {
-        case (start, end) =>
-          TemporalExtent(start, end)
-      }
-  }
 
   private def nonEmptyAlphaStringGen: Gen[String] =
     Gen.listOfN(15, Gen.alphaChar) map { _.mkString("") }
@@ -115,8 +90,8 @@ trait Generators extends NumericInstances {
 
   private def searchFiltersGen: Gen[SearchFilters] = {
     (
-      Gen.option(bboxGen),
-      Gen.option(temporalExtentGen),
+      Gen.option(arbitrary[Bbox]),
+      Gen.option(arbitrary[TemporalExtent]),
       Gen.option(rectangleGen),
       Gen.const(List.empty[String]),
       Gen.const(List.empty[String]),
