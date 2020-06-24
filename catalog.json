@@ -1,0 +1,46 @@
+{
+	"stac_version": "0.9.0",
+	"stac_extensions": [],
+	"id": "arcticdem-frontiere",
+	"title": "STAC for ArcticDEM data",
+	"description": "STAC for ArcticDEM data",
+	"extent": {
+		"spatial": {
+			"bbox": [
+				[
+					-180.0,
+					-90.0,
+					180.0,
+					90.0
+				]
+			]
+		},
+		"temporal": {
+			"interval": [
+				[
+					"2016-05-03T13:21:30.040Z",
+					"2017-05-03T13:21:30.040Z"
+				]
+			]
+		}
+	},
+        "properties": {
+		"collection": "arcticdem-frontiere"
+	},
+	"links": [{
+		"href": "../catalog.json",
+		"rel": "root"
+	}, {
+		"href": "../catalog.json",
+		"rel": "parent"
+	}, {
+		"href": "./catalog.json",
+		"rel": "self"
+	}, {
+		"href": "./arcticdem-frontiere-nord.json",
+		"rel": "item"
+	}, {
+		"href": "./arcticdem-frontiere-sud.json",
+		"rel": "item"
+	}]
+}

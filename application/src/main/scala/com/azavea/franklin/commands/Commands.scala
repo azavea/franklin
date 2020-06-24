@@ -7,7 +7,6 @@ import com.monovore.decline._
 import doobie.Transactor
 import doobie.free.connection.{rollback, setAutoCommit, unit}
 import doobie.util.transactor.Strategy
-import eu.timepit.refined.types.numeric.PosInt
 import org.flywaydb.core.Flyway
 
 object Commands {
@@ -18,9 +17,6 @@ object Commands {
 
   final case class RunImport(
       catalogRoot: String,
-      externalPort: PosInt,
-      apiHost: String,
-      apiScheme: String,
       config: DatabaseConfig,
       dryRun: Boolean
   )
@@ -29,9 +25,6 @@ object Commands {
     Opts.subcommand("import", "Import a STAC catalog") {
       (
         Options.catalogRoot,
-        Options.externalPort,
-        Options.apiHost,
-        Options.apiScheme,
         Options.databaseConfig,
         Options.dryRun
       ).mapN(RunImport)
@@ -63,15 +56,11 @@ object Commands {
 
   def runImport(
       stacCatalog: String,
-      externalPort: PosInt,
-      apiHost: String,
-      apiScheme: String,
       config: DatabaseConfig,
       dryRun: Boolean
   )(
       implicit contextShift: ContextShift[IO]
   ): IO[Unit] = {
-    val serverHost = getHost(externalPort, apiHost, apiScheme)
     val xa =
       Transactor.strategy.set(
         Transactor.fromDriverManager[IO](
@@ -85,7 +74,7 @@ object Commands {
         } else { Strategy.default }
       )
 
-    new StacImport(stacCatalog, serverHost).runIO(xa)
+    new StacImport(stacCatalog).runIO(xa)
   }
 
   def applicationCommand(implicit cs: ContextShift[IO]): Command[Product] =
