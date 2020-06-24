@@ -1,0 +1,50 @@
+{
+	"stac_version": "0.9.0",
+	"stac_extensions": [],
+	"type": "Feature",
+	"id": "arcticdem-frontiere-nord",
+	"bbox": [-141.654425, 60.9005314, -140.355825, 62.6769616],
+
+	"geometry": {
+		"type": "Polygon",
+		"coordinates": [
+			[
+				[-141.2419144, 60.9005314],
+				[-140.355825, 60.9443354],
+				[-140.7105981, 62.6769616],
+				[-141.654425, 62.6299269],
+				[-141.2419144, 60.9005314]
+			]
+		]
+	},
+	"collection": "arcticdem-frontiere",
+	"properties": {
+		"collection": "arcticdem-frontiere",
+		"layer:ids": [
+			"arcticdem"
+                ],
+		"datetime": "2017-05-03T13:21:30.040Z"
+	},
+	"assets": {
+		"DSM": {
+			"title": "Frontiere nord Yukon-Alaska",
+			"href": "https://datacube-dev-data.s3.ca-central-1.amazonaws.com/arcticdem-stac-layers/arcticdem-frontiere/arcticdem-frontiere-nord.tif",
+			"type": "image/tiff; application=geotiff",
+			"roles":[]
+		}
+	},
+	"links": [{
+			"rel": "self",
+			"href": "./arcticdem-frontiere-nord.json"
+	},{
+      "rel": "parent",
+      "href": "./catalog.json"
+    },{
+      "rel": "collection",
+      "href": "./catalog.json"
+    },{
+      "rel": "root",
+      "href": "../catalog.json"
+    }
+	]
+}

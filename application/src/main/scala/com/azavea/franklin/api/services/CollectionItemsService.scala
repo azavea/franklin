@@ -18,6 +18,7 @@ import com.azavea.franklin.error.{
   NotFound => NF,
   ValidationError
 }
+import com.azavea.franklin.extensions.validation.{validateItemAndLinks, ExtensionName}
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import com.azavea.stac4s.{`application/json`, StacItem, StacLink}
@@ -50,12 +51,14 @@ class CollectionItemsService[F[_]: Sync](
   def listCollectionItems(
       collectionId: String,
       token: Option[PaginationToken],
-      limit: Option[NonNegInt]
+      limit: Option[NonNegInt],
+      extensions: List[ExtensionName]
   ): F[Either[Unit, Json]] = {
     val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
       items <- StacItemDao.query
         .filter(StacItemDao.collectionFilter(decodedId))
+        .filter(extensions)
         .page(Page(limit getOrElse defaultLimit, token))
         .transact(xa)
       paginationToken <- items.lastOption traverse { item =>
@@ -67,6 +70,8 @@ class CollectionItemsService[F[_]: Sync](
           items map { item => item.addTilesLink(apiHost, collectionId, item.id) }
         case _ => items
       }
+      val withValidatedLinks =
+        updatedItems map { validateItemAndLinks }
       val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
         val lim = limit getOrElse defaultLimit
         StacLink(
@@ -79,7 +84,7 @@ class CollectionItemsService[F[_]: Sync](
       }
       val response = Json.obj(
         "type"     -> Json.fromString("FeatureCollection"),
-        "features" -> updatedItems.map(_.updateLinksWithHost(apiConfig)).asJson,
+        "features" -> withValidatedLinks.map(_.updateLinksWithHost(apiConfig)).asJson,
         "links"    -> nextLink.toList.asJson
       )
       Either.right(response)
@@ -101,7 +106,10 @@ class CollectionItemsService[F[_]: Sync](
         itemOption map { item =>
           val updatedItem = (if (enableTiles) { item.addTilesLink(apiHost, collectionId, itemId) }
                              else { item })
-          (updatedItem.updateLinksWithHost(apiConfig).asJson, item.##.toString)
+          (
+            validateItemAndLinks(updatedItem).updateLinksWithHost(apiConfig).asJson,
+            item.##.toString
+          )
         },
         NF(s"Item $itemId in collection $collectionId not found")
       )
@@ -151,7 +159,7 @@ class CollectionItemsService[F[_]: Sync](
           val withParent =
             item.copy(links = parentLink +: item.links.filter(_.rel != StacLinkType.Parent))
           StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-            Right((inserted.asJson, inserted.##.toString))
+            Right((validateItemAndLinks(inserted).asJson, inserted.##.toString))
           }
         } else {
           Applicative[F].pure(
@@ -184,7 +192,7 @@ class CollectionItemsService[F[_]: Sync](
       case Left(_) =>
         Left(ValidationError(s"Update of $itemId not possible with value passed"))
       case Right(item) =>
-        Right((item.asJson, item.##.toString))
+        Right((validateItemAndLinks(item).asJson, item.##.toString))
     }
 
   def deleteItem(
@@ -220,7 +228,7 @@ class CollectionItemsService[F[_]: Sync](
       case Left(StacItemDao.PatchInvalidatesItem(err)) =>
         Left(InvalidPatch(s"Patch would invalidate item $itemId", jsonPatch, err))
       case Right(updated) =>
-        Right((updated.asJson, updated.##.toString))
+        Right((validateItemAndLinks(updated).asJson, updated.##.toString))
     }
 
   val collectionItemEndpoints =

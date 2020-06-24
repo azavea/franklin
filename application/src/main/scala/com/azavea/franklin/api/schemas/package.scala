@@ -4,6 +4,7 @@ import cats.implicits._
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
+import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s._
 import geotrellis.vector.Geometry
 import io.circe.{Encoder, Json}
@@ -14,6 +15,9 @@ import sttp.tapir.{Codec, DecodeResult, Schema}
 import scala.util.Try
 
 package object schemas {
+
+  implicit val extensionNameCodec: PlainCodec[ExtensionName] =
+    Codec.string.mapDecode(s => DecodeResult.Value(ExtensionName.fromString(s)))(_.toString)
 
   implicit val schemaForTemporalExtent: Schema[TemporalExtent] = Schema(
     schemaForCirceJson.schemaType
