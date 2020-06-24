@@ -44,17 +44,12 @@ class SearchServiceSpec
 
   val collectionsService: CollectionsService[IO] = new CollectionsService[IO](
     transactor,
-    apiConfig.apiHost,
-    apiConfig.enableTransactions,
-    apiConfig.enableTiles
+    apiConfig
   )
 
   val collectionItemsService: CollectionItemsService[IO] = new CollectionItemsService[IO](
     transactor,
-    apiConfig.apiHost,
-    apiConfig.defaultLimit,
-    apiConfig.enableTransactions,
-    apiConfig.enableTiles
+    apiConfig
   )
 
   val testClient = new TestClient[IO](collectionsService, collectionItemsService)
@@ -64,7 +59,7 @@ class SearchServiceSpec
   )(getFilters: StacCollection => StacItem => Option[SearchFilters]) =
     prop { (stacItem: StacItem, stacCollection: StacCollection) =>
       val exclusiveParams = getFilters(stacCollection)(stacItem) map { _.asQueryParameters }
-      exclusiveParams.map({ params =>
+      val testResult = exclusiveParams.map({ params =>
         val resource = testClient.getResource(stacItem, stacCollection)
         val requestIO = resource.use {
           case _ =>
@@ -80,12 +75,15 @@ class SearchServiceSpec
         }
 
         val result = requestIO.unsafeRunSync.get
-        !result.features.map(_.id).contains(stacItem.id) should beFalse
+        result.features.map(_.id).contains(stacItem.id)
+      })
 
-      }) getOrElse {
-        println(s"$name did not produce filters to use");
-        true should beTrue
-      }
+      (testResult must beSome(false)) or (testResult must beNone and skipped(
+        {
+          println(s"$name did not produce filters. Skipped rather than succeeded.")
+          name
+        }
+      ))
     }
 
   def postSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
