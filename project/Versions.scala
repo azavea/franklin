@@ -12,7 +12,7 @@ object Versions {
   val Flyway                  = "6.4.4"
   val Fs2Version              = "2.4.2"
   val GeoTrellisVersion       = "3.4.0"
-  val GeotrellisServerVersion = "4.1.0"
+  val GeotrellisServerVersion = "4.2.0"
   val GuavaVersion            = "23.0"
   val HikariVersion           = "3.4.5"
   val Http4sVersion           = "0.21.4"
