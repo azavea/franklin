@@ -58,16 +58,18 @@ class SearchServiceSpec
       name: String
   )(getFilters: StacCollection => StacItem => Option[SearchFilters]) =
     prop { (stacItem: StacItem, stacCollection: StacCollection) =>
-      val exclusiveParams = getFilters(stacCollection)(stacItem) map { _.asQueryParameters }
+      val exclusiveParams = getFilters(stacCollection)(stacItem)
       val testResult = exclusiveParams.map({ params =>
         val resource = testClient.getResource(stacItem, stacCollection)
         val requestIO = resource.use {
           case _ =>
+            // doing this as a POST is important, since otherwise the `intersection` and
+            // `query` params would be ignored
             val request =
               Request[IO](
-                method = Method.GET,
-                uri = Uri.unsafeFromString(s"/search?$params")
-              )
+                method = Method.POST,
+                uri = Uri.unsafeFromString(s"/search")
+              ).withEntity(params)
             (for {
               resp    <- service.routes.run(request)
               decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
@@ -111,9 +113,10 @@ class SearchServiceSpec
     val requestIO = resource.use {
       case (item, collection) =>
         val inclusiveParams =
-          FiltersFor.inclusiveFilters(collection, item).asQueryParameters
+          FiltersFor.inclusiveFilters(collection, item)
         val request =
-          Request[IO](method = Method.GET, uri = Uri.unsafeFromString(s"/search?$inclusiveParams"))
+          Request[IO](method = Method.POST, uri = Uri.unsafeFromString(s"/search"))
+            .withEntity(inclusiveParams)
         (for {
           resp    <- service.routes.run(request)
           decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
