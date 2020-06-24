@@ -1,14 +1,15 @@
 package com.azavea.franklin.api.services
 
 import cats.Semigroup
+import cats.data.NonEmptyList
 import cats.implicits._
 import com.azavea.franklin.database.SearchFilters
 import com.azavea.stac4s.{StacCollection, StacItem, TemporalExtent, TwoDimBbox}
+import geotrellis.vector.Extent
 import io.circe.optics._
 import io.circe.syntax._
+
 import java.time.Instant
-import geotrellis.vector.Extent
-import cats.data.NonEmptyList
 
 object FiltersFor {
 

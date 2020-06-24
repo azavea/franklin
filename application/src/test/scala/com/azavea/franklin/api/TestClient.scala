@@ -1,17 +1,17 @@
 package com.azavea.franklin.api
 
-import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService}
-
 import cats.effect.Resource
 import cats.effect.Sync
 import cats.implicits._
+import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService}
 import com.azavea.stac4s.{StacCollection, StacItem}
 import eu.timepit.refined.auto._
 import io.circe.syntax._
-import org.http4s.{Method, Request, Uri}
-import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.circe.CirceEntityDecoder._
+import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.implicits._
+import org.http4s.{Method, Request, Uri}
+
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 

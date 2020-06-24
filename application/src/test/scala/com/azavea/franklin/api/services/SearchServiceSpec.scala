@@ -8,8 +8,8 @@ import com.azavea.franklin.api.TestClient
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.database.{SearchFilters, TestDatabaseSpec}
 import com.azavea.franklin.datamodel.StacSearchCollection
-import com.azavea.stac4s.{StacCollection, StacItem}
 import com.azavea.stac4s.testing._
+import com.azavea.stac4s.{StacCollection, StacItem}
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import org.http4s.circe.CirceEntityDecoder._
