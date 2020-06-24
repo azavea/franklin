@@ -64,7 +64,7 @@ class SearchServiceSpec
         val requestIO = resource.use {
           case _ =>
             // doing this as a POST is important, since otherwise the `intersection` and
-            // `query` params would be ignored
+            // `query` params would be ignored (not that we're testing `query` here)
             val request =
               Request[IO](
                 method = Method.POST,
