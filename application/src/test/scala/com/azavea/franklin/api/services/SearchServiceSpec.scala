@@ -79,10 +79,7 @@ class SearchServiceSpec
       })
 
       (testResult must beSome(false)) or (testResult must beNone and skipped(
-        {
-          println(s"$name did not produce filters. Skipped rather than succeeded.")
-          name
-        }
+        s"$name did not produce filters"
       ))
     }
 
