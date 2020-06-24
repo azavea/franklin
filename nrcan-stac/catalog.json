@@ -1,0 +1,17 @@
+{
+	"stac_version": "0.9.0",
+	"stac_extensions" : [],
+	"id": "arcticdem-stac-layers",	
+	"title": "STAC for ArcticDEM data",
+	"description": "STAC for ArcticDEM data",
+	"links": [{
+		"href": "./catalog.json",
+		"rel": "self"
+	},{
+		"href": "./catalog.json",
+		"rel": "root"
+	},{
+		"href": "./arcticdem-frontiere/catalog.json",
+		"rel": "child"
+	}]
+}

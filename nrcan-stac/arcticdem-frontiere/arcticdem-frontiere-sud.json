@@ -1,0 +1,47 @@
+{
+	"stac_version": "0.9.0",
+	"stac_extensions": [],
+	"type": "Feature",
+	"id": "arcticdem-frontiere-sud",
+	"bbox" : [-141.4416001,60.0401708,-140.1944289,61.8091913],
+	
+	"geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [-141.054192, 60.0401708],
+        [-140.1944289, 60.0824985],
+		[-140.5275401, 61.8091913],
+        [-141.4416001, 61.7638211],
+        [-141.054192, 60.0401708]
+      ]
+    ]
+  },
+  "collection": "arcticdem-frontiere",
+  "properties": {
+	  	"collection": "arcticdem-frontiere",
+		"datetime": "2016-05-03T13:21:30.040Z"
+	},
+ "assets": {
+		"DSM": {
+			"title": "Frontiere sud Yukon-Alaska",
+			"href": "https://datacube-dev-data.s3.ca-central-1.amazonaws.com/arcticdem-stac-layers/arcticdem-frontiere/arcticdem-frontiere-sud.tif",
+			"type": "image/tiff; application=geotiff",
+			"roles":[]
+		}
+	},
+	"links": [{
+			"rel": "self",
+			"href": "./arcticdem-frontiere-sud.json"
+	},{
+      "rel": "parent",
+      "href": "./catalog.json"
+    },{
+      "rel": "collection",
+      "href": "./catalog.json"
+    },{
+      "rel": "root",
+      "href": "../catalog.json"
+    }
+	]
+}

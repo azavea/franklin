@@ -18,7 +18,7 @@ class ValidationSpec extends Specification with ScalaCheck {
 """
 
   def validateSeveralExpectation = prop { (item: StacItem) =>
-    val validate = getItemValidator(List(Label, Layer))
+    val validate = getItemValidator(List("label", "layer"))
     val test = validate(item)
       .getExtensionFields[ValidationExtension]
       .toEither
@@ -33,9 +33,9 @@ class ValidationSpec extends Specification with ScalaCheck {
   }
 
   def accumulateErrorsExpectation = prop { (item: StacItem) =>
-    val validateLabel    = getItemValidator(List(Label))
-    val validateLayer    = getItemValidator(List(Layer))
-    val combinedValidate = getItemValidator(List(Layer, Label))
+    val validateLabel    = getItemValidator(List("label"))
+    val validateLayer    = getItemValidator(List("layer"))
+    val combinedValidate = getItemValidator(List("layer", "label"))
 
     val labelValidated    = validateLabel(item)
     val layerValidated    = validateLayer(item)

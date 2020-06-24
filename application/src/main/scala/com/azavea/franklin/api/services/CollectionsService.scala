@@ -2,6 +2,7 @@ package com.azavea.franklin.api.services
 
 import cats.effect._
 import cats.implicits._
+import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.StacCollectionDao
@@ -12,7 +13,6 @@ import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
-import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
 import org.http4s.dsl.Http4sDsl
@@ -23,17 +23,21 @@ import java.nio.charset.StandardCharsets
 
 class CollectionsService[F[_]: Sync](
     xa: Transactor[F],
-    apiHost: NonEmptyString,
-    enableTransactions: Boolean,
-    enableTiles: Boolean
+    apiConfig: ApiConfig
 )(
     implicit contextShift: ContextShift[F]
 ) extends Http4sDsl[F] {
 
+  val apiHost            = apiConfig.apiHost
+  val enableTransactions = apiConfig.enableTransactions
+  val enableTiles        = apiConfig.enableTiles
+
   def listCollections(): F[Either[Unit, Json]] = {
     for {
       collections <- StacCollectionDao.listCollections().transact(xa)
-      updated = collections map { _.maybeAddTilesLink(enableTiles, apiHost) }
+      updated = collections map { _.maybeAddTilesLink(enableTiles, apiHost) } map {
+        _.updateLinksWithHost(apiConfig)
+      }
     } yield {
       Either.right(CollectionsResponse(updated).asJson)
     }
@@ -48,7 +52,9 @@ class CollectionsService[F[_]: Sync](
         .transact(xa)
     } yield {
       Either.fromOption(
-        collectionOption map { _.maybeAddTilesLink(enableTiles, apiHost).asJson },
+        collectionOption map { _.maybeAddTilesLink(enableTiles, apiHost) } map {
+          _.updateLinksWithHost(apiConfig).asJson
+        },
         NF(s"Collection $collectionId not found")
       )
     }

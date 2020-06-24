@@ -1,0 +1,14 @@
+{
+    "bbox": null,
+    "collections": [],
+    "datetime": null,
+    "intersects": null,
+    "items": [],
+    "limit": 1,
+    "next": null,
+    "query": {
+        "class": {
+            "eq": "red"
+        }
+    }
+}
