@@ -98,17 +98,12 @@ $$$$
       tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
       collectionRoutes = new CollectionsService[IO](
         xa,
-        apiConfig.apiHost,
-        apiConfig.enableTransactions,
-        apiConfig.enableTiles
+        apiConfig
       ).routes <+> new CollectionItemsService[
         IO
       ](
         xa,
-        apiConfig.apiHost,
-        apiConfig.defaultLimit,
-        apiConfig.enableTransactions,
-        apiConfig.enableTiles
+        apiConfig
       ).routes
       router = CORS(
         Router(
@@ -139,10 +134,8 @@ $$$$
           .use(_ => IO.never)
           .as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
-      case RunImport(catalogRoot, externalPort, apiHost, apiScheme, dbConfig, dryRun) =>
-        runImport(catalogRoot, externalPort, apiHost, apiScheme, dbConfig, dryRun) map { _ =>
-          ExitCode.Success
-        }
+      case RunImport(catalogRoot, dbConfig, dryRun) =>
+        runImport(catalogRoot, dbConfig, dryRun) map { _ => ExitCode.Success }
     } match {
       case Left(e) =>
         IO {
