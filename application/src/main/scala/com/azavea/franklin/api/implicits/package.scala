@@ -20,7 +20,13 @@ package object implicits {
 
     def updateLinksWithHost(apiConfig: ApiConfig) = {
       val updatedLinks = item.links.map(_.addServerHost(apiConfig))
-      item.copy(links = updatedLinks)
+      val updatedAssets = item.assets.mapValues { asset =>
+        asset.href.startsWith("/") match {
+          case true => asset.copy(href = s"${apiConfig.apiHost}${asset.href}")
+          case _    => asset
+        }
+      }
+      item.copy(links = updatedLinks, assets = updatedAssets)
     }
 
     def addTilesLink(apiHost: String, collectionId: String, itemId: String) = {
