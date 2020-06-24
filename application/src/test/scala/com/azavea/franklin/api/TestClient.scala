@@ -32,8 +32,17 @@ class TestClient[F[_]: Sync](
       ).withEntity(collection.asJson)
     ) flatMap { _.as[StacCollection] }
 
-  private def deleteCollection(collection: StacCollection): F[Unit] =
-    Sync[F].delay(println(s"oh no can't delete collections yet: ${collection.id}"))
+  private def deleteCollection(collection: StacCollection): F[Unit] = {
+    val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+    collectionsService.routes.orNotFound
+      .run(
+        Request(
+          method = Method.DELETE,
+          uri = Uri.unsafeFromString(s"/collections/$encodedCollectionId")
+        )
+      )
+      .void
+  }
 
   private def createItemInCollection(collection: StacCollection, item: StacItem): F[StacItem] = {
     val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)

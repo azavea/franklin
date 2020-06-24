@@ -28,6 +28,12 @@ class CollectionEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
         | """.trim.stripMargin)
       .name("postCollection")
 
+  val deleteCollection: Endpoint[String, NotFound, Unit, Nothing] =
+    base.get
+      .in(path[String])
+      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
+      .name("collectionDelete")
+
   val collectionUnique: Endpoint[String, NotFound, Json, Nothing] =
     base.get
       .in(path[String])
@@ -47,5 +53,5 @@ class CollectionEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
 
   val endpoints = List(collectionsList, collectionUnique) ++ {
     if (enableTiles) List(collectionTiles) else Nil
-  } ++ { if (enableTransactions) List(createCollection) else Nil }
+  } ++ { if (enableTransactions) List(createCollection, deleteCollection) else Nil }
 }

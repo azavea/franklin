@@ -105,18 +105,43 @@ class CollectionsService[F[_]: Sync](
     } yield Right(inserted.asJson)
   }
 
+  def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    for {
+      collectionOption <- StacCollectionDao
+        .getCollectionUnique(collectionId)
+        .transact(xa)
+      deleted <- collectionOption traverse { _ =>
+        StacCollectionDao.query.filter(fr"id = $collectionId").delete.transact(xa).void
+      }
+    } yield {
+      Either.fromOption(
+        deleted,
+        NF(s"Collection $collectionId not found")
+      )
+    }
+  }
+
   val collectionEndpoints = new CollectionEndpoints(enableTransactions, enableTiles)
 
   val routesList = List(
-    collectionEndpoints.createCollection.toRoutes(collection => createCollection(collection)),
     collectionEndpoints.collectionsList.toRoutes(_ => listCollections()),
     collectionEndpoints.collectionUnique
       .toRoutes {
         case collectionId => getCollectionUnique(collectionId)
       }
-  ) ++ (if (enableTiles) {
-          List(collectionEndpoints.collectionTiles.toRoutes(getCollectionTiles))
-        } else Nil)
+  ) ++
+    (if (enableTiles) {
+       List(collectionEndpoints.collectionTiles.toRoutes(getCollectionTiles))
+     } else Nil) ++
+    (if (enableTransactions) {
+       List(
+         collectionEndpoints.createCollection
+           .toRoutes(collection => createCollection(collection)),
+         collectionEndpoints.deleteCollection
+           .toRoutes(rawCollectionId => deleteCollection(rawCollectionId))
+       )
+     } else Nil)
 
   val routes = routesList.foldK
 
