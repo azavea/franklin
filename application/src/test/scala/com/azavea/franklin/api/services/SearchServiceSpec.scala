@@ -13,7 +13,6 @@ import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.{Method, Request, Uri}
 import org.specs2.{ScalaCheck, Specification}
-import com.azavea.franklin.api.TestServices
 
 class SearchServiceSpec
     extends Specification

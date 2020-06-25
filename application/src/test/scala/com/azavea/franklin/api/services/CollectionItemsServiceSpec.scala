@@ -1,24 +1,24 @@
 package com.azavea.franklin.api.services
 
+import cats.data.OptionT
 import cats.effect.IO
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
 import com.azavea.franklin.datamodel.CollectionItemsResponse
-import com.azavea.stac4s.testing._
 import com.azavea.stac4s.StacCollection
+import com.azavea.stac4s.StacItem
+import com.azavea.stac4s.testing._
+import io.circe.Json
+import io.circe.syntax._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
+import org.http4s.{Header, Headers}
 import org.http4s.{Method, Request, Uri}
 import org.specs2.{ScalaCheck, Specification}
-import cats.data.OptionT
-import io.circe.syntax._
+
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import com.azavea.stac4s.StacItem
-import _root_.org.http4s.Header
-import org.http4s.Headers
-import io.circe.Json
 
 class CollectionItemsServiceSpec
     extends Specification

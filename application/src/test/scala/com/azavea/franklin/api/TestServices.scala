@@ -1,10 +1,10 @@
 package com.azavea.franklin.api
 
-import com.azavea.franklin.api.commands.ApiConfig
 import cats.effect.{ContextShift, Sync}
-import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
+import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService, SearchService}
 import doobie.Transactor
+import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 
 class TestServices[F[_]: Sync](xa: Transactor[F])(implicit cs: ContextShift[F]) {
 

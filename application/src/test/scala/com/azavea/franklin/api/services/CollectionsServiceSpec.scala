@@ -1,17 +1,17 @@
 package com.azavea.franklin.api.services
 
+import cats.data.OptionT
 import cats.effect.IO
 import cats.implicits._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
 import com.azavea.franklin.datamodel.CollectionsResponse
-import com.azavea.stac4s.testing._
 import com.azavea.stac4s.StacCollection
+import com.azavea.stac4s.testing._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.{Method, Request, Uri}
 import org.specs2.{ScalaCheck, Specification}
-import cats.data.OptionT
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
