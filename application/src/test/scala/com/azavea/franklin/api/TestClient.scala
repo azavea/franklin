@@ -67,21 +67,17 @@ class TestClient[F[_]: Sync](
       .void
   }
 
-  private def acquire(item: StacItem, collection: StacCollection): F[(StacItem, StacCollection)] =
-    for {
-      createdCollection <- createCollection(collection)
-      createdItem <- createItemInCollection(
-        createdCollection,
-        item.copy(collection = Some(createdCollection.id))
-      )
-    } yield (createdItem, createdCollection)
+  def getItemResource(collection: StacCollection, item: StacItem): Resource[F, StacItem] =
+    Resource.make(createItemInCollection(collection, item.copy(collection = Some(collection.id))))(
+      item => deleteItemInCollection(collection, item)
+    )
 
-  private def release(item: StacItem, collection: StacCollection): F[Unit] =
-    deleteCollection(collection) *> deleteItemInCollection(collection, item)
+  def getCollectionResource(collection: StacCollection): Resource[F, StacCollection] =
+    Resource.make(createCollection(collection))(collection => deleteCollection(collection))
 
-  def getResource(
+  def getCollectionItemResource(
       item: StacItem,
       collection: StacCollection
   ): Resource[F, (StacItem, StacCollection)] =
-    Resource.make(acquire(item, collection))(Function.tupled(release))
+    (getItemResource(collection, item), getCollectionResource(collection)).tupled
 }
