@@ -32,7 +32,7 @@ class CollectionItemsServiceSpec
     - create and delete items         $createDeleteItemExpectation
     - list items                      $listCollectionItemsExpectation
     - update an item                  $updateItemExpectation
-    - patch an item                   $patchItemExpectation
+    - patch an item                   $skipped
     - get an item                     $getCollectionItemExpectation
 """
 
