@@ -131,7 +131,6 @@ object StacItemDao extends Dao[StacItem] {
       .selectOption
 
   private def doUpdate(itemId: String, item: StacItem): ConnectionIO[StacItem] = {
-    println("attempting to do the udpate")
     val itemExtent = Projected(item.geometry.getEnvelope, 4326)
     val fragment   = fr"""
       UPDATE collection_items
@@ -168,17 +167,12 @@ object StacItemDao extends Dao[StacItem] {
       jsonPatch: Json,
       etag: String
   ): ConnectionIO[Option[Either[StacItemDaoError, StacItem]]] = {
-    println("gonna try to patch")
     (for {
       itemInDBOpt <- getCollectionItem(collectionId, itemId)
-      _ = "past getting them item"
       update <- itemInDBOpt traverse { itemInDB =>
         val etagInDb = itemInDB.##
         val patched  = itemInDB.asJson.deepMerge(jsonPatch).dropNullValues
         val decoded  = patched.as[StacItem]
-        println("decoded the patch")
-        println(s"Decoded is: $decoded")
-        println(s"Etags match: ${etagInDb.toString == etag}")
         (decoded, etagInDb.toString == etag) match {
           case (Right(patchedItem), true) =>
             doUpdate(itemId, patchedItem.copy(properties = patchedItem.properties.filter({
