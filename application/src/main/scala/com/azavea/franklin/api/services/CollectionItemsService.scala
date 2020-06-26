@@ -238,7 +238,12 @@ class CollectionItemsService[F[_]: Sync](
       case Some(Left(StacItemDao.UpdateFailed)) =>
         Left(ValidationError(s"Update of $itemId not possible with value passed"))
       case Some(Left(StacItemDao.PatchInvalidatesItem(err))) =>
-        Left(InvalidPatch(s"Patch would invalidate item $itemId", jsonPatch, err))
+        Left(
+          InvalidPatch(
+            s"Patch would invalidate item $itemId: ${CursorOp.opsToPath(err.history)}",
+            jsonPatch
+          )
+        )
       case Some(Right(updated)) =>
         Right((validateItemAndLinks(updated).asJson, updated.##.toString))
 

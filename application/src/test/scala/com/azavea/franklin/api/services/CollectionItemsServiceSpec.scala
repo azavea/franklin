@@ -32,7 +32,7 @@ class CollectionItemsServiceSpec
     - create and delete items         $createDeleteItemExpectation
     - list items                      $listCollectionItemsExpectation
     - update an item                  $updateItemExpectation
-    - patch an item                   $skipped
+    - patch an item                   $patchItemExpectation
     - get an item                     $getCollectionItemExpectation
 """
 
@@ -149,7 +149,6 @@ class CollectionItemsServiceSpec
 
         (for {
           response <- testServices.collectionItemsService.routes.run(request)
-          _        <- OptionT.liftF { IO { println(s"Status: ${response.status}") } }
           decoded  <- OptionT.liftF { response.as[StacItem] }
         } yield decoded).value
     }
@@ -159,6 +158,8 @@ class CollectionItemsServiceSpec
       res.properties.asJson.as[Map[String, Json]].toOption
     } flatMap {
       _.get("veryUnlikelyProperty")
+    } flatMap {
+      _.as[Boolean].toOption
     } must beSome(true)
   }
 

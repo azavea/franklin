@@ -17,7 +17,7 @@ import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Projected
 import io.circe.syntax._
-import io.circe.{Error, Json}
+import io.circe.{DecodingFailure, Json}
 
 import java.time.Instant
 
@@ -28,7 +28,7 @@ object StacItemDao extends Dao[StacItem] {
   case object StaleObject                                 extends StacItemDaoError("Server-side object updated")
   case object ItemNotFound                                extends StacItemDaoError("Not found")
 
-  case class PatchInvalidatesItem(err: Error)
+  case class PatchInvalidatesItem(err: DecodingFailure)
       extends StacItemDaoError("Applying patch would create an invalid patch item")
 
   val tableName = "collection_items"
