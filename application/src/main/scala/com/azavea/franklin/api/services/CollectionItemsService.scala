@@ -82,12 +82,11 @@ class CollectionItemsService[F[_]: Sync](
           title = None
         )
       }
-      val response = Json.obj(
-        "type"     -> Json.fromString("FeatureCollection"),
-        "features" -> withValidatedLinks.map(_.updateLinksWithHost(apiConfig)).asJson,
-        "links"    -> nextLink.toList.asJson
+      val response = CollectionItemsResponse(
+        withValidatedLinks.map(_.updateLinksWithHost(apiConfig)),
+        nextLink.toList
       )
-      Either.right(response)
+      Either.right(response.asJson)
     }
 
   }
@@ -159,7 +158,8 @@ class CollectionItemsService[F[_]: Sync](
           val withParent =
             item.copy(links = parentLink +: item.links.filter(_.rel != StacLinkType.Parent))
           StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-            Right((validateItemAndLinks(inserted).asJson, inserted.##.toString))
+            val validated = validateItemAndLinks(inserted)
+            Right((validated.asJson, validated.##.toString))
           }
         } else {
           Applicative[F].pure(
@@ -173,17 +173,21 @@ class CollectionItemsService[F[_]: Sync](
       case None =>
         val withParent = item.copy(links = fallbackCollectionLink +: item.links)
         StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-          Right((inserted.asJson, inserted.##.toString))
+          val validated = validateItemAndLinks(inserted)
+          Right((validated.asJson, validated.##.toString))
         }
     }
   }
 
   def putItem(
-      collectionId: String,
-      itemId: String,
+      rawCollectionId: String,
+      rawItemId: String,
       itemUpdate: StacItem,
       etag: String
-  ): F[Either[CrudError, (Json, String)]] =
+  ): F[Either[CrudError, (Json, String)]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
     StacItemDao.updateStacItem(collectionId, itemId, itemUpdate, etag).transact(xa) map {
       case Left(StacItemDao.StaleObject) =>
         Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
@@ -194,23 +198,31 @@ class CollectionItemsService[F[_]: Sync](
       case Right(item) =>
         Right((validateItemAndLinks(item).asJson, item.##.toString))
     }
+  }
 
   def deleteItem(
-      collectionId: String,
-      itemId: String
-  ): F[Either[Unit, Unit]] =
+      rawCollectionId: String,
+      rawItemId: String
+  ): F[Either[Unit, Unit]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
     StacItemDao.query
       .filter(fr"id = $itemId")
       .filter(StacItemDao.collectionFilter(collectionId))
       .delete
       .transact(xa) *> Applicative[F].pure { Right(()) }
+  }
 
   def patchItem(
-      collectionId: String,
-      itemId: String,
+      rawCollectionId: String,
+      rawItemId: String,
       jsonPatch: Json,
       etag: String
-  ): F[Either[CrudError, (Json, String)]] =
+  ): F[Either[CrudError, (Json, String)]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
     StacItemDao
       .patchItem(
         collectionId,
@@ -219,17 +231,24 @@ class CollectionItemsService[F[_]: Sync](
         etag
       )
       .transact(xa) map {
-      case Left(StacItemDao.StaleObject) =>
-        Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
-      case Left(StacItemDao.ItemNotFound) =>
+      case None | Some(Left(StacItemDao.ItemNotFound)) =>
         Left(NF(s"Item $itemId in collection $collectionId not found"))
-      case Left(StacItemDao.UpdateFailed) =>
+      case Some(Left(StacItemDao.StaleObject)) =>
+        Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
+      case Some(Left(StacItemDao.UpdateFailed)) =>
         Left(ValidationError(s"Update of $itemId not possible with value passed"))
-      case Left(StacItemDao.PatchInvalidatesItem(err)) =>
-        Left(InvalidPatch(s"Patch would invalidate item $itemId", jsonPatch, err))
-      case Right(updated) =>
+      case Some(Left(StacItemDao.PatchInvalidatesItem(err))) =>
+        Left(
+          InvalidPatch(
+            s"Patch would invalidate item $itemId: ${CursorOp.opsToPath(err.history)}",
+            jsonPatch
+          )
+        )
+      case Some(Right(updated)) =>
         Right((validateItemAndLinks(updated).asJson, updated.##.toString))
+
     }
+  }
 
   val collectionItemEndpoints =
     new CollectionItemEndpoints(defaultLimit, enableTransactions, enableTiles)

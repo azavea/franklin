@@ -1,11 +1,7 @@
 package com.azavea.franklin.error
 
-import cats.Show
 import io.circe.generic.semiauto._
-import io.circe.syntax._
 import io.circe.{Codec => _, _}
-import sttp.tapir._
-import sttp.tapir.json.circe._
 
 sealed abstract class CrudError
 
@@ -30,41 +26,9 @@ object MidAirCollision {
   implicit val decMidAirCollision: Decoder[MidAirCollision] = deriveDecoder
 }
 
-case class InvalidPatch(msg: String, patch: Json, error: Error) extends CrudError
+case class InvalidPatch(msg: String, patch: Json) extends CrudError
 
 object InvalidPatch {
-
-  implicit val encError: Encoder[Error] = new Encoder[Error] {
-    def apply(err: Error): Json = Show[Error].show(err).asJson
-  }
-
-  implicit val decError: Decoder[Error] = Decoder.decodeString.emap { s =>
-    s.takeWhile(_ != ':').toLowerCase match {
-      case "parsingfailure" =>
-        val baseMessage = s.dropWhile(_ != ':').drop(2)
-        Right(ParsingFailure(baseMessage, new Exception(baseMessage)))
-      case "decodingfailure" =>
-        val baseMessage = s.dropWhile(_ != ':').drop(2)
-        // DecodingFailures don't print their list of cursor ops in a way that's
-        // easy to recover -- this is definitely not lawful, but I don't _think_
-        // we need to decode these error messages ever -- the decoder just has
-        // to exist for some tapir typeclass evidence I think
-        Right(DecodingFailure(baseMessage, Nil))
-    }
-  }
-
-  val jsonCodec: Codec.JsonCodec[Json] = implicitly[Codec.JsonCodec[Json]]
-
-  def decodePatch(json: Json): DecodeResult[InvalidPatch] = json.as[InvalidPatch] match {
-    case Left(err) => DecodeResult.Error(err.getMessage, err)
-    case Right(v)  => DecodeResult.Value(v)
-  }
-
-  def encodePatch(patch: InvalidPatch): Json = Encoder[InvalidPatch].apply(patch)
-
-  implicit val codecInvalidPatch: Codec.JsonCodec[InvalidPatch] =
-    jsonCodec.mapDecode(decodePatch)(encodePatch)
-
   implicit val encInvalidPatch: Encoder[InvalidPatch] = deriveEncoder
   implicit val decInvalidPatch: Decoder[InvalidPatch] = deriveDecoder
 }

@@ -4,8 +4,8 @@ import cats.implicits._
 import com.azavea.stac4s.StacItem
 import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.testing._
-import org.specs2.{ScalaCheck, Specification}
 import eu.timepit.refined.types.string.NonEmptyString
+import org.specs2.{ScalaCheck, Specification}
 
 class ValidationSpec extends Specification with ScalaCheck {
 

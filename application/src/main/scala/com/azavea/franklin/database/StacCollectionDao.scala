@@ -7,9 +7,11 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
 
-object StacCollectionDao {
+object StacCollectionDao extends Dao[StacCollection] {
 
   val selectF = fr"SELECT collection FROM collections"
+
+  val tableName = "collections"
 
   def listCollections(): ConnectionIO[List[StacCollection]] = {
     selectF.query[StacCollection].to[List]

@@ -17,7 +17,7 @@ import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Projected
 import io.circe.syntax._
-import io.circe.{Error, Json}
+import io.circe.{DecodingFailure, Json}
 
 import java.time.Instant
 
@@ -28,7 +28,7 @@ object StacItemDao extends Dao[StacItem] {
   case object StaleObject                                 extends StacItemDaoError("Server-side object updated")
   case object ItemNotFound                                extends StacItemDaoError("Not found")
 
-  case class PatchInvalidatesItem(err: Error)
+  case class PatchInvalidatesItem(err: DecodingFailure)
       extends StacItemDaoError("Applying patch would create an invalid patch item")
 
   val tableName = "collection_items"
@@ -155,8 +155,6 @@ object StacItemDao extends Dao[StacItem] {
       )
       etagInDb = itemInDB.##
       update <- if (etagInDb.toString == etag) {
-        // this painful type inference failure thanks to subtyping will someday
-        // drive me insane, but not yet
         EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }
       } else {
         EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
@@ -168,26 +166,24 @@ object StacItemDao extends Dao[StacItem] {
       itemId: String,
       jsonPatch: Json,
       etag: String
-  ): ConnectionIO[Either[StacItemDaoError, StacItem]] =
+  ): ConnectionIO[Option[Either[StacItemDaoError, StacItem]]] = {
     (for {
-      itemInDB <- EitherT.fromOptionF[ConnectionIO, StacItemDaoError, StacItem](
-        getCollectionItem(collectionId, itemId),
-        ItemNotFound: StacItemDaoError
-      )
-      etagInDb = itemInDB.##
-      patched  = itemInDB.asJson.deepMerge(jsonPatch).dropNullValues
-      decoded  = patched.as[StacItem]
-      update <- (decoded, etagInDb.toString == etag) match {
-        case (Right(patchedItem), true) =>
-          EitherT {
+      itemInDBOpt <- getCollectionItem(collectionId, itemId)
+      update <- itemInDBOpt traverse { itemInDB =>
+        val etagInDb = itemInDB.##
+        val patched  = itemInDB.asJson.deepMerge(jsonPatch).dropNullValues
+        val decoded  = patched.as[StacItem]
+        (decoded, etagInDb.toString == etag) match {
+          case (Right(patchedItem), true) =>
             doUpdate(itemId, patchedItem.copy(properties = patchedItem.properties.filter({
               case (_, v) => !v.isNull
-            }))).attempt
-          } leftMap { _ => UpdateFailed: StacItemDaoError }
-        case (_, false) =>
-          EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
-        case (Left(err), _) =>
-          EitherT.leftT[ConnectionIO, StacItem] { PatchInvalidatesItem(err): StacItemDaoError }
+            }))).attempt map { _.leftMap(_ => UpdateFailed: StacItemDaoError) }
+          case (_, false) =>
+            (Either.left[StacItemDaoError, StacItem](StaleObject)).pure[ConnectionIO]
+          case (Left(err), _) =>
+            (Either.left[StacItemDaoError, StacItem](PatchInvalidatesItem(err))).pure[ConnectionIO]
+        }
       }
-    } yield update).value
+    } yield update)
+  }
 }
