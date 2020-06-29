@@ -86,8 +86,7 @@ how to provide a class at runtime that I could cast to what I wanted and call me
 
 I don't think this option would make it significantly harder to deploy Franklin. You
 need to be able to place a jar somewhere that the Franklin container you intend
-to run can access it. I think this is a four line Dockerfile. You also need to be
-able to host that container image somewhere possibly private. I believe we can take that skill for granted.
+to run can access it. I think "Container image A, but with a file in location B" is a four line Dockerfile.
 
 ##### What restrictions are placed on the user as a result of this choice?
 
