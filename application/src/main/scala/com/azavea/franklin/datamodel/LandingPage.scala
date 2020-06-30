@@ -1,8 +1,8 @@
 package com.azavea.franklin.datamodel
 
+import com.azavea.stac4s.StacLinkType
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.generic.semiauto._
-import com.azavea.stac4s.StacLinkType
 
 case class LandingPage(title: NonEmptyString, description: NonEmptyString, links: List[Link]) {
 

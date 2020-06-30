@@ -3,22 +3,25 @@ package com.azavea.franklin.api.services
 import cats._
 import cats.effect._
 import cats.implicits._
+import com.azavea.franklin
+import com.azavea.franklin.api._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints._
 import com.azavea.franklin.api.implicits._
-import com.azavea.franklin.api._
+import com.azavea.franklin.database._
 import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
+import doobie._
+import doobie.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
-import com.azavea.franklin
 
-class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift: ContextShift[F])
+class LandingPageService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(implicit contextShift: ContextShift[F])
     extends Http4sDsl[F] {
 
   val links = List(
@@ -64,7 +67,7 @@ class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift
     val jsonOutput  = conformance.asJson
     val html        = franklin.html.conformance(conformance).body
 
-    Applicative[F].pure(handleOut(html, jsonOutput, acceptHeader))
+    Applicative[F].pure(handleOut[F](html, jsonOutput, acceptHeader))
   }
 
   def landingPage(
@@ -74,13 +77,21 @@ class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift
     val description: NonEmptyString =
       "An OGC API - Features, Tiles, and STAC Server"
     val landingPage = LandingPage(title, description, links)
-    val text   = franklin.html.index(landingPage)
-    val result = handleOut(text.body, landingPage.asJson, acceptHeader)
-    println(s"Accept Json: ${acceptHeader.acceptJson}")
-    Applicative[F].pure(result)
+
+    for {
+      collectionCount <- StacCollectionDao.getCollectionCount().transact(xa)
+      itemCount <- StacItemDao.getItemCount().transact(xa)
+      assetCount <- StacItemDao.getAssetCount().transact(xa)
+      allCollections <- StacCollectionDao.listCollections().transact(xa)
+      landingPageJson <- Applicative[F].pure(landingPage.asJson)
+    } yield {
+      val text = franklin.html.index(landingPage, collectionCount, itemCount, assetCount, allCollections, apiConfig.apiHost)
+      handleOut[F](text.body, landingPageJson, acceptHeader)
+    }
+
   }
 
-  val endpoints = new LandingPageEndpoints()
+  val endpoints = new LandingPageEndpoints[F]()
 
   val routes: HttpRoutes[F] = endpoints.conformanceEndpoint.toRoutes(acceptHeader =>
     conformancePage(acceptHeader)

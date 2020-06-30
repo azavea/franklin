@@ -17,6 +17,10 @@ object StacCollectionDao extends Dao[StacCollection] {
     selectF.query[StacCollection].to[List]
   }
 
+  def getCollectionCount(): ConnectionIO[Int] = {
+    sql"select count(*) from collections".query[Int].unique
+  }
+
   def getCollectionUnique(
       collectionId: String
   ): ConnectionIO[Option[StacCollection]] = {

@@ -1,13 +1,13 @@
 package com.azavea.franklin.api.endpoints
 
 import cats.effect._
+import com.azavea.franklin.api._
+import com.azavea.franklin.datamodel._
 import fs2.{Stream => FS2Stream}
 import io.circe._
 import sttp.tapir._
-import sttp.tapir.json.circe._
 import sttp.tapir._
-import com.azavea.franklin.api._
-import com.azavea.franklin.datamodel._
+import sttp.tapir.json.circe._
 
 case class AcceptHeader(v: Option[String]) {
   private val mediaTypeOption = v.map(_.split(","))

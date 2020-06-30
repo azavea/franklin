@@ -14,7 +14,10 @@ case class TileInfo(
     description: Option[String],
     tileMatrixSetLinks: List[TileMatrixSetLink],
     links: List[TileSetLink]
-)
+) {
+  val minX = extent.spatial.bbox(0).xmin
+  val minY = extent.spatial.bbox(0).ymin
+}
 
 object TileInfo {
 
