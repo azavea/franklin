@@ -4,18 +4,19 @@ import cats._
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin.api.commands.ApiConfig
-import com.azavea.franklin.api.endpoints.LandingPageEndpoints
+import com.azavea.franklin.api.endpoints._
 import com.azavea.franklin.api.implicits._
+import com.azavea.franklin.api._
 import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
-import io.circe._
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
+import com.azavea.franklin
 
 class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift: ContextShift[F])
     extends Http4sDsl[F] {
@@ -37,7 +38,7 @@ class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift
       apiConfig.apiHost + "/conformance",
       StacLinkType.Conformance,
       Some(`application/json`),
-      None
+      Some("Conformance")
     ),
     Link(
       apiConfig.apiHost + "/collections",
@@ -49,31 +50,39 @@ class LandingPageService[F[_]: Sync](apiConfig: ApiConfig)(implicit contextShift
       apiConfig.apiHost + "/search",
       StacLinkType.Data,
       Some(`application/geo+json`),
-      Some("Franklin Powered STAC")
+      Some("STAC Search API")
     )
   )
 
-  def landingPage(): F[Either[Unit, Json]] = {
-    Applicative[F].pure {
-      val title: NonEmptyString = "Franklin Powered OGC API - Features and STAC web service"
-      val description: NonEmptyString =
-        "Web service powered by [Franklin](https://github.com/azavea/franklin)"
-      Right(LandingPage(title, description, links).asJson)
-    }
+  def conformancePage(acceptHeader: AcceptHeader): F[Either[Unit, (String, fs2.Stream[F, Byte])]] = {
+    val uriList: List[NonEmptyString] = List(
+      "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/core",
+      "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
+      "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/geojson"
+    )
+    val conformance = FranklinConformance(uriList)
+    val jsonOutput  = conformance.asJson
+    val html        = franklin.html.conformance(conformance).body
+
+    Applicative[F].pure(handleOut(html, jsonOutput, acceptHeader))
   }
 
-  def conformancePage(): F[Either[Unit, Json]] = {
-    Applicative[F].pure {
-      val uriList: List[NonEmptyString] = List(
-        "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/core",
-        "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
-        "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/geojson"
-      )
-      Right(FranklinConformance(uriList).asJson)
-    }
+  def landingPage(
+      acceptHeader: AcceptHeader
+  ): F[Either[Unit, (String, fs2.Stream[F, Byte])]] = {
+    val title: NonEmptyString = "Welcome to Franklin"
+    val description: NonEmptyString =
+      "An OGC API - Features, Tiles, and STAC Server"
+    val landingPage = LandingPage(title, description, links)
+    val text   = franklin.html.index(landingPage)
+    val result = handleOut(text.body, landingPage.asJson, acceptHeader)
+    println(s"Accept Json: ${acceptHeader.acceptJson}")
+    Applicative[F].pure(result)
   }
 
-  val routes: HttpRoutes[F] =
-    LandingPageEndpoints.landingPageEndpoint.toRoutes(_ => landingPage()) <+>
-      LandingPageEndpoints.conformanceEndpoint.toRoutes(_ => conformancePage())
+  val endpoints = new LandingPageEndpoints()
+
+  val routes: HttpRoutes[F] = endpoints.conformanceEndpoint.toRoutes(acceptHeader =>
+    conformancePage(acceptHeader)
+  ) <+> endpoints.landingPageEndpoint.toRoutes(headers => landingPage(headers))
 }
