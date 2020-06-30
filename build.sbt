@@ -7,6 +7,7 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.12.10",
   scapegoatVersion in ThisBuild := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
+  scalacOptions ~= filterConsoleScalacOptions,
   externalResolvers := Seq(
     DefaultMavenRepository,
     Resolver.sonatypeRepo("snapshots"),
@@ -50,6 +51,8 @@ lazy val commonSettings = Seq(
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
 scalafixDependencies in ThisBuild +=
   "com.nequissimus" %% "sort-imports" % "0.5.4"
+
+TwirlKeys.templateImports := Seq()
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
@@ -117,6 +120,7 @@ lazy val applicationDependencies = Seq(
   "io.circe"                    %% "circe-parser"             % Versions.CirceVersion,
   "io.circe"                    %% "circe-refined"            % Versions.CirceVersion,
   "io.circe"                    %% "circe-testing"            % Versions.CirceVersion % Test,
+  "io.circe" %% "circe-fs2" % Versions.CirceVersion,
   "net.postgis"                 % "postgis-geometry"          % Versions.Postgis,
   "net.postgis"                 % "postgis-jdbc"              % Versions.Postgis,
   "org.flywaydb"                % "flyway-core"               % Versions.Flyway,
@@ -126,6 +130,7 @@ lazy val applicationDependencies = Seq(
   "org.http4s"                  %% "http4s-core"              % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-dsl"               % Versions.Http4sVersion,
   "org.http4s"                  %% "http4s-server"            % Versions.Http4sVersion,
+  "org.http4s"                  %% "http4s-twirl"             % Versions.Http4sVersion,
   "org.locationtech.geotrellis" %% "geotrellis-layer"         % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis" %% "geotrellis-proj4"         % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis" %% "geotrellis-raster"        % Versions.GeoTrellisVersion,
@@ -159,6 +164,7 @@ lazy val application = (project in file("application"))
   .settings({
     libraryDependencies ++= applicationDependencies
   })
+  .enablePlugins(SbtTwirl)
 
 //////////
 // DOCS //
