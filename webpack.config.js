@@ -11,6 +11,10 @@ module.exports = {
         'main': './main.ts'
     },
 
+    performance: {
+        hints: false
+    },
+
     output: {
         filename: '[name].bundle.js',
         library: 'franklin',
