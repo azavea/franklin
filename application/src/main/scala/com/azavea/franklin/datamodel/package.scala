@@ -23,7 +23,6 @@ package object datamodel {
   type Quantile = Int Refined Interval.Closed[W.`0`.T, W.`100`.T]
   object Quantile extends RefinedTypeOps[Quantile, Int]
 
-
   implicit class CollectionList(collections: List[StacCollection]) {
 
     @JsonCodec
@@ -31,7 +30,7 @@ package object datamodel {
 
     def toGeoJson = {
       JsonFeatureCollection(collections.map { collection =>
-        val geom = collection.extent.extentGeom
+        val geom       = collection.extent.extentGeom
         val properties = Properties(collection.id)
         Feature(geom, properties)
       }).asJson.noSpaces
@@ -40,10 +39,16 @@ package object datamodel {
     def extentMap = collections.map(c => (c.id -> c.extent.extent)).toMap
 
     def extent = {
-      collections.flatMap(_.extent.spatial.bbox.flatMap(l => l.toExtent match {
-        case Left(_) => None
-        case Right(e) => Some(e)
-      })).reduce( _ combine _ )
+      collections
+        .flatMap(
+          _.extent.spatial.bbox.flatMap(l =>
+            l.toExtent match {
+              case Left(_)  => None
+              case Right(e) => Some(e)
+            }
+          )
+        )
+        .reduce(_ combine _)
     }
   }
 
@@ -52,29 +57,35 @@ package object datamodel {
     def startTime = {
       stacExtent.temporal.interval.flatMap(_.value.headOption).flatten match {
         case l if l.isEmpty => None
-        case l => Some(l.min)
+        case l              => Some(l.min)
       }
     }
 
     def endTime = {
       stacExtent.temporal.interval.flatMap(_.value.lift(1)).flatten match {
         case l if l.isEmpty => None
-        case l => Some(l.max)
+        case l              => Some(l.max)
       }
     }
 
     def extent = {
-      (stacExtent.spatial.bbox.flatMap(l => l.toExtent match {
-        case Left(_) => None
-        case Right(e) => Some(e)
-      })).reduce(_ combine _)
+      (stacExtent.spatial.bbox
+        .flatMap { l =>
+          l.toExtent match {
+            case Left(_)  => None
+            case Right(e) => Some(e)
+          }
+        })
+        .reduce(_ combine _)
     }
 
     def extentGeom = {
-      MultiPolygon(stacExtent.spatial.bbox.flatMap(l => l.toExtent match {
-        case Left(_) => None
-        case Right(e) => Some(e.toPolygon)
-      }))
+      MultiPolygon(stacExtent.spatial.bbox.flatMap { l =>
+        l.toExtent match {
+          case Left(_)  => None
+          case Right(e) => Some(e.toPolygon)
+        }
+      })
     }
   }
 

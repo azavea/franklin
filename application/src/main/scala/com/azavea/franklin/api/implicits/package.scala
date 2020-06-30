@@ -69,7 +69,7 @@ package object implicits {
 
     def selfLink(apiHost: String): String = {
       val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-        s"$apiHost/collections/$encodedCollectionId/",
+      s"$apiHost/collections/$encodedCollectionId/",
     }
 
     def addTilesLink(apiHost: String): StacCollection = {

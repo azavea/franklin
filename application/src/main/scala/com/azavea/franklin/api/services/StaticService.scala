@@ -18,7 +18,6 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 
-
 class StaticService[F[_]: Sync](blocker: Blocker)(implicit cs: ContextShift[F])
     extends Http4sDsl[F] {
 

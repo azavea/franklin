@@ -21,8 +21,9 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
-class LandingPageService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(implicit contextShift: ContextShift[F])
-    extends Http4sDsl[F] {
+class LandingPageService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
+    implicit contextShift: ContextShift[F]
+) extends Http4sDsl[F] {
 
   val links = List(
     Link(
@@ -57,7 +58,9 @@ class LandingPageService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(im
     )
   )
 
-  def conformancePage(acceptHeader: AcceptHeader): F[Either[Unit, (String, fs2.Stream[F, Byte])]] = {
+  def conformancePage(
+      acceptHeader: AcceptHeader
+  ): F[Either[Unit, (String, fs2.Stream[F, Byte])]] = {
     val uriList: List[NonEmptyString] = List(
       "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/core",
       "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
@@ -80,12 +83,19 @@ class LandingPageService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(im
 
     for {
       collectionCount <- StacCollectionDao.getCollectionCount().transact(xa)
-      itemCount <- StacItemDao.getItemCount().transact(xa)
-      assetCount <- StacItemDao.getAssetCount().transact(xa)
-      allCollections <- StacCollectionDao.listCollections().transact(xa)
+      itemCount       <- StacItemDao.getItemCount().transact(xa)
+      assetCount      <- StacItemDao.getAssetCount().transact(xa)
+      allCollections  <- StacCollectionDao.listCollections().transact(xa)
       landingPageJson <- Applicative[F].pure(landingPage.asJson)
     } yield {
-      val text = franklin.html.index(landingPage, collectionCount, itemCount, assetCount, allCollections, apiConfig.apiHost)
+      val text = franklin.html.index(
+        landingPage,
+        collectionCount,
+        itemCount,
+        assetCount,
+        allCollections,
+        apiConfig.apiHost
+      )
       handleOut[F](text.body, landingPageJson, acceptHeader)
     }
 

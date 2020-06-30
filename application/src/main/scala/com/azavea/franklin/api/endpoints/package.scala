@@ -10,5 +10,7 @@ import sttp.tapir.json.circe._
 import sttp.tapir.{Codec => TapirCodec}
 
 package object endpoints {
-  val acceptHeaderInput: EndpointInput[AcceptHeader] = header[Option[String]]("Accept").mapTo(AcceptHeader)
+
+  val acceptHeaderInput: EndpointInput[AcceptHeader] =
+    header[Option[String]]("Accept").mapTo(AcceptHeader)
 }

@@ -7,7 +7,9 @@ import io.circe.generic.semiauto._
 case class LandingPage(title: NonEmptyString, description: NonEmptyString, links: List[Link]) {
 
   lazy val dataLinks = links.filter(_.rel == StacLinkType.Data)
-  lazy val docLinks = links.filter(l => (l.rel == StacLinkType.ServiceDesc || l.rel == StacLinkType.Conformance))
+
+  lazy val docLinks =
+    links.filter(l => (l.rel == StacLinkType.ServiceDesc || l.rel == StacLinkType.Conformance))
 }
 
 object LandingPage {

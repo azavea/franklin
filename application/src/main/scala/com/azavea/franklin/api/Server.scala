@@ -89,9 +89,14 @@ $$$$
       docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       landingPageRoutes = new LandingPageService[IO](apiConfig, xa).routes
-      searchRoutes      = new SearchService[IO](apiConfig.apiHost, apiConfig.defaultLimit, apiConfig.enableTiles, xa).routes
-      staticService     = new StaticService[IO](Blocker.liftExecutionContext(transactionEc))
-      tileRoutes        = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+      searchRoutes = new SearchService[IO](
+        apiConfig.apiHost,
+        apiConfig.defaultLimit,
+        apiConfig.enableTiles,
+        xa
+      ).routes
+      staticService = new StaticService[IO](Blocker.liftExecutionContext(transactionEc))
+      tileRoutes    = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
       collectionRoutes = new CollectionsService[IO](xa, apiConfig).routes <+> new CollectionItemsService[
         IO
       ](

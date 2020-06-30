@@ -14,7 +14,7 @@ case class AcceptHeader(v: Option[String]) {
 
   lazy val acceptJson = mediaTypeOption match {
     case Some(acceptStrings) => acceptStrings.contains("application/json")
-    case _ => true
+    case _                   => true
   }
 }
 
@@ -22,7 +22,8 @@ class LandingPageEndpoints[F[_]: Sync] {
 
   val base = endpoint.in("")
 
-  val landingPageEndpoint: Endpoint[AcceptHeader, Unit, (String, FS2Stream[F, Byte]), FS2Stream[F, Byte]] =
+  val landingPageEndpoint
+      : Endpoint[AcceptHeader, Unit, (String, FS2Stream[F, Byte]), FS2Stream[F, Byte]] =
     base.get
       .in(acceptHeaderInput)
       .out(header[String]("content-type"))
@@ -30,15 +31,17 @@ class LandingPageEndpoints[F[_]: Sync] {
       .description("STAC Service Provided via [franklin](https://github.com/azavea/franklin)")
       .name("landingPage")
 
-  val conformanceEndpoint: Endpoint[AcceptHeader, Unit, (String, FS2Stream[F, Byte]), FS2Stream[F, Byte]] = endpoint.get
-    .in("conformance")
-    .in(acceptHeaderInput)
-    .out(header[String]("content-type"))
-    .out(streamBody[FS2Stream[F, Byte]](schemaFor[Conformance], CodecFormat.Json()))
-    .description(
-      "A list of all conformance classes specified in a standard that the server conforms to"
-    )
-    .name("conformance")
+  val conformanceEndpoint
+      : Endpoint[AcceptHeader, Unit, (String, FS2Stream[F, Byte]), FS2Stream[F, Byte]] =
+    endpoint.get
+      .in("conformance")
+      .in(acceptHeaderInput)
+      .out(header[String]("content-type"))
+      .out(streamBody[FS2Stream[F, Byte]](schemaFor[Conformance], CodecFormat.Json()))
+      .description(
+        "A list of all conformance classes specified in a standard that the server conforms to"
+      )
+      .name("conformance")
 
   val endpoints = List(conformanceEndpoint, landingPageEndpoint)
 

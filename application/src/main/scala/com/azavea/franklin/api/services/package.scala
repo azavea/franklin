@@ -9,7 +9,11 @@ import io.circe.fs2._
 
 package object services {
 
-  def handleOut[F[_]: Sync](html: String, json: Json, accept: AcceptHeader): Either[Unit, (String, Stream[F, Byte])] = {
+  def handleOut[F[_]: Sync](
+      html: String,
+      json: Json,
+      accept: AcceptHeader
+  ): Either[Unit, (String, Stream[F, Byte])] = {
     accept.acceptJson match {
       case true => {
         val bytes = Stream.emits(json.noSpaces.getBytes())
