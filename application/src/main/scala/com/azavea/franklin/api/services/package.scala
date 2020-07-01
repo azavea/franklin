@@ -5,7 +5,6 @@ import com.azavea.franklin.api.endpoints.AcceptHeader
 import fs2.Stream
 import io.circe.Json
 import io.circe._
-import io.circe.fs2._
 
 package object services {
 
