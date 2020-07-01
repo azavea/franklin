@@ -11,7 +11,7 @@ jobs:
           - gh-pages
 
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: circleci/openjdk:8-jdk-node
         environment:
           - POSTGRES_URL=jdbc:postgresql://database.service.internal/
       - image: quay.io/azavea/postgis:3-postgres12.2-slim
