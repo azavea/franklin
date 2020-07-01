@@ -35,6 +35,17 @@ object StacItemDao extends Dao[StacItem] {
 
   val selectF = fr"SELECT item FROM " ++ tableF
 
+  def getItemCount(): ConnectionIO[Int] = {
+    sql"select count(*) from collection_items".query[Int].unique
+  }
+
+  def getAssetCount(): ConnectionIO[Int] = {
+    sql"""select count(*)
+          from (
+            select jsonb_object_keys((item->>'assets')::jsonb) from collection_items
+          ) assets""".query[Int].unique
+  }
+
   def collectionFilter(collectionId: String): Fragment = {
     val jsonFilter = s"""{"collection": "$collectionId"}"""
     fr"item @> $jsonFilter :: jsonb"

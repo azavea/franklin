@@ -124,3 +124,17 @@ app-lambda/opt/*
 node_modules/*
 website/build/*
 /project/metals.sbt
+application/src/main/resources/assets/main.bundle.js
+application/src/main/resources/assets/main.bundle.js.map
+
+.idea
+node_modules
+src/**/*.js
+src/**/*.js.map
+typings
+dist
+coverage
+ts-out
+npm-debug.log
+debug.log
+main.bundle.js.map

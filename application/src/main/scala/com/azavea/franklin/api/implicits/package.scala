@@ -67,6 +67,11 @@ package object implicits {
 
   implicit class StacCollectionWithTiles(collection: StacCollection) {
 
+    def selfLink(apiHost: String): String = {
+      val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+      s"$apiHost/collections/$encodedCollectionId/",
+    }
+
     def addTilesLink(apiHost: String): StacCollection = {
       val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
       val tileLink = StacLink(

@@ -7,6 +7,7 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.12.10",
   scapegoatVersion in ThisBuild := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
+  scalacOptions ~= filterConsoleScalacOptions,
   externalResolvers := Seq(
     DefaultMavenRepository,
     Resolver.sonatypeRepo("snapshots"),
@@ -50,6 +51,8 @@ lazy val commonSettings = Seq(
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
 scalafixDependencies in ThisBuild +=
   "com.nequissimus" %% "sort-imports" % "0.5.4"
+
+TwirlKeys.templateImports := Seq()
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
@@ -159,6 +162,7 @@ lazy val application = (project in file("application"))
   .settings({
     libraryDependencies ++= applicationDependencies
   })
+  .enablePlugins(SbtTwirl)
 
 //////////
 // DOCS //
