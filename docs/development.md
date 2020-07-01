@@ -37,4 +37,4 @@ There are two parts to working on the frontend: `twirl` templates and `TypeScrip
 
 ### TypeScript
 
-Bits and pieces of `typescript` are necessary for interactive elements on the frontend - mostly the map interactions. If you are making changes to this code you need to compile your `TypeScript`. This can be done either by running `./scripts/update` or manually running `npm run build`. This will compile the `TypeScript` files in `frontend/` and place them in the `assets` directory of the application. This will be loaded by the frontend then.
+Bits and pieces of `typescript` are necessary for interactive elements on the frontend - mostly the map interactions. If you are making changes to this code you need to compile your `TypeScript`. This can be done either by running `./scripts/update` or manually running `npm run build`. This will compile the `TypeScript` files in `frontend/` and place them in the `assets` directory of the application. This will be loaded by the frontend on refresh.
