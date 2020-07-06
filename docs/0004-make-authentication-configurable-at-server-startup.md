@@ -49,7 +49,7 @@ we can
 to apply one of these functions and keep the routes' business logic distinct from authentication concerns.
 
 The question at that point is how to specify which endpoints or groups of endpoints require authentication. It was sufficiently simple to create some
-ADT called `Domain` and choose up to several of them from the command line at server startup that I don't believe this question deserves much further
+algebraic data type called `Domain` and choose from among them from the command line at server startup. I don't believe this question deserves much further
 consideration. An example of using `serverLogicPart` and a command line flag for controlling which endpoints require authentication can be seen in
 [this PR](https://github.com/jisantuc/configable-auth/pull/1) against the toy repository.
 
@@ -108,6 +108,7 @@ how `erjang` works, I think we might be in trouble. A lot of languages will run 
 #### Providing an endpoint that returns UserInfo or an error
 
 In this option, a user provides an absolute URL that accepts requests containing a token to validate and returns either `UserInfo` or an error.
+An example of what might be required for this strategy can be seen in [`jisantuc/configable-auth#2`](https://github.com/jisantuc/configable-auth/pull/2).
 
 ##### How much harder is it to set up Franklin?
 
@@ -142,12 +143,105 @@ systems in order to accomodate a Franklin feature they're not using.
 Resolving user information via http and the request flow with the libraries we use would allow us to be very helpful. Debug logging when we receive a response,
 when we try to decode the response, and of non-sensitive values in the body
 would let us ensure that users have access to everything they need in order to tell
-whether surprising authentication problems are in Franklin or in their service.
+whether surprising authentication problems are in Franklin or in their service. We can also set
+up the request expectations such that users can find out what field was the problem. For instance,
+in the linked PR above, changing the response from `userId` (correct) to `userID` results in the
+service returning a pretty clear message:
+
+```bash
+$ http :8080/api/users Authorization:"Bearer good token"
+HTTP/1.1 400 Bad Request
+Content-Length: 63
+Content-Type: text/plain; charset=UTF-8
+Date: Mon, 06 Jul 2020 19:42:59 GMT
+
+The authentication server didn't respond as expected at .userId
+```
+
+#### We implement a few strategies and hope we did enough
+
+In this option, we provide a few different authentication implementations
+out-of-the-box, and users choose among them with command line flags.
+
+##### How much harder is it to set up Franklin?
+
+In the no-authentication case, it is identically easy to set up Franklin. If a user wants authentication to occur, and their authentication story is covered
+by what we've implemented, then it's not much harder to set up Franklin.
+If their authentication isn't covered, then their choices are to open issues
+and hope we get to them soon, pull down Franklin and edit it locally, or use something else.
+
+##### How much harder is it to deploy Franklin?
+
+If a user's case is covered, then deploying Franklin in this story requires running
+the server command with an extra command line flag. It is therefore not harder to deploy Franklin in this story.
+
+##### What restrictions are placed on the user as a result of this choice?
+
+Users' authentication strategies must fit in one of several very constrained boxes.
+The space of authentication strategies is hardly infinite, and a few strategies (third party JWT, local JWT, opaque token) might cover a huge number of cases, but small variations would be difficult to accomodate, which
+would shunt some users into requiring custom software to get use out of Franklin.
+
+##### What restrictions are placed on us as a result of this choice?
+
+No additional restrictions are placed on us as a result of this choice. We get to treat
+the authentication strategy as 100% known and well-modeled by the server logic we
+already have in place. For us it will not end up being in the way at all, though
+we will need to maintain a few different authentication strategies for users who
+know their requirements better than we do.
 
 ## Decision
 
-The change that we're proposing or have agreed to implement.
+For configuring domain levels, we should accept arguments indicating "domains" that
+should be behind authentication. For configuring how to authenticate, we should
+ask users to point Franklin to a service that can accept the authentication request
+we'd like to send.
+
+I chose this option primarily for two reasons. First, Franklin
+will almost always and everywhere be an auxiliary service. People will use Franklin
+as a STAC API that augments what's possible in some other API or frontend application. That other application likely already exists and has its own
+solution to authentication. Franklin shouldn't force people to reimplement
+solutions to problems they've already solved elsewhere.
+
+Second, not everyone writes for the JVM. The relative volume of non-Azavea-authored issues
+and forks on `PySTAC` (_some_ issues, _many_ forks) vs `stac4s` (zero of either) and Franklin (three issues from one person, one inactive fork)
+tells us something about engagement we can expect if something requires writing
+Scala. [`staccato`](https://github.com/planetlabs/staccato/network/members) similarly
+has seen minimal community engagement, more or less entirely maintained by `@joshfix`,
+with very few issues and forks from a short list of people. In short, if "classloader" ends up within
+20 miles of the "starting Franklin with authentication" docs, I think we'll
+be dramatically limiting Franklin's potential audience.
+
+Asking people to provide a route to an authentication service keeps the docs 100%
+in HTTP-land. Additionally, we can provide a very dumb authentication service
+in a container that ensures that the startup instructions continue only to require
+running Docker commands.
 
 ## Consequences
 
-What becomes easier or more difficult to do and any risks introduced by the change that will need to be mitigated.
+The first consequence of this is that Franklin will in an instant become distributed. While
+in practice deployment will probably mean sidecar containers for people like us
+who never learned to `k8s`, these sidecars are still an additional service dependency.
+As a result, we should **require** the authentication service to expose
+a healthcheck and include it in Franklin's healthcheck, if such a service has
+been configured.
+
+Second, introducing additional services increases the cost of not having tracing configured.
+At the time that we created Franklin, we had some sort of conflicts with our
+tracing library, tapir, and cats versions that caused us to be unable to include
+tracing. That was disappointing, but acceptable for our small API that didn't talk to anything but a database.
+With an additional
+service which might have its own performance and reliability statistics, we
+should ensure that Franklin is capable of hooking into OpenTelemetry-compliant
+tracing systems. There is a [new entry](https://github.com/janstenpickle/trace4cats) in this domain that we should consider as well, now that we have
+some experience in this domain.
+
+Third, we'll need to develop an example authentication service and add it to the getting started documentation.
+We'll need to advertise and document the semantics of the authentication service somehow.
+The most straightforward way to do this would be with an example service that:
+
+1. is sufficient for Franklin's needs
+2. advertises an OpenAPI specification
+
+An added bonus of this is that we'll have _two_ services, one of which calls the other, that we can use to learn more about the capabilities that OpenTelemetry enables.
+
+Finally, we'll need to adapt the work in the [toy repository](https://github.com/jisantuc/configable-auth) for Franklin.
