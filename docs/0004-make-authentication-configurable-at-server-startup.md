@@ -1,12 +1,17 @@
-# 4. Make Authentication Configurable at Server Startup
+---
+id: 0004-make-authentication-configurable-at-server-startup
+title: 4 - Configurable Authentication at Server Startup
+---
 
 Date: 2020-06-29
 
-## Status
+Status
+-----
 
 Accepted
 
-## Context
+Context
+-----
 
 We would like to add some authentication support to Franklin, but are unsure exactly what the shape of this feature should be.
 Most of Azavea's authentication mechanisms include JWT of some form - GroundWork and RF use JWTs from Auth0. Additionally, we have
@@ -189,7 +194,8 @@ already have in place. For us it will not end up being in the way at all, though
 we will need to maintain a few different authentication strategies for users who
 know their requirements better than we do.
 
-## Decision
+Decision
+-----
 
 For configuring domain levels, we should accept arguments indicating "domains" that
 should be behind authentication. For configuring how to authenticate, we should
@@ -216,7 +222,8 @@ in HTTP-land. Additionally, we can provide a very dumb authentication service
 in a container that ensures that the startup instructions continue only to require
 running Docker commands.
 
-## Consequences
+Consequences
+-----
 
 The first consequence of this is that Franklin will in an instant become distributed. While
 in practice deployment will probably mean sidecar containers for people like us
