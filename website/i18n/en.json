@@ -14,6 +14,9 @@
       "0003-item-tms-rendering": {
         "title": "3 - Item TMS Rendering"
       },
+      "0004-make-authentication-configurable-at-server-startup": {
+        "title": "4 - Configurable Authentication at Server Startup"
+      },
       "development": {
         "title": "development"
       },
