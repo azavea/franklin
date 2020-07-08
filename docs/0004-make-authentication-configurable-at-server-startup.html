@@ -1,0 +1,250 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>4 - Configurable Authentication at Server Startup · Franklin</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="Date: 2020-06-29"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="4 - Configurable Authentication at Server Startup · Franklin"/><meta property="og:type" content="website"/><meta property="og:url" content="https://azavea.github.io/franklin/"/><meta property="og:description" content="Date: 2020-06-29"/><meta property="og:image" content="https://azavea.github.io/franklin/img/franklin-logo-tagline.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://azavea.github.io/franklin/img/franklin-logo-tagline.svg"/><link rel="shortcut icon" href="/franklin/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-970854-35', 'auto');
+              ga('send', 'pageview');
+            </script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed:400,700&amp;display=swap"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/franklin/js/scrollSpy.js"></script><link rel="stylesheet" href="/franklin/css/main.css"/><script src="/franklin/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/franklin/"><img class="logo" src="/franklin/img/header.png" alt="Franklin"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/franklin/docs/introduction" target="_self">Getting Started</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>ADRs</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Overview</h3><ul class=""><li class="navListItem"><a class="navItem" href="/franklin/docs/introduction">Introduction</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">ADRs</h3><ul class=""><li class="navListItem"><a class="navItem" href="/franklin/docs/0001-record-architecture-decisions">1 - Recording Architecture Decisions</a></li><li class="navListItem"><a class="navItem" href="/franklin/docs/0002-choose-a-pagination-strategy-and-implementation">2 - Choose a Pagination Strategy and Implementation</a></li><li class="navListItem"><a class="navItem" href="/franklin/docs/0003-item-tms-rendering">3 - Item TMS Rendering</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/franklin/docs/0004-make-authentication-configurable-at-server-startup">4 - Configurable Authentication at Server Startup</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">4 - Configurable Authentication at Server Startup</h1></header><article><div><span><p>Date: 2020-06-29</p>
+<h2><a class="anchor" aria-hidden="true" id="status"></a><a href="#status" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Status</h2>
+<p>Accepted</p>
+<h2><a class="anchor" aria-hidden="true" id="context"></a><a href="#context" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Context</h2>
+<p>We would like to add some authentication support to Franklin, but are unsure exactly what the shape of this feature should be.
+Most of Azavea's authentication mechanisms include JWT of some form - GroundWork and RF use JWTs from Auth0. Additionally, we have
+a few clients who have expressed interest in Franklin that also use JWTs. That said, there are a few cases where opaque token
+authentication might be appropriate. As a result, how to perform authentication should probably be configurable via the command line
+and/or environment variables.</p>
+<p>In addition to what kind of authentication to do, we'd also like to be able to configure the &quot;level&quot; of authentication. There are at
+least three scenarios we should accomodate:</p>
+<ul>
+<li>All endpoints require authentication</li>
+<li>Destructive endpoints (e.g. POST, PUT, DELETE) require authentication, but GET endpoints do not</li>
+<li>No endpoints require authentication</li>
+</ul>
+<p>This ADR exists to propose strategies for addressing those two challenges. I created
+<a href="https://github.com/jisantuc/configable-auth">a toy repository</a> to explore our options based on our
+<a href="https://github.com/azavea/azavea.g8">Http4s project template</a>.</p>
+<h3><a class="anchor" aria-hidden="true" id="configuring-levels"></a><a href="#configuring-levels" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Configuring levels</h3>
+<p>Treat authentication as some function from <code>String =&gt; IO[Either[Err, UserInfo]]</code>. We don't need to know the particular shapes of
+<code>Err</code> and <code>UserInfo</code> to use this formulation to think about how to configure which endpoints are authenticated. If we're
+capable of imagining some kind of empty or default <code>UserInfo</code>, then we can easily come up with a function</p>
+<pre><code class="hljs css language-scala"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">successful</span></span>(token: <span class="hljs-type">String</span>): <span class="hljs-type">IO</span>[<span class="hljs-type">Either</span>[<span class="hljs-type">Err</span>, <span class="hljs-type">UserInfo</span>]] = <span class="hljs-type">IO</span>.pure(<span class="hljs-type">Right</span>(<span class="hljs-type">UserInfo</span>.<span class="hljs-keyword">default</span>))
+</code></pre>
+<p>Separately, we if <em>want</em> to apply authentication, then we have to verify the token:</p>
+<pre><code class="hljs css language-scala"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">validate</span></span>(token: <span class="hljs-type">String</span>): <span class="hljs-type">IO</span>[<span class="hljs-type">Either</span>[<span class="hljs-type">Err</span>, <span class="hljs-type">UserInfo</span>]] = <span class="hljs-type">IO</span> { ??? }
+</code></pre>
+<p>I've chosen these particular types because they align well with libraries we're already using. For instance, if our
+token parameter is the first endpoint input, like it is
+<a href="https://github.com/raster-foundry/granary/blob/master/api/src/main/scala/com/rasterfoundry/granary/endpoints/TaskEndpoints.scala#L16-L17">in Granary</a>,
+we can
+<a href="https://github.com/raster-foundry/granary/blob/master/api/src/main/scala/com/rasterfoundry/granary/services/TaskService.scala#L66">use <code>tapir</code>'s <code>serverLogicPart</code> function</a>
+to apply one of these functions and keep the routes' business logic distinct from authentication concerns.</p>
+<p>The question at that point is how to specify which endpoints or groups of endpoints require authentication. It was sufficiently simple to create some
+algebraic data type called <code>Domain</code> and choose from among them from the command line at server startup. I don't believe this question deserves much further
+consideration. An example of using <code>serverLogicPart</code> and a command line flag for controlling which endpoints require authentication can be seen in
+<a href="https://github.com/jisantuc/configable-auth/pull/1">this PR</a> against the toy repository.</p>
+<h3><a class="anchor" aria-hidden="true" id="configuring-authentication-strategy"></a><a href="#configuring-authentication-strategy" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Configuring authentication strategy</h3>
+<p>This choice is more difficult, because the strategies themselves are more difficult.
+I considered three strategies for making the authentication strategy a configurable
+option at server startup:</p>
+<ul>
+<li>dynamic class loading</li>
+<li>providing an endpoint that returns <code>UserInfo</code> or an error</li>
+<li>we implement a few strategies and hope we did enough</li>
+</ul>
+<p>To attempt to come up with a fair evaluation, I considered difficulty along several axes:</p>
+<ul>
+<li>how much harder is it to set up Franklin?</li>
+<li>how much harder is it to deploy Franklin?</li>
+<li>what restrictions are placed on the user (someone deploying their own Franklin instance) as a result of this choice?</li>
+<li>what restrictions are placed on us as a result of this choice?</li>
+<li>how helpful can we expect to be when something goes wrong?</li>
+</ul>
+<h4><a class="anchor" aria-hidden="true" id="dynamic-class-loading"></a><a href="#dynamic-class-loading" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Dynamic class loading</h4>
+<p>In this option, a user provides a path to be added to the classpath and a class name that has access to some function matching the signature above.</p>
+<h5><a class="anchor" aria-hidden="true" id="how-much-harder-is-it-to-set-up-franklin"></a><a href="#how-much-harder-is-it-to-set-up-franklin" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How much harder is it to set up Franklin?</h5>
+<p>If a user doesn't want to do authentication, not much -- we can reasonably expect ourselves to include a <code>no-auth</code> implementation in the repository.
+If a user wants to write an authentication strategy, it will be more difficult. We will probably provide some sensible defaults (e.g. Auth0 JWT authentication),
+but custom authenticators will require custom code that runs on the JVM. This strategy is outside of my strikezone even after some experimentation, but in my experiment, I didn't figure out
+how to provide a class at runtime that I could cast to what I wanted and call methods from. You can see that experiment on a branch in the <a href="https://github.com/jisantuc/configable-auth/tree/dynamic-classloading/dynamic-test-code">toy repo</a>. It's not obvious to me if someone who's more used to Java tooling and lower-level programming in Java would think this is challenging.</p>
+<h5><a class="anchor" aria-hidden="true" id="how-much-harder-is-it-to-deploy-franklin"></a><a href="#how-much-harder-is-it-to-deploy-franklin" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How much harder is it to deploy Franklin?</h5>
+<p>I don't think this option would make it significantly harder to deploy Franklin. You
+need to be able to place a jar somewhere that the Franklin container you intend
+to run can access it. I think &quot;Container image A, but with a file in location B&quot; is a four line Dockerfile.</p>
+<h5><a class="anchor" aria-hidden="true" id="what-restrictions-are-placed-on-the-user-as-a-result-of-this-choice"></a><a href="#what-restrictions-are-placed-on-the-user-as-a-result-of-this-choice" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>What restrictions are placed on the user as a result of this choice?</h5>
+<p>Users who want custom authentication logic <em>must</em> write that logic in a language that runs on the JVM.</p>
+<h5><a class="anchor" aria-hidden="true" id="what-restrictions-are-placed-on-us-as-a-result-of-this-choice"></a><a href="#what-restrictions-are-placed-on-us-as-a-result-of-this-choice" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>What restrictions are placed on us as a result of this choice?</h5>
+<p>The biggest restriction is that we'd be some pretty serious jerks if we rewrote Franklin
+in anything that doesn't run on the JVM in the future.</p>
+<h5><a class="anchor" aria-hidden="true" id="how-helpful-can-we-expect-to-be-when-something-goes-wrong"></a><a href="#how-helpful-can-we-expect-to-be-when-something-goes-wrong" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How helpful can we expect to be when something goes wrong?</h5>
+<p>That depends on the specific implementation that someone has chosen.</p>
+<p>If someone writes their authentication implementation in Scala or Java, I think we'd probably not have much trouble
+helping them debug problems. If we end up in a rabbit hole trying to figure out
+how <code>erjang</code> works, I think we might be in trouble. A lot of languages will run on the JVM if you really want them to, and we'll never have 100% coverage.</p>
+<h4><a class="anchor" aria-hidden="true" id="providing-an-endpoint-that-returns-userinfo-or-an-error"></a><a href="#providing-an-endpoint-that-returns-userinfo-or-an-error" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Providing an endpoint that returns UserInfo or an error</h4>
+<p>In this option, a user provides an absolute URL that accepts requests containing a token to validate and returns either <code>UserInfo</code> or an error.
+An example of what might be required for this strategy can be seen in <a href="https://github.com/jisantuc/configable-auth/pull/2"><code>jisantuc/configable-auth#2</code></a>.</p>
+<h5><a class="anchor" aria-hidden="true" id="how-much-harder-is-it-to-set-up-franklin-1"></a><a href="#how-much-harder-is-it-to-set-up-franklin-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How much harder is it to set up Franklin?</h5>
+<p>In the no-authentication case, it is identically easy to set up Franklin, since we can fall back to the default without actually making a request. If a user wants authentication to occur, they'll need to ensure:</p>
+<ul>
+<li>that their authentication service is running</li>
+<li>that Franklin can see it from where they're running Franklin</li>
+<li>that their authentication service returns data of the correct shape</li>
+</ul>
+<p>These requirements collectively increase the difficulty of starting Franklin for the first time, especially if the existing authentication service can't be easily modified.</p>
+<h5><a class="anchor" aria-hidden="true" id="how-much-harder-is-it-to-deploy-franklin-1"></a><a href="#how-much-harder-is-it-to-deploy-franklin-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How much harder is it to deploy Franklin?</h5>
+<p>Deploying Franklin requires similar criteria to starting Franklin. The user must ensure the same three things. Depending on their deployment scenario, this
+may be easy because the requirements match, or it may be difficult. If we encourage users to run containers alongside Franklin to meet this requirement locally,
+that should facilitate an easier deployment story.</p>
+<h5><a class="anchor" aria-hidden="true" id="what-restrictions-are-placed-on-the-user-as-a-result-of-this-choice-1"></a><a href="#what-restrictions-are-placed-on-the-user-as-a-result-of-this-choice-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>What restrictions are placed on the user as a result of this choice?</h5>
+<p>Users are free to use whatever language they choose to implement their authentication
+service, but the response from the endpoint provided must match a specific shape.</p>
+<h5><a class="anchor" aria-hidden="true" id="what-restrictions-are-placed-on-us-as-a-result-of-this-choice-1"></a><a href="#what-restrictions-are-placed-on-us-as-a-result-of-this-choice-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>What restrictions are placed on us as a result of this choice?</h5>
+<p>The main restriction placed on us is that this would introduce a cost to increasing authentication complexity. For example, in Raster Foundry, we added scopes to users. If we were to add scopes to Franklin's <code>UserInfo</code>, we'd need to ensure that
+we thought through what sensible default behavior should look like, so that downstream
+users wouldn't need to figure out scopes or possibly deploy changes to their authentication
+systems in order to accomodate a Franklin feature they're not using.</p>
+<h5><a class="anchor" aria-hidden="true" id="how-helpful-can-we-expect-to-be-when-something-goes-wrong-1"></a><a href="#how-helpful-can-we-expect-to-be-when-something-goes-wrong-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How helpful can we expect to be when something goes wrong?</h5>
+<p>Resolving user information via http and the request flow with the libraries we use would allow us to be very helpful. Debug logging when we receive a response,
+when we try to decode the response, and of non-sensitive values in the body
+would let us ensure that users have access to everything they need in order to tell
+whether surprising authentication problems are in Franklin or in their service. We can also set
+up the request expectations such that users can find out what field was the problem. For instance,
+in the linked PR above, changing the response from <code>userId</code> (correct) to <code>userID</code> results in the
+service returning a pretty clear message:</p>
+<pre><code class="hljs css language-bash">$ http :8080/api/users Authorization:<span class="hljs-string">"Bearer good token"</span>
+HTTP/1.1 400 Bad Request
+Content-Length: 63
+Content-Type: text/plain; charset=UTF-8
+Date: Mon, 06 Jul 2020 19:42:59 GMT
+
+The authentication server didn<span class="hljs-string">'t respond as expected at .userId
+</span></code></pre>
+<h4><a class="anchor" aria-hidden="true" id="we-implement-a-few-strategies-and-hope-we-did-enough"></a><a href="#we-implement-a-few-strategies-and-hope-we-did-enough" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>We implement a few strategies and hope we did enough</h4>
+<p>In this option, we provide a few different authentication implementations
+out-of-the-box, and users choose among them with command line flags.</p>
+<h5><a class="anchor" aria-hidden="true" id="how-much-harder-is-it-to-set-up-franklin-2"></a><a href="#how-much-harder-is-it-to-set-up-franklin-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How much harder is it to set up Franklin?</h5>
+<p>In the no-authentication case, it is identically easy to set up Franklin. If a user wants authentication to occur, and their authentication story is covered
+by what we've implemented, then it's not much harder to set up Franklin.
+If their authentication isn't covered, then their choices are to open issues
+and hope we get to them soon, pull down Franklin and edit it locally, or use something else.</p>
+<h5><a class="anchor" aria-hidden="true" id="how-much-harder-is-it-to-deploy-franklin-2"></a><a href="#how-much-harder-is-it-to-deploy-franklin-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How much harder is it to deploy Franklin?</h5>
+<p>If a user's case is covered, then deploying Franklin in this story requires running
+the server command with an extra command line flag. It is therefore not harder to deploy Franklin in this story.</p>
+<h5><a class="anchor" aria-hidden="true" id="what-restrictions-are-placed-on-the-user-as-a-result-of-this-choice-2"></a><a href="#what-restrictions-are-placed-on-the-user-as-a-result-of-this-choice-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>What restrictions are placed on the user as a result of this choice?</h5>
+<p>Users' authentication strategies must fit in one of several very constrained boxes.
+The space of authentication strategies is hardly infinite, and a few strategies (third party JWT, local JWT, opaque token) might cover a huge number of cases, but small variations would be difficult to accomodate, which
+would shunt some users into requiring custom software to get use out of Franklin.</p>
+<h5><a class="anchor" aria-hidden="true" id="what-restrictions-are-placed-on-us-as-a-result-of-this-choice-2"></a><a href="#what-restrictions-are-placed-on-us-as-a-result-of-this-choice-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>What restrictions are placed on us as a result of this choice?</h5>
+<p>No additional restrictions are placed on us as a result of this choice. We get to treat
+the authentication strategy as 100% known and well-modeled by the server logic we
+already have in place. For us it will not end up being in the way at all, though
+we will need to maintain a few different authentication strategies for users who
+know their requirements better than we do.</p>
+<h2><a class="anchor" aria-hidden="true" id="decision"></a><a href="#decision" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Decision</h2>
+<p>For configuring domain levels, we should accept arguments indicating &quot;domains&quot; that
+should be behind authentication. For configuring how to authenticate, we should
+ask users to point Franklin to a service that can accept the authentication request
+we'd like to send.</p>
+<p>I chose this option primarily for two reasons. First, Franklin
+will almost always and everywhere be an auxiliary service. People will use Franklin
+as a STAC API that augments what's possible in some other API or frontend application. That other application likely already exists and has its own
+solution to authentication. Franklin shouldn't force people to reimplement
+solutions to problems they've already solved elsewhere.</p>
+<p>Second, not everyone writes for the JVM. The relative volume of non-Azavea-authored issues
+and forks on <code>PySTAC</code> (<em>some</em> issues, <em>many</em> forks) vs <code>stac4s</code> (zero of either) and Franklin (four issues from two people, one inactive fork)
+tells us something about engagement we can expect if something requires writing
+Scala. <a href="https://github.com/planetlabs/staccato/network/members"><code>staccato</code></a> similarly
+has seen minimal community engagement, more or less entirely maintained by <code>@joshfix</code>,
+with very few issues and forks from a short list of people. In short, if &quot;classloader&quot; ends up within
+20 miles of the &quot;starting Franklin with authentication&quot; docs, I think we'll
+be dramatically limiting Franklin's potential audience.</p>
+<p>Asking people to provide a route to an authentication service keeps the docs 100%
+in HTTP-land. Additionally, we can provide a very dumb authentication service
+in a container that ensures that the startup instructions continue only to require
+running Docker commands.</p>
+<h2><a class="anchor" aria-hidden="true" id="consequences"></a><a href="#consequences" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Consequences</h2>
+<p>The first consequence of this is that Franklin will in an instant become distributed. While
+in practice deployment will probably mean sidecar containers for people like us
+who never learned to <code>k8s</code>, these sidecars are still an additional service dependency.
+As a result, we should <strong>require</strong> the authentication service to expose
+a healthcheck and include it in Franklin's healthcheck, if such a service has
+been configured.</p>
+<p>Second, introducing additional services increases the cost of not having tracing configured.
+At the time that we created Franklin, we had some sort of conflicts with our
+tracing library, tapir, and cats versions that caused us to be unable to include
+tracing. That was disappointing, but acceptable for our small API that didn't talk to anything but a database.
+With an additional
+service which might have its own performance and reliability statistics, we
+should ensure that Franklin is capable of hooking into OpenTelemetry-compliant
+tracing systems. There is a <a href="https://github.com/janstenpickle/trace4cats">new entry</a> in this domain that we should consider as well, now that we have
+some experience in this domain.</p>
+<p>Third, we'll need to develop an example authentication service and add it to the getting started documentation.
+We'll need to advertise and document the semantics of the authentication service somehow.
+The most straightforward way to do this would be with an example service that:</p>
+<ol>
+<li>is sufficient for Franklin's needs</li>
+<li>advertises an OpenAPI specification</li>
+</ol>
+<p>An added bonus of this is that we'll have <em>two</em> services, one of which calls the other, that we can use to learn more about the capabilities that OpenTelemetry enables.</p>
+<p>Finally, we'll need to adapt the work in the <a href="https://github.com/jisantuc/configable-auth">toy repository</a> for Franklin. Choosing a configurable HTTP authentication service
+will introduce some latency to requests for servers that have it configured. As a result, the adaptation should involve some kind of authentication result caching that
+respects any TTL returned by the authentication service.</p>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/franklin/docs/0003-item-tms-rendering"><span class="arrow-prev">← </span><span>3 - Item TMS Rendering</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#status">Status</a></li><li><a href="#context">Context</a><ul class="toc-headings"><li><a href="#configuring-levels">Configuring levels</a></li><li><a href="#configuring-authentication-strategy">Configuring authentication strategy</a></li></ul></li><li><a href="#decision">Decision</a></li><li><a href="#consequences">Consequences</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/franklin/" class="nav-home"><img src="/franklin/img/footer.png" alt="Franklin" width="66" height="58"/></a><div><h5>Other Projects</h5><a href="https://rasterfoundry.azavea.com">Raster Foundry</a><a href="https://rastervision.io">Raster Vision</a><a href="https://geotrellis.io">GeoTrellis</a></div><div><h5>Contribute</h5><a href="https://github.com/azavea/franklin">GitHub</a></div><div></div></section><a href="https://www.azavea.com/blog/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/franklin/img/azavea_white_solo.svg" alt="Azavea" width="170" height="45"/></a><section class="copyright">Copyright © 2020 Azavea</section></footer></div></body></html>
