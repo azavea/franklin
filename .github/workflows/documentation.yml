@@ -21,7 +21,7 @@ jobs:
       - uses: olafurpg/setup-scala@v5
       - name: Test Build
         run: |
-          csbt docs/docusaurusCreateSite
+          sbt docs/docusaurusCreateSite
           pushd website
           if [ -e yarn.lock ]; then
           yarn install --frozen-lockfile
@@ -59,4 +59,4 @@ jobs:
         run: |
           git config --global user.email "actions@gihub.com"
           git config --global user.name "gh-actions"
-          csbt docs/docusaurusPublishGhpages
+          sbt docs/docusaurusPublishGhpages
