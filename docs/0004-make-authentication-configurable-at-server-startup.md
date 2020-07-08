@@ -244,4 +244,6 @@ The most straightforward way to do this would be with an example service that:
 
 An added bonus of this is that we'll have _two_ services, one of which calls the other, that we can use to learn more about the capabilities that OpenTelemetry enables.
 
-Finally, we'll need to adapt the work in the [toy repository](https://github.com/jisantuc/configable-auth) for Franklin.
+Finally, we'll need to adapt the work in the [toy repository](https://github.com/jisantuc/configable-auth) for Franklin. Choosing a configurable HTTP authentication service
+will introduce some latency to requests for servers that have it configured. As a result, the adaptation should involve some kind of authentication result caching that
+respects any TTL returned by the authentication service.
