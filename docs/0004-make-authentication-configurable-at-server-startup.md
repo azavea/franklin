@@ -203,7 +203,7 @@ solution to authentication. Franklin shouldn't force people to reimplement
 solutions to problems they've already solved elsewhere.
 
 Second, not everyone writes for the JVM. The relative volume of non-Azavea-authored issues
-and forks on `PySTAC` (_some_ issues, _many_ forks) vs `stac4s` (zero of either) and Franklin (three issues from one person, one inactive fork)
+and forks on `PySTAC` (_some_ issues, _many_ forks) vs `stac4s` (zero of either) and Franklin (four issues from two people, one inactive fork)
 tells us something about engagement we can expect if something requires writing
 Scala. [`staccato`](https://github.com/planetlabs/staccato/network/members) similarly
 has seen minimal community engagement, more or less entirely maintained by `@joshfix`,
