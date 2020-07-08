@@ -7,7 +7,7 @@ on:
   push:
     branches:
         - master
-        - docs/js/deploy-gh-pages-on-push
+        - docs/js/publish-pages-with-actions
 
 jobs:
   checks:
