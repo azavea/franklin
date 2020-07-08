@@ -31,6 +31,7 @@ jobs:
           npm i
           fi
           npm run build
+          popd
   gh-release:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -59,4 +60,7 @@ jobs:
         run: |
           git config --global user.email "actions@gihub.com"
           git config --global user.name "gh-actions"
-          sbt docs/docusaurusPublishGhpages
+          sbt docs/docusaurusCreateSite
+          pushd website
+          yarn publish-gh-pages
+          popd
