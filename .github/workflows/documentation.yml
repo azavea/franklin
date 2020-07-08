@@ -18,8 +18,10 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: '12.x'
+      - uses: olafurpg/setup-scala@v5
       - name: Test Build
         run: |
+          csbt docs/docusaurusCreateSite
           pushd website
           if [ -e yarn.lock ]; then
           yarn install --frozen-lockfile
@@ -57,12 +59,4 @@ jobs:
         run: |
           git config --global user.email "actions@gihub.com"
           git config --global user.name "gh-actions"
-          pushd website
-          if [ -e yarn.lock ]; then
-          yarn install --frozen-lockfile
-          elif [ -e package-lock.json ]; then
-          npm ci
-          else
-          npm i
-          fi
-          npx docusaurus deploy
+          csbt docs/docusaurusPublishGhpages
