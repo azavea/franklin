@@ -2,32 +2,36 @@ package com.azavea.franklin.extensions
 
 import cats.Functor
 import cats.implicits._
+import com.azavea.franklin.extensions.validation.syntax._
+import com.azavea.stac4s.extensions.eo.EOItemExtension
 import com.azavea.stac4s.extensions.label.{LabelItemExtension, LabelLinkExtension}
 import com.azavea.stac4s.extensions.layer.LayerItemExtension
 import com.azavea.stac4s.{StacItem, StacLink}
+import eu.timepit.refined.auto._
 import monocle.macros.GenLens
-import com.azavea.stac4s.extensions.eo.EOItemExtension
 
 package object validation {
 
   def getItemValidator(extensions: List[String]): StacItem => StacItem = {
-    makeValidator(extensions map { s =>
-      ExtensionName.fromString(s) match {
-        case Label        => ItemValidator[LabelItemExtension].validate _
-        case Layer        => ItemValidator[LayerItemExtension].validate _
-        case EO           => ItemValidator[EOItemExtension].validate _
-        case Unchecked(_) => (x: StacItem) => x
+    makeValidator(extensions map { s => (item: StacItem) =>
+      {
+        ExtensionName.fromString(s) match {
+          case Label        => item.validate[LabelItemExtension]("label")
+          case Layer        => item.validate[LayerItemExtension]("layer")
+          case EO           => item.validate[EOItemExtension]("eo")
+          case Unchecked(_) => item
+        }
       }
     })
   }
 
   def getLinkValidator(extensions: List[String]): StacLink => StacLink = {
-    makeValidator(extensions map { s =>
+    makeValidator(extensions map { s => (link: StacLink) =>
       ExtensionName.fromString(s) match {
-        case Label        => LinkValidator[LabelLinkExtension].validate _
-        case Layer        => (x: StacLink) => x
-        case EO           => (x: StacLink) => x
-        case Unchecked(_) => (x: StacLink) => x
+        case Label        => link.validate[LabelLinkExtension]("label")
+        case Layer        => link
+        case EO           => link
+        case Unchecked(_) => link
       }
     })
   }
