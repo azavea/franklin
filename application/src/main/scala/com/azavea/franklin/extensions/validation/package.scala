@@ -6,6 +6,7 @@ import com.azavea.stac4s.extensions.label.{LabelItemExtension, LabelLinkExtensio
 import com.azavea.stac4s.extensions.layer.LayerItemExtension
 import com.azavea.stac4s.{StacItem, StacLink}
 import monocle.macros.GenLens
+import com.azavea.stac4s.extensions.eo.EOItemExtension
 
 package object validation {
 
@@ -14,6 +15,7 @@ package object validation {
       ExtensionName.fromString(s) match {
         case Label        => ItemValidator[LabelItemExtension].validate _
         case Layer        => ItemValidator[LayerItemExtension].validate _
+        case EO           => ItemValidator[EOItemExtension].validate _
         case Unchecked(_) => (x: StacItem) => x
       }
     })
@@ -24,6 +26,7 @@ package object validation {
       ExtensionName.fromString(s) match {
         case Label        => LinkValidator[LabelLinkExtension].validate _
         case Layer        => (x: StacLink) => x
+        case EO           => (x: StacLink) => x
         case Unchecked(_) => (x: StacLink) => x
       }
     })
