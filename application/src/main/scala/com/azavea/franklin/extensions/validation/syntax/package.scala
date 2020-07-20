@@ -31,4 +31,18 @@ package object syntax {
       })
     }
   }
+
+  implicit class validateLinkWhen(link: StacLink) {
+
+    def validateWhen[T: LinkExtension](
+        name: NonEmptyString,
+        predicate: StacLink => Boolean
+    ): StacLink = {
+      if (predicate(link)) {
+        link.validate(name)
+      } else {
+        link
+      }
+    }
+  }
 }

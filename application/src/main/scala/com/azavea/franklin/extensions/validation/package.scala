@@ -6,7 +6,7 @@ import com.azavea.franklin.extensions.validation.syntax._
 import com.azavea.stac4s.extensions.eo.EOItemExtension
 import com.azavea.stac4s.extensions.label.{LabelItemExtension, LabelLinkExtension}
 import com.azavea.stac4s.extensions.layer.LayerItemExtension
-import com.azavea.stac4s.{StacItem, StacLink}
+import com.azavea.stac4s.{StacItem, StacLink, StacLinkType}
 import eu.timepit.refined.auto._
 import monocle.macros.GenLens
 
@@ -28,7 +28,7 @@ package object validation {
   def getLinkValidator(extensions: List[String]): StacLink => StacLink = {
     makeValidator(extensions map { s => (link: StacLink) =>
       ExtensionName.fromString(s) match {
-        case Label        => link.validate[LabelLinkExtension]("label")
+        case Label        => link.validateWhen[LabelLinkExtension]("label", _.rel == StacLinkType.Source)
         case Layer        => link
         case EO           => link
         case Unchecked(_) => link
