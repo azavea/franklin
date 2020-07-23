@@ -24,6 +24,13 @@ trait ApiOptions {
     .option[String]("api-host", help = "Hostname Franklin is hosted it (e.g. localhost)")
     .withDefault("localhost")
 
+  val apiPath = Opts
+    .option[String](
+      "api-path",
+      help = "Path component for root of Franklin instance (e.g. /stac/api)"
+    )
+    .orNone
+
   val apiScheme =
     Opts
       .option[String]("api-scheme", "Scheme server is exposed to end users with")
@@ -49,6 +56,7 @@ trait ApiOptions {
     externalPort,
     internalPort,
     apiHost,
+    apiPath,
     apiScheme,
     defaultLimit,
     enableTransactions,
