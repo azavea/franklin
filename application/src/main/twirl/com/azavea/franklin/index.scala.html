@@ -3,87 +3,87 @@
 @import com.azavea.stac4s.StacLinkType
 @import com.azavea.stac4s.StacCollection
 
-@(landingPage: LandingPage, collectionCount: Int, itemCount: Int, assetCount: Int, collectionList: List[StacCollection], apiHost: String)
+@(landingPage: LandingPage, collectionCount: Int, itemCount: Int, assetCount: Int, collectionList: List[StacCollection],
+apiHost: String)
 
 <!DOCTYPE html>
 <html>
 
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Franklin OGC API - Features, Tiles, and STAC Server</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
-    <!-- Bulma Version 0.8.x-->
-    <link rel="stylesheet" href="https://unpkg.com/bulma@@0.8.0/css/bulma.min.css" />
-    <link rel="stylesheet" type="text/css" href="/assets/franklin.css">
-  </head>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Franklin OGC API - Features, Tiles, and STAC Server</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
+  <!-- Bulma Version 0.8.x-->
+  <link rel="stylesheet" href="https://unpkg.com/bulma@@0.8.0/css/bulma.min.css" />
+  <link rel="stylesheet" type="text/css" href="/assets/franklin.css">
+</head>
 
-  <body>
+<body>
 
-    <!-- START NAV -->
-    @navbar()
-    <!-- END NAV -->
-    <div class="container">
-      <div class="columns">
-        @sidebar("home")
-        <div class="column is-9">
-          <section class="hero is-info welcome is-small box">
-            <div class="hero-body">
-              <div class="container">
-                <h1 class="title">
-                  @landingPage.title
-                </h1>
-                <h2 class="subtitle">
-                  @landingPage.description
-                </h2>
-              </div>
+  <!-- START NAV -->
+  @navbar(apiHost)
+  <!-- END NAV -->
+  <div class="container">
+    <div class="columns">
+      @sidebar("home", apiHost)
+      <div class="column is-9">
+        <section class="hero is-info welcome is-small box">
+          <div class="hero-body">
+            <div class="container">
+              <h1 class="title">
+                @landingPage.title
+              </h1>
+              <h2 class="subtitle">
+                @landingPage.description
+              </h2>
             </div>
-          </section>
-          <section class="info-tiles">
-            <div class="tile is-ancestor has-text-centered">
-              <div class="tile is-parent">
-                <article class="tile is-child box">
-                  <p class="title">@collectionCount</p>
-                  <p class="subtitle">Collections</p>
-                </article>
-              </div>
-              <div class="tile is-parent">
-                <article class="tile is-child box">
-                  <p class="title">@itemCount</p>
-                  <p class="subtitle">Items</p>
-                </article>
-              </div>
-              <div class="tile is-parent">
-                <article class="tile is-child box">
-                  <p class="title">@assetCount</p>
-                  <p class="subtitle">Assets</p>
-                </article>
-              </div>
+          </div>
+        </section>
+        <section class="info-tiles">
+          <div class="tile is-ancestor has-text-centered">
+            <div class="tile is-parent">
+              <article class="tile is-child box">
+                <p class="title">@collectionCount</p>
+                <p class="subtitle">Collections</p>
+              </article>
             </div>
-          </section>
-          <div class="columns">
-            <div class="column is-12">
-              <div class="card events-card box">
-                <header class="card-header">
-                  <p class="card-header-title">
-                    Collections
-                  </p>
-                </header>
-                <div class="card-table">
-                  <div class="content">
-                    <table class="table is-fullwidth is-striped">
-                      <tbody>
-                        @for(collection <- collectionList) {
-                        <tr>
-                          <td>@collection.title.getOrElse(collection.id)</td>
-                          <td class="level-right"><a class="button is-small is-primary" href="@collection.selfLink(apiHost)">View</a></td>
+            <div class="tile is-parent">
+              <article class="tile is-child box">
+                <p class="title">@itemCount</p>
+                <p class="subtitle">Items</p>
+              </article>
+            </div>
+            <div class="tile is-parent">
+              <article class="tile is-child box">
+                <p class="title">@assetCount</p>
+                <p class="subtitle">Assets</p>
+              </article>
+            </div>
+          </div>
+        </section>
+        <div class="columns">
+          <div class="column is-12">
+            <div class="card events-card box">
+              <header class="card-header">
+                <p class="card-header-title">
+                  Collections
+                </p>
+              </header>
+              <div class="card-table">
+                <div class="content">
+                  <table class="table is-fullwidth is-striped">
+                    <tbody>
+                      @for(collection <- collectionList) { <tr>
+                        <td>@collection.title.getOrElse(collection.id)</td>
+                        <td class="level-right"><a class="button is-small is-primary"
+                            href="@collection.selfLink(apiHost)">View</a></td>
                         </tr>
                         }
-                      </tbody>
-                    </table>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -91,7 +91,8 @@
         </div>
       </div>
     </div>
-    <script async type="text/javascript" src="/assets/bulma.js"></script>
-  </body>
+  </div>
+  <script async type="text/javascript" src="/assets/bulma.js"></script>
+</body>
 
 </html>
