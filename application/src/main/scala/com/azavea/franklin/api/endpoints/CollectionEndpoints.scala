@@ -1,14 +1,14 @@
 package com.azavea.franklin.api.endpoints
 
 import cats.effect._
+import com.azavea.franklin.datamodel.CollectionsResponse
 import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
+import fs2.{Stream => FS2Stream}
 import io.circe._
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.json.circe._
-import com.azavea.franklin.datamodel.CollectionsResponse
-import fs2.{Stream => FS2Stream}
 
 class CollectionEndpoints[F[_]: Sync](enableTransactions: Boolean, enableTiles: Boolean) {
 

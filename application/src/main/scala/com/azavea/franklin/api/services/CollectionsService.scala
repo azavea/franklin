@@ -4,6 +4,7 @@ import cats.effect._
 import cats.implicits._
 import com.azavea.franklin
 import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.api.endpoints.AcceptHeader
 import com.azavea.franklin.api.endpoints._
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.StacCollectionDao
@@ -21,7 +22,6 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import com.azavea.franklin.api.endpoints.AcceptHeader
 
 class CollectionsService[F[_]: Sync](
     xa: Transactor[F],
