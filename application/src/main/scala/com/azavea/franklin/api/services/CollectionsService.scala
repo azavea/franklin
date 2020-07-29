@@ -2,8 +2,9 @@ package com.azavea.franklin.api.services
 
 import cats.effect._
 import cats.implicits._
+import com.azavea.franklin
 import com.azavea.franklin.api.commands.ApiConfig
-import com.azavea.franklin.api.endpoints.CollectionEndpoints
+import com.azavea.franklin.api.endpoints._
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.datamodel.{CollectionsResponse, TileInfo}
@@ -20,6 +21,7 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import com.azavea.franklin.api.endpoints.AcceptHeader
 
 class CollectionsService[F[_]: Sync](
     xa: Transactor[F],
@@ -32,14 +34,18 @@ class CollectionsService[F[_]: Sync](
   val enableTransactions = apiConfig.enableTransactions
   val enableTiles        = apiConfig.enableTiles
 
-  def listCollections(): F[Either[Unit, Json]] = {
+  def listCollections(
+      acceptHeader: AcceptHeader
+  ): F[Either[Unit, (String, fs2.Stream[F, Byte])]] = {
     for {
       collections <- StacCollectionDao.listCollections().transact(xa)
       updated = collections map { _.maybeAddTilesLink(enableTiles, apiHost) } map {
         _.updateLinksWithHost(apiConfig)
       }
     } yield {
-      Either.right(CollectionsResponse(updated).asJson)
+      val collectionResponse = CollectionsResponse(updated)
+      val html               = franklin.html.collections(collectionResponse, apiConfig.apiHost).body
+      handleOut[F](html, collectionResponse.asJson, acceptHeader)
     }
 
   }
@@ -122,10 +128,10 @@ class CollectionsService[F[_]: Sync](
     }
   }
 
-  val collectionEndpoints = new CollectionEndpoints(enableTransactions, enableTiles)
+  val collectionEndpoints = new CollectionEndpoints[F](enableTransactions, enableTiles)
 
   val routesList = List(
-    collectionEndpoints.collectionsList.toRoutes(_ => listCollections()),
+    collectionEndpoints.collectionsList.toRoutes(acceptHeader => listCollections(acceptHeader)),
     collectionEndpoints.collectionUnique
       .toRoutes {
         case collectionId => getCollectionUnique(collectionId)

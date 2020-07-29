@@ -78,7 +78,7 @@ $$$$
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       )
-      collectionEndpoints = new CollectionEndpoints(
+      collectionEndpoints = new CollectionEndpoints[IO](
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       )

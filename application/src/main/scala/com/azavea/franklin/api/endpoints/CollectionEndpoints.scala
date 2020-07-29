@@ -1,19 +1,25 @@
 package com.azavea.franklin.api.endpoints
 
+import cats.effect._
 import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
 import io.circe._
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.json.circe._
+import com.azavea.franklin.datamodel.CollectionsResponse
+import fs2.{Stream => FS2Stream}
 
-class CollectionEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
+class CollectionEndpoints[F[_]: Sync](enableTransactions: Boolean, enableTiles: Boolean) {
 
   val base = endpoint.in("collections")
 
-  val collectionsList: Endpoint[Unit, Unit, Json, Nothing] =
+  val collectionsList
+      : Endpoint[AcceptHeader, Unit, (String, FS2Stream[F, Byte]), FS2Stream[F, Byte]] =
     base.get
-      .out(jsonBody[Json])
+      .in(acceptHeaderInput)
+      .out(header[String]("content-type"))
+      .out(streamBody[FS2Stream[F, Byte]](schemaFor[CollectionsResponse], CodecFormat.Json()))
       .description("A list of collections")
       .name("collections")
 

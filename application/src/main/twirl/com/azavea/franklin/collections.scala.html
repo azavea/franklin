@@ -1,0 +1,85 @@
+@import _root_.com.azavea.franklin.datamodel._
+@import _root_.com.azavea.franklin.api.implicits._
+@import _root_.geotrellis.vector.io.json.Implicits._
+@import _root_.io.circe.syntax._
+@import com.azavea.stac4s.StacLinkType
+@import com.azavea.stac4s.StacCollection
+@(collectionsResponse: CollectionsResponse, apiHost: String)
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Franklin OGC API - Features, Tiles, and STAC Server</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
+  <!-- Bulma Version 0.8.x-->
+  <link rel="stylesheet" href="https://unpkg.com/bulma@@0.8.0/css/bulma.min.css" />
+  <link rel="stylesheet" type="text/css" href="/assets/franklin.css">
+  <script src="/assets/main.bundle.js"></script>
+</head>
+
+  <body>
+    <!-- START NAV -->
+    @navbar(apiHost)
+    <!-- END NAV -->
+
+    <div class="container">
+      <div class="columns">
+        @sidebar("collections", apiHost)
+        <div class="column is-9">
+          <section class="section">
+            <div style="height: 300px" id="map" class="map"></div>
+          </section>
+          <div class="columns">
+            <div class="column is-12">
+              <div class="card events-card box">
+                <header class="card-header">
+                  <p class="card-header-title">
+                    Collections
+                  </p>
+                </header>
+                <div class="card-table">
+                  <div class="content">
+                    <table class="table is-fullwidth is-striped">
+                      <tbody>
+                        <tr>
+                          <th>Name</th>
+                          <th>License</th>
+                          <th>Start</th>
+                          <th>End</th>
+                          <th></th>
+                        </tr>
+                        @for(collection <- collectionsResponse.collections) {
+                          <tr data-collection="@collection.id" class="collection-item">
+                            <td>@collection.title.getOrElse(collection.id)</td>
+                            <td>@collection.license.name</td>
+                            <td>@collection.extent.startTime.getOrElse("")</td>
+                            <td>@collection.extent.endTime.getOrElse("")</td>
+                            <td class="level-right"><a class="button is-small is-primary" href="/collections/@collection.id">View</a></td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      var map = franklin.createMap();
+      var features = @Html(collectionsResponse.collections.toGeoJson);
+      var extents = @Html(collectionsResponse.collections.extentMap.asJson.noSpaces);
+      franklin.addGeoJson(map, features);
+      var collectionsExtent = @Html(collectionsResponse.collections.extent.asJson.noSpaces);
+      franklin.fitToBounds(map, collectionsExtent);
+      franklin.addEventListener(map, extents);
+    </script>
+  </body>
+</html>
