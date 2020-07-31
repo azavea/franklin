@@ -141,7 +141,7 @@ object StacItemDao extends Dao[StacItem] {
       .selectOption
 
   private def doUpdate(itemId: String, item: StacItem): ConnectionIO[StacItem] = {
-    val fragment   = fr"""
+    val fragment = fr"""
       UPDATE collection_items
       SET
         item = $item
