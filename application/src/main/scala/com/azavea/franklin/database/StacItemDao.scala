@@ -141,11 +141,9 @@ object StacItemDao extends Dao[StacItem] {
       .selectOption
 
   private def doUpdate(itemId: String, item: StacItem): ConnectionIO[StacItem] = {
-    val itemExtent = Projected(item.geometry.getEnvelope, 4326)
     val fragment   = fr"""
       UPDATE collection_items
       SET
-        extent = $itemExtent,
         item = $item
       WHERE id = $itemId
     """
