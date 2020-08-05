@@ -1,5 +1,6 @@
 package com.azavea.franklin.api.services
 
+import cats.data.EitherT
 import cats.effect._
 import cats.implicits._
 import com.azavea.franklin
@@ -15,6 +16,7 @@ import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
+import geotrellis.vector.Extent
 import io.circe._
 import io.circe.syntax._
 import org.http4s.dsl.Http4sDsl
@@ -22,6 +24,7 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import com.azavea.franklin.error.ValidationError
 
 class CollectionsService[F[_]: Sync](
     xa: Transactor[F],
@@ -85,7 +88,7 @@ class CollectionsService[F[_]: Sync](
     }
   }
 
-  def createCollection(collection: StacCollection): F[Either[Unit, Json]] = {
+  def createCollection(collection: StacCollection): F[Either[ValidationError, Json]] = {
     val newCollection = collection.copy(links =
       collection.links.filter({ link =>
         !Set[StacLinkType](StacLinkType.Item, StacLinkType.StacRoot, StacLinkType.Self)
@@ -106,9 +109,25 @@ class CollectionsService[F[_]: Sync](
           )
         )
     )
-    for {
-      inserted <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
-    } yield Right(inserted.asJson)
+
+    val hasValidExtent = newCollection.extent.spatial.bbox
+      .map(_.toExtent)
+      .foldRight(Right(Nil): Either[String, List[Extent]]) { (e, acc) =>
+        for (xs <- acc.right; x <- e.right) yield x :: xs
+      }
+      .toOption
+
+    hasValidExtent traverse { _ =>
+      StacCollectionDao
+        .insertStacCollection(newCollection, None)
+        .transact(xa)
+        .map(_.asJson)
+    } map { something =>
+      Either.fromOption(
+        something,
+        ValidationError(s"At least one of the collection extents is invalid")
+      )
+    }
   }
 
   def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = {

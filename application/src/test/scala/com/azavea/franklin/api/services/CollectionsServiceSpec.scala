@@ -10,14 +10,19 @@ import com.azavea.franklin.datamodel.CollectionsResponse
 import com.azavea.stac4s.StacCollection
 import com.azavea.stac4s.testing._
 import org.http4s.circe.CirceEntityDecoder._
-import org.http4s.{Method, Request, Uri}
+import org.http4s.dsl.io._
+import org.http4s.implicits._
+import org.http4s.{Header, Headers, Method, Request, Uri}
+import org.http4s.headers._
 import org.specs2.{ScalaCheck, Specification}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import org.specs2.control.Debug
 
 class CollectionsServiceSpec
     extends Specification
+    with Debug
     with ScalaCheck
     with TestDatabaseSpec
     with Generators {
@@ -38,14 +43,19 @@ class CollectionsServiceSpec
   def listCollectionsExpectation = prop {
     (stacCollectionA: StacCollection, stacCollectionB: StacCollection) =>
       {
+        println("STARTING SPEC")
         val listIO = (
           testClient.getCollectionResource(stacCollectionA),
           testClient.getCollectionResource(stacCollectionB)
         ).tupled use { _ =>
-          val request = Request[IO](method = Method.GET, Uri.unsafeFromString(s"/collections"))
+          val request = Request[IO](
+            method = Method.GET,
+            Uri.unsafeFromString(s"/collections"),
+            headers = Headers.of(Header("Accept", "application/json"))
+          )
           (for {
-            resp    <- testServices.collectionsService.routes.run(request)
-            decoded <- OptionT.liftF { resp.as[CollectionsResponse] }
+            resp    <- testServices.collectionsService.routes.run(request).pp
+            decoded <- OptionT.liftF { resp.as[CollectionsResponse] }.pp
           } yield decoded).value
         }
 

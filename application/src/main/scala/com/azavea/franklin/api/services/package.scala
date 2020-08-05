@@ -15,14 +15,15 @@ package object services {
   ): Either[Unit, (String, Stream[F, Byte])] = {
     accept.acceptJson match {
       case true => {
+        println("JSON!!!!")
         val bytes = Stream.emits(json.noSpaces.getBytes())
         Right(("application/json", bytes))
       }
       case _ => {
+        println("HTML!!!!")
         val bytes = Stream.emits(html.getBytes())
         Right(("text/html", bytes))
       }
     }
   }
-
 }

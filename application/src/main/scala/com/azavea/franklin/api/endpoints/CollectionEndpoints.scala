@@ -2,11 +2,11 @@ package com.azavea.franklin.api.endpoints
 
 import cats.effect._
 import com.azavea.franklin.datamodel.CollectionsResponse
-import com.azavea.franklin.error.NotFound
+import com.azavea.franklin.error.{NotFound, ValidationError}
 import com.azavea.stac4s.StacCollection
 import fs2.{Stream => FS2Stream}
 import io.circe._
-import sttp.model.StatusCode.{NotFound => NF}
+import sttp.model.StatusCode.{NotFound => NF, BadRequest}
 import sttp.tapir._
 import sttp.tapir.json.circe._
 
@@ -23,10 +23,13 @@ class CollectionEndpoints[F[_]: Sync](enableTransactions: Boolean, enableTiles: 
       .description("A list of collections")
       .name("collections")
 
-  val createCollection: Endpoint[StacCollection, Unit, Json, Nothing] =
+  val createCollection: Endpoint[StacCollection, ValidationError, Json, Nothing] =
     base.post
       .in(jsonBody[StacCollection])
       .out(jsonBody[Json])
+      .errorOut(
+        oneOf(statusMapping(BadRequest, jsonBody[ValidationError].description("bad request")))
+      )
       .description("""
         | Create a new collection. Item links in the POSTed collection will be ignored in
         | the service of ensuring that we can turn around an HTTP response in a reasonable
