@@ -124,12 +124,11 @@ object StacItemDao extends Dao[StacItem] {
 
   def insertStacItem(item: StacItem): ConnectionIO[StacItem] = {
     val projectedGeometry = Projected(item.geometry, 4326)
-    val itemExtent        = Projected(item.geometry.getEnvelope, 4326)
 
     val insertFragment = fr"""
-      INSERT INTO collection_items (id, extent, geom, item)
+      INSERT INTO collection_items (id, geom, item)
       VALUES
-      (${item.id}, $itemExtent, $projectedGeometry, $item)
+      (${item.id}, $projectedGeometry, $item)
       """
     insertFragment.update
       .withUniqueGeneratedKeys[StacItem]("item")
@@ -142,11 +141,9 @@ object StacItemDao extends Dao[StacItem] {
       .selectOption
 
   private def doUpdate(itemId: String, item: StacItem): ConnectionIO[StacItem] = {
-    val itemExtent = Projected(item.geometry.getEnvelope, 4326)
-    val fragment   = fr"""
+    val fragment = fr"""
       UPDATE collection_items
       SET
-        extent = $itemExtent,
         item = $item
       WHERE id = $itemId
     """

@@ -11,6 +11,7 @@ object ExtensionName {
   def fromString(s: String): ExtensionName = s.toLowerCase match {
     case "label" => Label
     case "layer" => Layer
+    case "eo"    => EO
     case _       => Unchecked(s)
   }
 
@@ -20,4 +21,5 @@ object ExtensionName {
 
 case object Label                        extends ExtensionName("label")
 case object Layer                        extends ExtensionName("layer")
+case object EO                           extends ExtensionName("eo")
 case class Unchecked(underlying: String) extends ExtensionName(underlying)

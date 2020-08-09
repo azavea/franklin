@@ -1,10 +1,13 @@
 {
   "docs": {
-    "Overview": ["introduction"],
+    "Overview": [
+      "introduction"
+    ],
     "ADRs": [
       "0001-record-architecture-decisions",
       "0002-choose-a-pagination-strategy-and-implementation",
-      "0003-item-tms-rendering"
+      "0003-item-tms-rendering",
+      "0004-make-authentication-configurable-at-server-startup"
     ]
   }
 }
