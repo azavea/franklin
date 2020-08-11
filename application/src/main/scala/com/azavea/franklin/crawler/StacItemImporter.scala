@@ -27,16 +27,26 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
     EitherT.right(itemUris.traverse(uri => StacIO.readItem(uri, true, collection)))
   }
 
-  def runIO(xa: Transactor[IO]): IO[Either[String, NonEmptyList[StacItem]]] = {
+  def runIO(xa: Transactor[IO]): IO[Either[String, List[StacItem]]] = {
     for {
       collection <- getCollection(xa)
       itemList   <- readItems(collection)
-      stacItems <- EitherT.right[String](
-        itemList
-          .traverse(item =>
-            StacItemDao.insertStacItem(item.copy(collection = Some(collectionId))).transact(xa)
-          )
-      )
+      stacItems <- {
+        val collectionWrapper = CollectionWrapper(
+          collection.copy(id = collectionId),
+          None,
+          List.empty,
+          itemList.toList
+        ).updateLinks
+        val items = collectionWrapper.items.traverse(item =>
+          StacItemDao
+            .insertStacItem(
+              item.copy(collection = Some(collectionId))
+            )
+            .transact(xa)
+        )
+        EitherT.right[String](items)
+      }
     } yield {
       stacItems
     }
