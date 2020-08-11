@@ -138,3 +138,4 @@ ts-out
 npm-debug.log
 debug.log
 main.bundle.js.map
+data/*

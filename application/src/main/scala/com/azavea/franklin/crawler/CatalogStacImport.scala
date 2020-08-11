@@ -4,6 +4,7 @@ import cats.data.Validated.Invalid
 import cats.effect.IO
 import cats.implicits._
 import com.amazonaws.services.s3.{AmazonS3ClientBuilder, AmazonS3URI}
+import com.azavea.franklin.crawler.StacIO._
 import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 import com.azavea.stac4s.StacLinkType._
 import com.azavea.stac4s._
@@ -26,90 +27,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class StacImport(val catalogRoot: String) {
+class CatalogStacImport(val catalogRoot: String) {
 
   implicit val cs     = IO.contextShift(global)
   implicit def logger = Slf4jLogger.getLogger[IO]
 
-  val s3 = AmazonS3ClientBuilder
-    .standard()
-    .withForceGlobalBucketAccessEnabled(true)
-    .build()
-
-  private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("/")
-
-  private def makeAbsPath(from: String, relPath: String): String = {
-    // don't try to relativize links that start with s3 -- the string splitting
-    // does _weird_ stuff :(
-    if (relPath.startsWith("s3://")) {
-      relPath
-    } else {
-      val prefix       = getPrefix(from)
-      val prefixSplit  = prefix.split("/")
-      val relPathSplit = relPath.split("/")
-      val up           = relPathSplit.count(_ == "..")
-      // safe because String.split always returns an array with an element
-      (prefixSplit.dropRight(up) :+ (if (up > 0) relPathSplit.drop(up)
-                                     else relPathSplit.drop(1)).mkString("/")) mkString ("/")
-    }
-  }
-
-  private def readFromS3(path: String): IO[String] = {
-    val awsURI        = new AmazonS3URI(path)
-    val inputStreamIO = IO(s3.getObject(awsURI.getBucket, awsURI.getKey).getObjectContent)
-    inputStreamIO.map(is => scala.io.Source.fromInputStream(is).mkString)
-  }
-
-  private def readFromLocalPath(path: String): IO[String] = {
-    IO(scala.io.Source.fromFile(path).getLines.mkString)
-  }
-
-  private def readPath[T: Decoder](path: String): IO[T] = {
-    val str = if (path.startsWith("s3://")) {
-      readFromS3(path)
-    } else {
-      readFromLocalPath(path)
-    }
-
-    str.flatMap { s =>
-      decode[T](s) match {
-        case Left(e)  => IO.raiseError(e)
-        case Right(t) => IO.pure(t)
-      }
-    }
-  }
-
-  private def readRoot: IO[StacCatalog] = readPath[StacCatalog](catalogRoot)
-
-  private def readItem(
-      path: String,
-      rewriteSourceIfPresent: Boolean,
-      inCollection: StacCollection
-  ): IO[StacItem] = {
-    val readIO = readPath[StacItem](path)
-    if (!rewriteSourceIfPresent) readIO
-    else {
-      for {
-        item <- readIO
-        sourceLinkO = item.links.find(_.rel === StacLinkType.Source)
-        sourceItemO <- sourceLinkO traverse { link =>
-          val sourcePath = makeAbsPath(path, link.href)
-          readItem(sourcePath, rewriteSourceIfPresent = false, inCollection)
-        }
-      } yield {
-        (sourceLinkO, sourceItemO, sourceItemO flatMap { _.collection }).tupled map {
-          case (link, sourceItem, collectionId) =>
-            val encodedSourceItemId =
-              URLEncoder.encode(sourceItem.id, StandardCharsets.UTF_8.toString)
-            val encodedCollectionId =
-              URLEncoder.encode(collectionId, StandardCharsets.UTF_8.toString)
-            val newSourceLink =
-              link.copy(href = s"/collections/$encodedCollectionId/items/$encodedSourceItemId")
-            item.copy(links = newSourceLink :: item.links.filter(_.rel != StacLinkType.Source))
-        } getOrElse { item }
-      }
-    }
-  }
+  private def readRoot: IO[StacCatalog] = readJsonFromPath[StacCatalog](catalogRoot)
 
   private def createCollectionForGeoJsonAsset(
       forItem: StacItem,
@@ -128,7 +51,7 @@ class StacImport(val catalogRoot: String) {
       case _ =>
         geojsonAssets.zipWithIndex traverse {
           case ((assetKey, asset), idx) =>
-            readPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
+            readJsonFromPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
               featureCollection =>
                 val parentCollectionHref =
                   s"/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
@@ -213,7 +136,7 @@ class StacImport(val catalogRoot: String) {
       parent: Option[CollectionWrapper]
   ): IO[CollectionWrapper] = {
     for {
-      stacCollection <- readPath[StacCollection](path)
+      stacCollection <- readJsonFromPath[StacCollection](path)
       _              <- logger.info(s"Read STAC Collection : ${stacCollection.title getOrElse path}")
       itemLinks     = stacCollection.links.filter(link => link.rel == Item)
       childrenLinks = stacCollection.links.filter(link => link.rel == Child)
@@ -264,8 +187,8 @@ class StacImport(val catalogRoot: String) {
         .filter(_.rel == StacLinkType.Child)
         .traverse { c =>
           def links(path: String): IO[List[StacLink]] =
-            readPath[StacCollection](path).map(_ => List(c)) orElse {
-              readPath[StacCatalog](path)
+            readJsonFromPath[StacCollection](path).map(_ => List(c)) orElse {
+              readJsonFromPath[StacCatalog](path)
                 .flatMap {
                   _.links
                     .filter(_.rel == StacLinkType.Child)
