@@ -7,7 +7,8 @@ import com.azavea.stac4s.StacCollection
 import com.azavea.stac4s.StacItem
 import com.azavea.stac4s.StacLinkType
 import geotrellis.store.s3.AmazonS3URI
-import io.circe.Decoder
+import io.chrisdavenport.log4cats.Logger
+import io.circe.{Decoder, DecodingFailure, Error => CirceError, ParsingFailure, CursorOp}
 import io.circe.parser.decode
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
@@ -18,6 +19,25 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 object StacIO {
+
+  private def logCirceError(path: String, error: CirceError)(
+      implicit logger: Logger[IO]
+  ): IO[Unit] =
+    error match {
+      case ParsingFailure(message, _) =>
+        logger.error(s"Value at $path was not valid json: $message")
+      case DecodingFailure("Attempt to decode value on failed cursor", history) =>
+        logger.error(
+          s"In $path, I expected to find a value at ${CursorOp.opsToPath(history)}, but there was nothing 😞"
+        )
+      case DecodingFailure(s, history) =>
+        logger.error(
+          s"In $path, I found something unexpected at ${CursorOp.opsToPath(history)}. I expected a value of type $s 🤔"
+        )
+    }
+
+  private def logBadResponse(path: String, code: Int)(implicit logger: Logger[IO]): IO[Unit] =
+    logger.error(s"The server responsible for $path rejected my request with a status of $code")
 
   val s3 = AmazonS3ClientBuilder
     .standard()
@@ -42,29 +62,36 @@ object StacIO {
     }
   }
 
-  def readJsonFromPath[T: Decoder](path: String)(implicit contextShift: ContextShift[IO]): IO[T] = {
+  def readJsonFromPath[T: Decoder](
+      path: String
+  )(implicit contextShift: ContextShift[IO], logger: Logger[IO]): IO[T] = {
     if (path.startsWith("http")) {
       {
-        readJsonFromHttp(SttpUri.unsafeApply(path))
+        readJsonFromHttp(path)
       }
     } else {
       val str = readLinesFromPath(path)
 
       str.flatMap { s =>
         decode[T](s.mkString) match {
-          case Left(e)  => IO.raiseError(e)
+          case Left(e)  => logCirceError(path, e) *> IO.raiseError(e)
           case Right(t) => IO.pure(t)
         }
       }
     }
   }
 
-  def readJsonFromHttp[T: Decoder](url: SttpUri)(implicit contextShift: ContextShift[IO]): IO[T] =
+  def readJsonFromHttp[T: Decoder](
+      url: String
+  )(implicit contextShift: ContextShift[IO], logger: Logger[IO]): IO[T] =
     AsyncHttpClientCatsBackend[IO]().flatMap { implicit backend =>
       for {
-        response <- basicRequest.get(url).response(asJson[T]).send[IO]
+        response <- basicRequest.get(uri"$url").response(asJson[T]).send[IO]
         decoded <- response.body match {
-          case Left(e)     => IO.raiseError(e)
+          case Left(e @ DeserializationError(_, err)) =>
+            logCirceError(s"$url", err) *> IO.raiseError(e)
+          case Left(e @ HttpError(_, code)) =>
+            logBadResponse(s"$url", code.code) *> IO.raiseError(e)
           case Right(body) => IO.pure(body)
         }
       } yield decoded
@@ -75,7 +102,7 @@ object StacIO {
   def makeAbsPath(from: String, relPath: String): String = {
     // don't try to relativize links that start with s3 -- the string splitting
     // does _weird_ stuff :(
-    if (relPath.startsWith("s3://")) {
+    if (relPath.startsWith("s3://") || relPath.startsWith("http")) {
       relPath
     } else {
       val prefix       = getPrefix(from)
@@ -92,7 +119,7 @@ object StacIO {
       path: String,
       rewriteSourceIfPresent: Boolean,
       inCollection: StacCollection
-  )(implicit contextShift: ContextShift[IO]): IO[StacItem] = {
+  )(implicit contextShift: ContextShift[IO], logger: Logger[IO]): IO[StacItem] = {
     val readIO = readJsonFromPath[StacItem](path)
     if (!rewriteSourceIfPresent) readIO
     else {
