@@ -1,0 +1,36 @@
+{
+    "name": "Franklin - OGC API Features/STAC Server",
+    "description": "An open source OGC API Features and STAC server",
+    "keywords": [
+        "productivity",
+        "HTML5",
+        "scalpel"
+    ],
+    "website": "https://azavea.github.io/franklin/",
+    "repository": "https://github.com/azavea/franklin",
+    "logo": "https://azavea.github.io/franklin/img/header.png",
+    "success_url": "/",
+    "scripts": {},
+    "formation": {
+        "web": {
+            "quantity": 1,
+            "size": "standard-1x"
+        }
+    },
+    "addons": [
+        {
+            "plan": "heroku-postgresql",
+            "options": {
+                "version": "9.5"
+            }
+        }
+    ],
+    "buildpacks": [],
+    "environments": {
+        "test": {
+            "scripts": {
+                "test": "bundle exec rake test"
+            }
+        }
+    }
+}
