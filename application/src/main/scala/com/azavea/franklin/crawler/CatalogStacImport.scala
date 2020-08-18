@@ -74,7 +74,7 @@ class CatalogStacImport(val catalogRoot: String) {
                       None
                     )
                   val labelCollection = StacCollection(
-                    "0.9.0",
+                    "1.0.0-beta1",
                     Nil,
                     s"${forItem.id}-labels-${idx + 1}",
                     Some(s"${forItem.id} Labels"),
