@@ -9,7 +9,17 @@ import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 class TestServices[F[_]: Sync](xa: Transactor[F])(implicit cs: ContextShift[F]) {
 
   val apiConfig: ApiConfig =
-    ApiConfig(PosInt(9090), PosInt(9090), "localhost", None, "http", NonNegInt(30), true, false)
+    ApiConfig(
+      PosInt(9090),
+      PosInt(9090),
+      "localhost",
+      None,
+      "http",
+      NonNegInt(30),
+      true,
+      false,
+      false
+    )
 
   val searchService: SearchService[F] =
     new SearchService[F](apiConfig.apiHost, NonNegInt(30), apiConfig.enableTiles, xa)
