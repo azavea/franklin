@@ -51,68 +51,72 @@ class CatalogStacImport(val catalogRoot: String) {
       case _ =>
         geojsonAssets.zipWithIndex traverse {
           case ((assetKey, asset), idx) =>
-            readJsonFromPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) map {
+            readJsonFromPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) flatMap {
               featureCollection =>
-                val parentCollectionHref =
-                  s"/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
-                val derivedFromItemHref =
-                  s"$parentCollectionHref/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
-                val parentCollectionLink = StacLink(
-                  parentCollectionHref,
-                  StacLinkType.Collection,
-                  Some(`application/json`),
-                  None
-                )
-                val derivedFromItemLink =
-                  StacLink(
-                    derivedFromItemHref,
-                    StacLinkType.VendorLinkType("derived_from"),
+                logger.debug(
+                  s"Item ${forItem.id} has a geojson asset, so creating a collection for its features"
+                ) map { _ =>
+                  val parentCollectionHref =
+                    s"/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
+                  val derivedFromItemHref =
+                    s"$parentCollectionHref/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
+                  val parentCollectionLink = StacLink(
+                    parentCollectionHref,
+                    StacLinkType.Collection,
                     Some(`application/json`),
                     None
                   )
-                val labelCollection = StacCollection(
-                  "0.9.0",
-                  Nil,
-                  s"${forItem.id}-labels-${idx + 1}",
-                  Some(s"${forItem.id} Labels"),
-                  s"Labels for ${forItem.id}'s ${assetKey} asset",
-                  Nil,
-                  Proprietary(),
-                  Nil,
-                  inCollection.extent.copy(spatial = SpatialExtent(List(forItem.bbox))),
-                  ().asJsonObject,
-                  forItem.properties,
-                  List(parentCollectionLink, derivedFromItemLink)
-                )
-                val featureItems =
-                  featureCollection.getAllFeatures[Feature[Geometry, JsonObject]] map { feature =>
-                    FeatureExtractor.toItem(
-                      feature,
-                      forItem,
-                      inCollection.id,
-                      labelCollection
+                  val derivedFromItemLink =
+                    StacLink(
+                      derivedFromItemHref,
+                      StacLinkType.VendorLinkType("derived_from"),
+                      Some(`application/json`),
+                      None
                     )
-                  }
-
-                val newAsset = Map(
-                  s"Label collection ${idx + 1}" -> StacItemAsset(
-                    s"/collections/${URLEncoder
-                      .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
-                    None,
-                    Some("Collection containing items for this item's label geojson asset"),
-                    Set(StacAssetRole.VendorAsset("data-collection")),
-                    Some(`application/json`)
-                  )
-                )
-                (
-                  newAsset,
-                  CollectionWrapper(
-                    labelCollection,
-                    None,
+                  val labelCollection = StacCollection(
+                    "1.0.0-beta1",
                     Nil,
-                    featureItems.toList
+                    s"${forItem.id}-labels-${idx + 1}",
+                    Some(s"${forItem.id} Labels"),
+                    s"Labels for ${forItem.id}'s ${assetKey} asset",
+                    Nil,
+                    Proprietary(),
+                    Nil,
+                    inCollection.extent.copy(spatial = SpatialExtent(List(forItem.bbox))),
+                    ().asJsonObject,
+                    forItem.properties,
+                    List(parentCollectionLink, derivedFromItemLink)
                   )
-                )
+                  val featureItems =
+                    featureCollection.getAllFeatures[Feature[Geometry, JsonObject]] map { feature =>
+                      FeatureExtractor.toItem(
+                        feature,
+                        forItem,
+                        inCollection.id,
+                        labelCollection
+                      )
+                    }
+
+                  val newAsset = Map(
+                    s"Label collection ${idx + 1}" -> StacItemAsset(
+                      s"/collections/${URLEncoder
+                        .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
+                      None,
+                      Some("Collection containing items for this item's label geojson asset"),
+                      Set(StacAssetRole.VendorAsset("data-collection")),
+                      Some(`application/json`)
+                    )
+                  )
+                  (
+                    newAsset,
+                    CollectionWrapper(
+                      labelCollection,
+                      None,
+                      Nil,
+                      featureItems.toList
+                    )
+                  )
+                }
             }
         }
     }
@@ -137,9 +141,12 @@ class CatalogStacImport(val catalogRoot: String) {
   ): IO[CollectionWrapper] = {
     for {
       stacCollection <- readJsonFromPath[StacCollection](path)
-      _              <- logger.info(s"Read STAC Collection : ${stacCollection.title getOrElse path}")
+      collectionRef = stacCollection.title getOrElse path
+      _ <- logger.info(s"Read STAC Collection : $collectionRef")
       itemLinks     = stacCollection.links.filter(link => link.rel == Item)
       childrenLinks = stacCollection.links.filter(link => link.rel == Child)
+      _ <- logger.debug(s"Collection $collectionRef had ${itemLinks.length} items")
+      _ <- logger.debug(s"Collection $collectionRef had ${childrenLinks.length} children")
       children <- childrenLinks.traverse(link =>
         readCollectionWrapper(makeAbsPath(path, link.href), None)
       )

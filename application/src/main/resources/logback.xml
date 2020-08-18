@@ -9,6 +9,7 @@
   <logger name="org.http4s.blaze" level="WARN"/>
   <logger name="org.http4s.blaze.channel.nio1" level="WARN"/>
   <logger name="org.http4s" level="INFO"/>
+  <logger name="com.azavea.franklin" level="${FRANKLIN_LOGGING_LEVEL:-WARN}"/>
   <root level="WARN">
     <appender-ref ref="STDOUT" />
   </root>
