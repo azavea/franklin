@@ -11,7 +11,8 @@ case class ApiConfig(
     scheme: String,
     defaultLimit: NonNegInt,
     enableTransactions: Boolean,
-    enableTiles: Boolean
+    enableTiles: Boolean,
+    runMigrations: Boolean
 ) {
 
   val apiHost: NonEmptyString =

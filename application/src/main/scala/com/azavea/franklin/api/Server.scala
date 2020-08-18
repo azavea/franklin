@@ -128,13 +128,28 @@ $$$$
     import Commands._
 
     applicationCommand.parse(args) map {
-      case RunServer(apiConfig, dbConfig) =>
+      case RunServer(apiConfig, dbConfig) if !apiConfig.runMigrations =>
         createServer(apiConfig, dbConfig)
           .use(_ => IO.never)
           .as(ExitCode.Success)
+      case RunServer(apiConfig, dbConfig) =>
+        runMigrations(dbConfig) *>
+          createServer(apiConfig, dbConfig).use(_ => IO.never).as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
-      case RunImport(catalogRoot, dbConfig, dryRun) =>
-        runImport(catalogRoot, dbConfig, dryRun) map { _ => ExitCode.Success }
+      case RunCatalogImport(catalogRoot, dbConfig, dryRun) =>
+        runCatalogImport(catalogRoot, dbConfig, dryRun) map { _ => ExitCode.Success }
+      case RunItemsImport(collectionId, itemUris, dbConfig, dryRun) => {
+        runStacItemImport(collectionId, itemUris, dbConfig, dryRun) map {
+          case Left(error) => {
+            println(s"Import failed: $error")
+            ExitCode.Error
+          }
+          case Right(items) => {
+            println(s"Import succesful: ${items.size} items imported")
+            ExitCode.Success
+          }
+        }
+      }
     } match {
       case Left(e) =>
         IO {
