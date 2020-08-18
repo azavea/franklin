@@ -39,6 +39,10 @@ lazy val commonSettings = Seq(
     "org.slf4j",
     "slf4j-simple"
   ),
+  unusedCompileDependenciesFilter -= moduleFilter(
+    "ch.qos.logback",
+    "logback-classic"
+  ),
   excludeDependencies ++= Seq(
     "log4j"     % "log4j",
     "org.slf4j" % "slf4j-log4j12",
@@ -78,6 +82,7 @@ lazy val applicationSettings = commonSettings ++ Seq(
 )
 
 lazy val applicationDependencies = Seq(
+  "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
   "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
@@ -97,9 +102,11 @@ lazy val applicationDependencies = Seq(
   "com.monovore"                 %% "decline-refined"                % Versions.DeclineVersion,
   "com.monovore"                 %% "decline"                        % Versions.DeclineVersion,
   "com.propensive"               %% "magnolia"                       % Versions.MagnoliaVersion,
+  "com.softwaremill.sttp.client" %% "async-http-client-backend"      % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "circe"                          % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "core"                           % Versions.SttpClientVersion,
+  "com.softwaremill.sttp.client" %% "json-common"                    % Versions.SttpClientVersion,
   "com.softwaremill.sttp.model"  %% "core"                           % Versions.SttpModelVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-core"                     % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-http4s-server"            % Versions.TapirVersion,
@@ -125,6 +132,7 @@ lazy val applicationDependencies = Seq(
   "io.circe"                     %% "circe-testing"                  % Versions.CirceVersion % Test,
   "net.postgis"                  % "postgis-geometry"                % Versions.Postgis,
   "net.postgis"                  % "postgis-jdbc"                    % Versions.Postgis,
+  "org.asynchttpclient"          % "async-http-client"               % Versions.AsyncHttpClientVersion,
   "org.flywaydb"                 % "flyway-core"                     % Versions.Flyway,
   "org.http4s"                   %% "http4s-blaze-server"            % Versions.Http4sVersion,
   "org.http4s"                   %% "http4s-blaze-server"            % Versions.Http4sVersion,
