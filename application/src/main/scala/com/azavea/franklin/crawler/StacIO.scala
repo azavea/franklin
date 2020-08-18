@@ -8,8 +8,8 @@ import com.azavea.stac4s.StacItem
 import com.azavea.stac4s.StacLinkType
 import geotrellis.store.s3.AmazonS3URI
 import io.chrisdavenport.log4cats.Logger
-import io.circe.{Decoder, DecodingFailure, Error => CirceError, ParsingFailure, CursorOp}
 import io.circe.parser.decode
+import io.circe.{CursorOp, Decoder, DecodingFailure, Error => CirceError, ParsingFailure}
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client.circe._
@@ -121,10 +121,11 @@ object StacIO {
       inCollection: StacCollection
   )(implicit contextShift: ContextShift[IO], logger: Logger[IO]): IO[StacItem] = {
     val readIO = readJsonFromPath[StacItem](path)
-    if (!rewriteSourceIfPresent) readIO
+    if (!rewriteSourceIfPresent) (logger.debug(s"Not rewriting source link at $path") *> readIO)
     else {
       for {
         item <- readIO
+        _    <- logger.debug(s"Rewriting item source link for item ${item.id}")
         sourceLinkO = item.links.find(_.rel === StacLinkType.Source)
         sourceItemO <- sourceLinkO traverse { link =>
           val sourcePath = makeAbsPath(path, link.href)
