@@ -1,6 +1,6 @@
 package com.azavea.franklin.crawler
 
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.implicits._
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.azavea.stac4s.StacCollection
@@ -9,6 +9,10 @@ import com.azavea.stac4s.StacLinkType
 import geotrellis.store.s3.AmazonS3URI
 import io.circe.Decoder
 import io.circe.parser.decode
+import sttp.client._
+import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import sttp.client.circe._
+import sttp.model.{Uri => SttpUri}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -24,7 +28,7 @@ object StacIO {
     IO(scala.io.Source.fromFile(path).getLines.toList)
   }
 
-  private def readFromS3(path: String): IO[List[String]] = {
+  private def readJsonFromS3(path: String): IO[List[String]] = {
     val awsURI        = new AmazonS3URI(path)
     val inputStreamIO = IO(s3.getObject(awsURI.getBucket, awsURI.getKey).getObjectContent)
     inputStreamIO.map(is => scala.io.Source.fromInputStream(is).getLines().toList)
@@ -32,22 +36,39 @@ object StacIO {
 
   def readLinesFromPath(path: String): IO[List[String]] = {
     if (path.startsWith("s3://")) {
-      readFromS3(path)
+      readJsonFromS3(path)
     } else {
       readFromLocalPath(path)
     }
   }
 
-  def readJsonFromPath[T: Decoder](path: String): IO[T] = {
-    val str = readLinesFromPath(path)
+  def readJsonFromPath[T: Decoder](path: String)(implicit contextShift: ContextShift[IO]): IO[T] = {
+    if (path.startsWith("http")) {
+      {
+        readJsonFromHttp(SttpUri.unsafeApply(path))
+      }
+    } else {
+      val str = readLinesFromPath(path)
 
-    str.flatMap { s =>
-      decode[T](s.mkString) match {
-        case Left(e)  => IO.raiseError(e)
-        case Right(t) => IO.pure(t)
+      str.flatMap { s =>
+        decode[T](s.mkString) match {
+          case Left(e)  => IO.raiseError(e)
+          case Right(t) => IO.pure(t)
+        }
       }
     }
   }
+
+  def readJsonFromHttp[T: Decoder](url: SttpUri)(implicit contextShift: ContextShift[IO]): IO[T] =
+    AsyncHttpClientCatsBackend[IO]().flatMap { implicit backend =>
+      for {
+        response <- basicRequest.get(url).response(asJson[T]).send[IO]
+        decoded <- response.body match {
+          case Left(e)     => IO.raiseError(e)
+          case Right(body) => IO.pure(body)
+        }
+      } yield decoded
+    }
 
   private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("/")
 
@@ -71,7 +92,7 @@ object StacIO {
       path: String,
       rewriteSourceIfPresent: Boolean,
       inCollection: StacCollection
-  ): IO[StacItem] = {
+  )(implicit contextShift: ContextShift[IO]): IO[StacItem] = {
     val readIO = readJsonFromPath[StacItem](path)
     if (!rewriteSourceIfPresent) readIO
     else {
