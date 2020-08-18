@@ -128,10 +128,13 @@ $$$$
     import Commands._
 
     applicationCommand.parse(args) map {
-      case RunServer(apiConfig, dbConfig) =>
+      case RunServer(apiConfig, dbConfig) if !apiConfig.runMigrations =>
         createServer(apiConfig, dbConfig)
           .use(_ => IO.never)
           .as(ExitCode.Success)
+      case RunServer(apiConfig, dbConfig) =>
+        runMigrations(dbConfig) *>
+          createServer(apiConfig, dbConfig).use(_ => IO.never).as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
       case RunCatalogImport(catalogRoot, dbConfig, dryRun) =>
         runCatalogImport(catalogRoot, dbConfig, dryRun) map { _ => ExitCode.Success }

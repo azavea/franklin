@@ -52,6 +52,9 @@ trait ApiOptions {
 
   private val enableTiles = Opts.flag("with-tiles", "Whether to include tile endpoints").orFalse
 
+  private val runMigrations =
+    Opts.flag("run-migrations", "Run migrations before the API server starts").orFalse
+
   val apiConfig: Opts[ApiConfig] = (
     externalPort,
     internalPort,
@@ -60,6 +63,7 @@ trait ApiOptions {
     apiScheme,
     defaultLimit,
     enableTransactions,
-    enableTiles
+    enableTiles,
+    runMigrations
   ) mapN ApiConfig
 }
