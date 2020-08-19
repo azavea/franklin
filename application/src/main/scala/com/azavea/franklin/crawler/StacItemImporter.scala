@@ -2,7 +2,7 @@ package com.azavea.franklin.crawler
 
 import cats.data.EitherT
 import cats.data.NonEmptyList
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.implicits._
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.database.StacItemDao
@@ -11,7 +11,9 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
-class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[String]) {
+class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[String])(
+    implicit contextShift: ContextShift[IO]
+) {
 
   implicit def logger = Slf4jLogger.getLogger[IO]
 
@@ -23,7 +25,9 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
       }
     }
 
-  private def readItems(collection: StacCollection): EitherT[IO, String, NonEmptyList[StacItem]] = {
+  private def readItems(
+      collection: StacCollection
+  ): EitherT[IO, String, NonEmptyList[StacItem]] = {
     EitherT.right(itemUris.traverse(uri => StacIO.readItem(uri, true, collection)))
   }
 

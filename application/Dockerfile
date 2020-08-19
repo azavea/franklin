@@ -2,7 +2,12 @@ FROM openjdk:8-jre-slim
 
 RUN \
       addgroup --system franklin \
-      && adduser --system --disabled-login --disabled-password --home /var/lib/franklin --shell /sbin/nologin --ingroup franklin franklin
+      && adduser --system --disabled-login --disabled-password \
+      --home /var/lib/franklin \
+      --shell /sbin/nologin \
+      --ingroup franklin \
+      -u 1000 \
+      franklin
 
 COPY ./target/scala-2.12/franklin-api-assembly.jar /var/lib/franklin/
 

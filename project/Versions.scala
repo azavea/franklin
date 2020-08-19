@@ -1,5 +1,6 @@
 // Versions
 object Versions {
+  val AsyncHttpClientVersion  = "2.12.1"
   val AWSVersion              = "1.11.751"
   val CatsEffectVersion       = "2.1.4"
   val CatsScalacheckVersion   = "0.3.0"
@@ -10,13 +11,14 @@ object Versions {
   val DoobieVersion           = "0.9.0"
   val EmojiVersion            = "1.2.1"
   val Flyway                  = "6.5.5"
-  val Fs2Version              = "2.4.3"
-  val GeoTrellisVersion       = "3.4.1"
+  val Fs2Version              = "2.4.2"
+  val GeoTrellisVersion       = "3.5.0"
   val GeotrellisServerVersion = "4.2.0"
   val GuavaVersion            = "29.0-jre"
   val HikariVersion           = "3.4.5"
   val Http4sVersion           = "0.21.7"
   val JtsVersion              = "1.16.1"
+  val LogbackVersion          = "1.2.3"
   val Log4CatsVersion         = "1.1.1"
   val MagnoliaVersion         = "0.16.0"
   val MamlVersion             = "0.6.1"
@@ -34,6 +36,7 @@ object Versions {
   val Specs2Version           = "4.10.3"
   val SpireVersion            = "0.13.0"
   val Stac4SVersion           = "0.0.14"
+  val SttpClientVersion       = "2.2.4"
   val SttpModelVersion        = "1.1.4"
   val TapirVersion            = "0.16.15"
 }
