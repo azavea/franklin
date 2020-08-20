@@ -46,6 +46,9 @@ object StacIO {
     IO(scala.io.Source.fromFile(path).getLines.toList)
   }
 
+  private def encodeString(s: String): String =
+    URLEncoder.encode(s, StandardCharsets.UTF_8.toString)
+
   private def readJsonFromS3(path: String): IO[List[String]] = {
     val awsURI        = new AmazonS3URI(path)
     val inputStreamIO = IO(s3.getObject(awsURI.getBucket, awsURI.getKey).getObjectContent)
@@ -133,26 +136,34 @@ object StacIO {
         val collectionIdO = item.collection orElse inCollectionId orElse (sourceItemO flatMap {
           _.collection
         })
-        (sourceLinkO, sourceItemO, collectionIdO).tupled map {
-          case (link, sourceItem, collectionId) =>
-            val encodedSourceItemId =
-              URLEncoder.encode(sourceItem.id, StandardCharsets.UTF_8.toString)
-            val encodedCollectionId =
-              URLEncoder.encode(collectionId, StandardCharsets.UTF_8.toString)
-            val newSourceLink =
+
+        val sourceLink =
+          (sourceLinkO, sourceItemO, collectionIdO).tupled map {
+            case (link, sourceItem, collectionId) =>
+              val encodedSourceItemId =
+                encodeString(sourceItem.id)
+              val encodedCollectionId =
+                encodeString(collectionId)
               link.copy(href = s"/collections/$encodedCollectionId/items/$encodedSourceItemId")
-            val newCollectionLink = StacLink(
-              s"/collections/${encodedCollectionId}",
-              StacLinkType.Collection,
-              Some(`application/json`),
-              None
-            )
-            item.copy(links =
-              newCollectionLink :: newSourceLink :: filterLinks(
-                item.links.filter(_.rel != StacLinkType.Source)
-              )
-            )
-        } getOrElse { item }
+          }
+
+        val collectionLink = collectionIdO map { collectionId =>
+          val encodedCollectionId =
+            encodeString(collectionId)
+          StacLink(
+            s"/collections/${encodedCollectionId}",
+            StacLinkType.Collection,
+            Some(`application/json`),
+            None
+          )
+        }
+
+        item.copy(links =
+          sourceLink.toList ++ collectionLink.toList ++ filterLinks(
+            item.links.filter(_.rel != StacLinkType.Source)
+          )
+        )
+
       }
     }
   }

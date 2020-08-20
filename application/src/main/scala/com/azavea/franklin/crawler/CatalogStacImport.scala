@@ -188,9 +188,6 @@ class CatalogStacImport(val catalogRoot: String) {
         ),
         collection.parent.map(_.value.id)
       )
-      _ = println(
-        s"Number of items to insert for ${collection.value.id}: ${collection.items.length}"
-      )
       _ <- collection.items.traverse(item => StacItemDao.insertStacItem(item))
       _ <- collection.children.traverse(child => insertCollection(child))
     } yield colInsert
@@ -228,22 +225,25 @@ class CatalogStacImport(val catalogRoot: String) {
           link =>
             val itemPath = makeAbsPath(absHref, link.href)
             readItem(itemPath, true, collectionO) flatMap { item =>
-              createCollectionForGeoJsonAsset(
-                item,
-                itemPath
-              ) flatMap { newAssets =>
+              logger.debug(s"Item links after read for ${item.id}: ${item.links map { _.href }}") *>
+                createCollectionForGeoJsonAsset(
+                  item,
+                  itemPath
+                ) flatMap { newAssets =>
                 val assets   = newAssets map { _._1 }
                 val wrappers = newAssets map { _._2 }
-                (StacItemDao
-                  .insertStacItem(
-                    item
-                      .copy(
-                        assets =
-                          item.assets ++ assets.foldK
-                      )
-                  ) *>
-                  (wrappers traverse { collectionWrapper => insertCollection(collectionWrapper) }))
-                  .transact(xa)
+                logger.debug(s"Item ${item.id} has ${newAssets.length} additional assets") *>
+                  logger.debug(s"Item links before write: ${item.links map { _.href }}") *>
+                  (StacItemDao
+                    .insertStacItem(
+                      item
+                        .copy(
+                          assets =
+                            item.assets ++ assets.foldK
+                        )
+                    ) *>
+                    (wrappers traverse { collectionWrapper => insertCollection(collectionWrapper) }))
+                    .transact(xa)
               }
             }
         })
