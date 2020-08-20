@@ -1,5 +1,6 @@
 package com.azavea.franklin.crawler
 
+import cats.data.StateT
 import cats.data.Validated.Invalid
 import cats.effect.IO
 import cats.implicits._
@@ -26,29 +27,72 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 
 class CatalogStacImport(val catalogRoot: String) {
 
   implicit val cs     = IO.contextShift(global)
   implicit def logger = Slf4jLogger.getLogger[IO]
 
-  private def readRoot: IO[StacCatalog] = readJsonFromPath[StacCatalog](catalogRoot)
+  private def getSelfLink(collection: StacCollection): StacLink = {
+    val encodedCollectionId =
+      URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+    StacLink(
+      s"/collections/$encodedCollectionId",
+      StacLinkType.Self,
+      Some(`application/json`),
+      None
+    )
+  }
+
+  private def getItemsLink(collection: StacCollection): StacLink = {
+    val encodedCollectionId =
+      URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+    StacLink(
+      s"/collections/$encodedCollectionId/items",
+      StacLinkType.Items,
+      Some(`application/json`),
+      None
+    )
+  }
+
+  def readCollection(path: String, xa: Transactor[IO]): IO[StacCollection] =
+    readJsonFromPath[StacCollection](path) flatMap { collection =>
+      StacCollectionDao
+        .insertStacCollection(
+          collection.copy(
+            links =
+              getItemsLink(collection) +: getSelfLink(collection) +: filterLinks(collection.links)
+          ),
+          None
+        )
+        .transact(xa) map { _ => collection }
+    }
+
+  def readRoot(xa: Transactor[IO]): IO[String] =
+    (readCollection(catalogRoot, xa) map { _.id }) orElse (readJsonFromPath[StacCatalog](
+      catalogRoot
+    ) map { _.id })
 
   private def createCollectionForGeoJsonAsset(
       forItem: StacItem,
-      inCollection: StacCollection,
       fromPath: String
   ): IO[List[(Map[String, StacItemAsset], CollectionWrapper)]] = {
     val geojsonAssets = forItem.assets.toList.filter {
       case (_, asset) => asset._type === Some(`application/geo+json`)
     }
-    (geojsonAssets.nonEmpty, forItem.getExtensionFields[LabelItemExtension]) match {
-      case (true, Invalid(errs)) =>
+    (geojsonAssets.nonEmpty, forItem.getExtensionFields[LabelItemExtension], forItem.collection) match {
+      case (true, Invalid(errs), _) =>
         logger.warn(
           s"""$forItem is not a valid label item, so skipping geojson import.\n${errs.toList
             .mkString("\n")}"""
         ) map { _ => List.empty }
-      case _ =>
+      case (_, _, None) =>
+        logger.warn(
+          s"Item ${forItem.id} did not have a collection, so skipping geojson collection creation"
+        ) map { _ => List.empty }
+      case (_, _, Some(collectionId)) =>
+        val encodedCollectionId = URLEncoder.encode(collectionId, StandardCharsets.UTF_8.toString)
         geojsonAssets.zipWithIndex traverse {
           case ((assetKey, asset), idx) =>
             readJsonFromPath[JsonFeatureCollection](makeAbsPath(fromPath, asset.href)) flatMap {
@@ -57,7 +101,7 @@ class CatalogStacImport(val catalogRoot: String) {
                   s"Item ${forItem.id} has a geojson asset, so creating a collection for its features"
                 ) map { _ =>
                   val parentCollectionHref =
-                    s"/collections/${URLEncoder.encode(inCollection.id, StandardCharsets.UTF_8.toString)}"
+                    s"/collections/$encodedCollectionId"
                   val derivedFromItemHref =
                     s"$parentCollectionHref/items/${URLEncoder.encode(forItem.id, StandardCharsets.UTF_8.toString)}"
                   val parentCollectionLink = StacLink(
@@ -82,7 +126,19 @@ class CatalogStacImport(val catalogRoot: String) {
                     Nil,
                     Proprietary(),
                     Nil,
-                    inCollection.extent.copy(spatial = SpatialExtent(List(forItem.bbox))),
+                    StacExtent(
+                      SpatialExtent(List(forItem.bbox)),
+                      Interval(
+                        List(
+                          TemporalExtent(
+                            forItem.properties.asJson.hcursor
+                              .get[Instant]("datetime")
+                              .getOrElse(Instant.now),
+                            None
+                          )
+                        )
+                      )
+                    ),
                     ().asJsonObject,
                     forItem.properties,
                     List(parentCollectionLink, derivedFromItemLink)
@@ -92,7 +148,7 @@ class CatalogStacImport(val catalogRoot: String) {
                       FeatureExtractor.toItem(
                         feature,
                         forItem,
-                        inCollection.id,
+                        encodedCollectionId,
                         labelCollection
                       )
                     }
@@ -127,95 +183,78 @@ class CatalogStacImport(val catalogRoot: String) {
   ): ConnectionIO[StacCollection] = {
     for {
       colInsert <- StacCollectionDao.insertStacCollection(
-        collection.value,
+        collection.value.copy(links =
+          getItemsLink(collection.value) +: getSelfLink(collection.value) +: collection.value.links
+        ),
         collection.parent.map(_.value.id)
+      )
+      _ = println(
+        s"Number of items to insert for ${collection.value.id}: ${collection.items.length}"
       )
       _ <- collection.items.traverse(item => StacItemDao.insertStacItem(item))
       _ <- collection.children.traverse(child => insertCollection(child))
     } yield colInsert
   }
 
-  private def readCollectionWrapper(
-      path: String,
-      parent: Option[CollectionWrapper]
-  ): IO[CollectionWrapper] = {
-    for {
-      stacCollection <- readJsonFromPath[StacCollection](path)
-      collectionRef = stacCollection.title getOrElse path
-      _ <- logger.info(s"Read STAC Collection : $collectionRef")
-      itemLinks     = stacCollection.links.filter(link => link.rel == Item)
-      childrenLinks = stacCollection.links.filter(link => link.rel == Child)
-      _ <- logger.debug(s"Collection $collectionRef had ${itemLinks.length} items")
-      _ <- logger.debug(s"Collection $collectionRef had ${childrenLinks.length} children")
-      children <- childrenLinks.traverse(link =>
-        readCollectionWrapper(makeAbsPath(path, link.href), None)
-      )
-      itemsWithCollections <- itemLinks.traverse(link =>
-        for {
-          item <- readItem(
-            makeAbsPath(path, link.href),
-            rewriteSourceIfPresent = true,
-            inCollection = stacCollection
-          )
-          assetsWithCollections <- createCollectionForGeoJsonAsset(
-            item,
-            stacCollection,
-            makeAbsPath(path, link.href)
-          )
-        } yield {
-          val labelCollectionAssets = (assetsWithCollections map { _._1 }).foldK
-          val collections           = assetsWithCollections map { _._2 }
-          val updatedItem = item.copy(
-            assets = item.assets ++ labelCollectionAssets
-          )
-          (updatedItem, collections)
+  def allChildPaths(xa: Transactor[IO]): StateT[IO, String, List[String]] =
+    StateT[IO, String, List[String]] { (root: String) =>
+      for {
+        rootLinks <- readCollection(root, xa) map { _.links } orElse {
+          readJsonFromPath[StacCatalog](root) map { _.links }
         }
-      )
-    } yield {
-      val collection =
-        CollectionWrapper(stacCollection, parent, children, itemsWithCollections map { _._1 })
-      val itemLabelCollections = itemsWithCollections flatMap { _._2 }
-      val updatedChildren = (collection.children ++ itemLabelCollections).map(child =>
-        child.copy(parent = Some(collection))
-      )
-      val updatedItems = collection.items.map { item =>
-        val links = filterLinks(item.links)
-        item.copy(links = links)
-      }
-      collection.copy(children = updatedChildren, items = updatedItems)
+        children      = rootLinks.filter(_.rel == StacLinkType.Child)
+        childAbsHrefs = children map { link => makeAbsPath(root, link.href) }
+        _ <- logger.debug(s"Child hrefs for $root: $childAbsHrefs")
+        childHrefs <- childAbsHrefs match {
+          case Nil => IO.pure((root, List(root)))
+          case refs =>
+            refs traverse { (ref: String) =>
+              allChildPaths(xa).runA(ref)
+            } map { childRefs => (root, root :: childRefs.flatten) }
+        }
+      } yield childHrefs
     }
-  }
 
-  def runIO(xa: Transactor[IO]): IO[Unit] = {
-    for {
-      catalog <- readRoot
-      _       <- IO { println("Read catalog") }
-      collections <- catalog.links
-        .filter(_.rel == StacLinkType.Child)
-        .traverse { c =>
-          def links(path: String): IO[List[StacLink]] =
-            readJsonFromPath[StacCollection](path).map(_ => List(c)) orElse {
-              readJsonFromPath[StacCatalog](path)
-                .flatMap {
-                  _.links
-                    .filter(_.rel == StacLinkType.Child)
-                    .traverse { c => links(makeAbsPath(catalogRoot, c.href)) }
-                    .map(_.flatten)
-                }
+  def insertItemsForAbsHref(absHref: String, xa: Transactor[IO]): IO[Unit] = {
+    ((readCollection(absHref, xa) map { collection =>
+      (collection.links, Option(collection.id))
+    } orElse (readJsonFromPath[
+      StacCatalog
+    ](absHref) map { catalog => (catalog.links, None) })) flatMap {
+      case (links, collectionO) =>
+        val filtered =
+          links.filter(_.rel == StacLinkType.Item)
+        logger.debug(s"Links to read for $absHref: ${filtered map { _.href }}") <* (filtered traverse {
+          link =>
+            val itemPath = makeAbsPath(absHref, link.href)
+            readItem(itemPath, true, collectionO) flatMap { item =>
+              createCollectionForGeoJsonAsset(
+                item,
+                itemPath
+              ) flatMap { newAssets =>
+                val assets   = newAssets map { _._1 }
+                val wrappers = newAssets map { _._2 }
+                (StacItemDao
+                  .insertStacItem(
+                    item
+                      .copy(
+                        assets =
+                          item.assets ++ assets.foldK
+                      )
+                  ) *>
+                  (wrappers traverse { collectionWrapper => insertCollection(collectionWrapper) }))
+                  .transact(xa)
+              }
             }
-
-          links(makeAbsPath(catalogRoot, c.href))
-        }
-        .flatMap {
-          _.flatten.traverse(c => readCollectionWrapper(makeAbsPath(catalogRoot, c.href), None))
-        }
-      _ <- collections
-        .traverse(c => {
-          insertCollection(c.updateLinks) map { _ =>
-            println(s"Inserted collection: ${c.value.id}")
-          }
         })
-        .transact(xa)
-    } yield ()
+    }).void
   }
+
+  def runIO(xa: Transactor[IO]): IO[Unit] =
+    for {
+      _             <- readRoot(xa)
+      allChildHrefs <- allChildPaths(xa).runA(catalogRoot)
+      _             <- logger.debug(s"All children: $allChildHrefs")
+      _             <- allChildHrefs traverse { href => insertItemsForAbsHref(href, xa) }
+    } yield ()
 }
