@@ -138,7 +138,7 @@ object StacIO {
         })
 
         val sourceLink =
-          (sourceLinkO, sourceItemO, collectionIdO).tupled map {
+          (sourceLinkO, sourceItemO, sourceItemO flatMap { _.collection }).tupled map {
             case (link, sourceItem, collectionId) =>
               val encodedSourceItemId =
                 encodeString(sourceItem.id)
