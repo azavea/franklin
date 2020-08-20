@@ -1,8 +1,7 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
-
 import cats.data.OptionT
+import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
 import com.azavea.stac4s._
 import doobie._
 import doobie.free.connection.ConnectionIO
