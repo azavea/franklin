@@ -147,19 +147,27 @@ object StacIO {
               link.copy(href = s"/collections/$encodedCollectionId/items/$encodedSourceItemId")
           }
 
-        val collectionLink = collectionIdO map { collectionId =>
+        val collectionAndSelfLink = collectionIdO map { collectionId =>
           val encodedCollectionId =
             encodeString(collectionId)
-          StacLink(
-            s"/collections/${encodedCollectionId}",
-            StacLinkType.Collection,
-            Some(`application/json`),
-            None
+          List(
+            StacLink(
+              s"/collections/${encodedCollectionId}",
+              StacLinkType.Collection,
+              Some(`application/json`),
+              None
+            ),
+            StacLink(
+              s"/collections/${encodedCollectionId}/items/${encodeString(item.id)}",
+              StacLinkType.Self,
+              Some(`application/json`),
+              None
+            )
           )
         }
 
         item.copy(links =
-          sourceLink.toList ++ collectionLink.toList ++ filterLinks(
+          sourceLink.toList ++ (collectionAndSelfLink getOrElse Nil) ++ filterLinks(
             item.links.filter(_.rel != StacLinkType.Source)
           )
         )
