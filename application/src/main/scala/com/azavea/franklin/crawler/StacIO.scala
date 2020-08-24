@@ -3,9 +3,7 @@ package com.azavea.franklin.crawler
 import cats.effect.{ContextShift, IO}
 import cats.implicits._
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.azavea.stac4s.StacCollection
-import com.azavea.stac4s.StacItem
-import com.azavea.stac4s.StacLinkType
+import com.azavea.stac4s.{`application/json`, StacCollection, StacItem, StacLink, StacLinkType}
 import geotrellis.store.s3.AmazonS3URI
 import io.chrisdavenport.log4cats.Logger
 import io.circe.parser.decode
@@ -47,6 +45,9 @@ object StacIO {
   private def readFromLocalPath(path: String): IO[List[String]] = {
     IO(scala.io.Source.fromFile(path).getLines.toList)
   }
+
+  private def encodeString(s: String): String =
+    URLEncoder.encode(s, StandardCharsets.UTF_8.toString)
 
   private def readJsonFromS3(path: String): IO[List[String]] = {
     val awsURI        = new AmazonS3URI(path)
@@ -118,7 +119,7 @@ object StacIO {
   def readItem(
       path: String,
       rewriteSourceIfPresent: Boolean,
-      inCollection: StacCollection
+      inCollectionId: Option[String]
   )(implicit contextShift: ContextShift[IO], logger: Logger[IO]): IO[StacItem] = {
     val readIO = readJsonFromPath[StacItem](path)
     if (!rewriteSourceIfPresent) (logger.debug(s"Not rewriting source link at $path") *> readIO)
@@ -129,19 +130,48 @@ object StacIO {
         sourceLinkO = item.links.find(_.rel === StacLinkType.Source)
         sourceItemO <- sourceLinkO traverse { link =>
           val sourcePath = makeAbsPath(path, link.href)
-          readItem(sourcePath, rewriteSourceIfPresent = false, inCollection)
+          readItem(sourcePath, rewriteSourceIfPresent = false, inCollectionId)
         }
       } yield {
-        (sourceLinkO, sourceItemO, sourceItemO flatMap { _.collection }).tupled map {
-          case (link, sourceItem, collectionId) =>
-            val encodedSourceItemId =
-              URLEncoder.encode(sourceItem.id, StandardCharsets.UTF_8.toString)
-            val encodedCollectionId =
-              URLEncoder.encode(collectionId, StandardCharsets.UTF_8.toString)
-            val newSourceLink =
+        val collectionIdO = item.collection orElse inCollectionId orElse (sourceItemO flatMap {
+          _.collection
+        })
+
+        val sourceLink =
+          (sourceLinkO, sourceItemO, sourceItemO flatMap { _.collection }).tupled map {
+            case (link, sourceItem, collectionId) =>
+              val encodedSourceItemId =
+                encodeString(sourceItem.id)
+              val encodedCollectionId =
+                encodeString(collectionId)
               link.copy(href = s"/collections/$encodedCollectionId/items/$encodedSourceItemId")
-            item.copy(links = newSourceLink :: item.links.filter(_.rel != StacLinkType.Source))
-        } getOrElse { item }
+          }
+
+        val collectionAndSelfLink = collectionIdO map { collectionId =>
+          val encodedCollectionId =
+            encodeString(collectionId)
+          List(
+            StacLink(
+              s"/collections/${encodedCollectionId}",
+              StacLinkType.Collection,
+              Some(`application/json`),
+              None
+            ),
+            StacLink(
+              s"/collections/${encodedCollectionId}/items/${encodeString(item.id)}",
+              StacLinkType.Self,
+              Some(`application/json`),
+              None
+            )
+          )
+        }
+
+        item.copy(links =
+          sourceLink.toList ++ (collectionAndSelfLink getOrElse Nil) ++ filterLinks(
+            item.links.filter(_.rel != StacLinkType.Source)
+          )
+        )
+
       }
     }
   }

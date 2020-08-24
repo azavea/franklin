@@ -1,5 +1,6 @@
 package com.azavea.franklin.database
 
+import cats.data.OptionT
 import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
 import com.azavea.stac4s._
 import doobie._
@@ -34,13 +35,17 @@ object StacCollectionDao extends Dao[StacCollection] {
       parentId: Option[String]
   ): ConnectionIO[StacCollection] = {
 
-    val insertFragment = fr"""
+    OptionT { getCollectionUnique(collection.id) } getOrElseF {
+      val insertFragment = fr"""
       INSERT INTO collections (id, parent, collection)
       VALUES
       (${collection.id}, $parentId, $collection)
       """
-    insertFragment.update
-      .withUniqueGeneratedKeys[StacCollection]("collection")
+      insertFragment.update
+        .withUniqueGeneratedKeys[StacCollection]("collection")
+
+    }
+
   }
 
   def getCollectionFootprintTile(

@@ -28,7 +28,7 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
   private def readItems(
       collection: StacCollection
   ): EitherT[IO, String, NonEmptyList[StacItem]] = {
-    EitherT.right(itemUris.traverse(uri => StacIO.readItem(uri, true, collection)))
+    EitherT.right(itemUris.traverse(uri => StacIO.readItem(uri, true, Some(collection.id))))
   }
 
   def runIO(xa: Transactor[IO]): IO[Either[String, List[StacItem]]] = {

@@ -194,4 +194,5 @@ object StacItemDao extends Dao[StacItem] {
       }
     } yield update)
   }
+
 }
