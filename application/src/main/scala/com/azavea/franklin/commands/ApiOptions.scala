@@ -75,8 +75,10 @@ trait ApiOptions {
     .orFalse orElse Opts
     .env[String]("API_WITH_TRANSACTIONS", help = enableTransactionsHelp, metavar = "true||false")
     .mapValidated { s =>
-      if (Try(s.toBoolean).getOrElse(false)) Validated.valid(s.toBoolean)
-      else Validated.invalidNel("Value must be Boolean")
+      Validated
+        .fromTry(Try(s.toBoolean))
+        .leftMap(_ => s"Expected to find a value that can convert to a Boolean, but got $s")
+        .toValidatedNel
     } withDefault (false)
 
   private val enableTilesHelp = "Whether to include tile endpoints. Default: 'false'."
@@ -89,8 +91,10 @@ trait ApiOptions {
     .orFalse orElse Opts
     .env[String]("API_WITH_TILES", help = enableTilesHelp, metavar = "true||false")
     .mapValidated { s =>
-      if (Try(s.toBoolean).getOrElse(false)) Validated.valid(s.toBoolean)
-      else Validated.invalidNel("Value must be Boolean")
+      Validated
+        .fromTry(Try(s.toBoolean))
+        .leftMap(_ => s"Expected to find a value that can convert to a Boolean, but got $s")
+        .toValidatedNel
     } withDefault (false)
 
   private val runMigrations =
