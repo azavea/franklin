@@ -18,34 +18,36 @@ trait DatabaseOptions {
   private val databaseOptionDefault = "franklin"
 
   private val databasePortDefault = PosInt(5432)
-  private val databasePortHelp = s"Port to connect to database on. Default: '$databasePortDefault'."
+  private val databasePortHelp    = s"Port to connect to database on. Default: '$databasePortDefault'."
+
   private val databasePort = Opts
     .option[PosInt]("db-port", help = databasePortHelp) orElse
     Opts.env[PosInt]("DB_PORT", help = databasePortHelp) withDefault (databasePortDefault)
 
   private val databaseHostHelp = "Database host to connect to."
+
   private val databaseHost = Opts
     .option[String]("db-host", help = databaseHostHelp) orElse
-    Opts.env[String]("DB_HOST", help = databaseHostHelp)
-  withDefault("database.service.internal")
+    Opts.env[String]("DB_HOST", help = databaseHostHelp) withDefault ("database.service.internal")
 
   private val databaseNameHelp = s"Database name to connect to. Default: '$databaseOptionDefault'."
+
   private val databaseName = Opts
     .option[String]("db-name", help = databaseNameHelp) orElse
-    Opts.env[String]("DB_NAME", help = databaseNameHelp)
-  withDefault(databaseOptionDefault)
+    Opts.env[String]("DB_NAME", help = databaseNameHelp) withDefault (databaseOptionDefault)
 
   private val databasePasswordHelp = s"Database password to use. Default: '$databaseOptionDefault'."
+
   private val databasePassword = Opts
     .option[String]("db-password", help = databasePasswordHelp) orElse
-    Opts.env[String]("DB_PASSWORD", help = databasePasswordHelp)
-  withDefault(databaseOptionDefault)
+    Opts.env[String]("DB_PASSWORD", help = databasePasswordHelp) withDefault (databaseOptionDefault)
 
-  private val databaseUserHelp = s"User to connect with database with. Default: '$databaseOptionDefault'."
+  private val databaseUserHelp =
+    s"User to connect with database with. Default: '$databaseOptionDefault'."
+
   private val databaseUser = Opts
     .option[String]("db-user", help = databaseUserHelp) orElse
-    Opts.env[String]("DB_USER", help = databaseUserHelp)
-  withDefault(databaseOptionDefault)
+    Opts.env[String]("DB_USER", help = databaseUserHelp) withDefault (databaseOptionDefault)
 
   def databaseConfig(implicit contextShift: ContextShift[IO]): Opts[DatabaseConfig] =
     ((
