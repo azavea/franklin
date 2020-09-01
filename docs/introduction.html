@@ -76,7 +76,7 @@
 <li><code>serve</code> to start the API server</li>
 </ul>
 <h3><a class="anchor" aria-hidden="true" id="database-configuration"></a><a href="#database-configuration" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Database configuration</h3>
-<p>By default  <code>franklin</code> attempts to connect to a database named <code>franklin</code> at <code>localhost:5432</code> with a password of <code>franklin</code>. Using the following CLI options you can customize your database connection:</p>
+<p>By default  <code>franklin</code> attempts to connect to a database named <code>franklin</code> at <code>localhost:5432</code> with a password of <code>franklin</code>. Using the following CLI options you can customize your database connection*:</p>
 <pre><code class="hljs css language-bash">    --db-user &lt;string&gt;
         User to connect with database with
     --db-password &lt;string&gt;
@@ -88,6 +88,7 @@
     --db-name &lt;string&gt;
         Database name to connect to
 </code></pre>
+<p>*<em>Database connection options can also be set using environment variables: <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code></em></p>
 <h3><a class="anchor" aria-hidden="true" id="example-commands"></a><a href="#example-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Example commands</h3>
 <p>The following examples show how to get started with <code>franklin</code> by importing a local catalog.</p>
 <h4><a class="anchor" aria-hidden="true" id="starting-a-database"></a><a href="#starting-a-database" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Starting a database</h4>
@@ -127,7 +128,7 @@
   --catalog-root /opt/data/catalog.json
 </code></pre>
 <h4><a class="anchor" aria-hidden="true" id="running-the-service"></a><a href="#running-the-service" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Running the service</h4>
-<p>At this point you are ready to run the service. To start the service on the default port <code>9090</code> you can run the following command:</p>
+<p>At this point you are ready to run the service. To start the service on the default port <code>9090</code> you can run the <code>serve</code> command using <code>docker run</code>:</p>
 <pre><code class="hljs css language-bash">docker run \
   --link franklin-database:franklin-database \
   -p 9090:9090 \
@@ -138,6 +139,25 @@
   --db-password franklinsecret \
   --db-host franklin-database
 </code></pre>
+<p>Additional API options and functionality can also be configured via the <code>franklin</code> CLI* by passing options to the <code>serve</code> command:</p>
+<pre><code class="hljs">  --external-port 
+     <span class="hljs-built_in"> Port </span>users/clients hit <span class="hljs-keyword">for</span> requests
+  --internal-port 
+     <span class="hljs-built_in"> Port server </span>listens on, this will be different <span class="hljs-keyword">from</span> <span class="hljs-string">'external-port'</span> when<span class="hljs-built_in"> service </span>is started behind a<span class="hljs-built_in"> proxy
+</span>  --api-host 
+      Hostname Franklin is hosted it (e.g. localhost)
+  --api-path 
+      Path component <span class="hljs-keyword">for</span> root of Franklin<span class="hljs-built_in"> instance </span>(e.g. /stac/api)
+  --api-scheme 
+      Scheme<span class="hljs-built_in"> server </span>is exposed <span class="hljs-keyword">to</span> end<span class="hljs-built_in"> users </span>with
+  --default-limit 
+     <span class="hljs-built_in"> Default </span>limit <span class="hljs-keyword">for</span> items returned <span class="hljs-keyword">in</span> paginated responses
+  --with-transactions
+      Whether <span class="hljs-keyword">to</span> respond <span class="hljs-keyword">to</span> transaction requests, like adding <span class="hljs-keyword">or</span> updating items
+  --with-tiles
+      Whether <span class="hljs-keyword">to</span> include tile endpoints
+</code></pre>
+<p>*<em>API options can also be set using environment variables: <code>API_EXTERNAL_PORT</code>, <code>API_INTERNAL_PORT</code>, <code>API_HOST</code>, <code>API_PATH</code>, <code>API_SCHEME</code>, <code>API_DEFAULT_LIMIT</code>, <code>API_WITH_TRANSACTIONS</code>, <code>API_WITH_TILES</code></em></p>
 <h3><a class="anchor" aria-hidden="true" id="using-docker-compose"></a><a href="#using-docker-compose" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Using docker compose</h3>
 <p>The examples above illustrate the separate commands and some options that can be used when running <code>franklin</code> via <code>docker run</code> commands. However, if you are familiar with <code>docker-compose</code> the configuration below can be used to get you started very quickly.</p>
 <p>First, copy this file locally in a <code>docker-compose.yml</code> file:</p>
@@ -167,10 +187,10 @@
       <span class="hljs-bullet">-</span> <span class="hljs-string">./:/opt/franklin/</span>
     <span class="hljs-attr">environment:</span>
       <span class="hljs-bullet">-</span> <span class="hljs-string">ENVIRONMENT=development</span>
-      <span class="hljs-bullet">-</span> <span class="hljs-string">POSTGRES_URL=jdbc:postgresql://database.service.internal/</span>
-      <span class="hljs-bullet">-</span> <span class="hljs-string">POSTGRES_NAME=franklin</span>
-      <span class="hljs-bullet">-</span> <span class="hljs-string">POSTGRES_USER=franklin</span>
-      <span class="hljs-bullet">-</span> <span class="hljs-string">POSTGRES_PASSWORD=franklin</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">DB_HOST=database.service.internal</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">DB_NAME=franklin</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">DB_USER=franklin</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">DB_PASSWORD=franklin</span>
     <span class="hljs-attr">links:</span>
       <span class="hljs-bullet">-</span> <span class="hljs-string">database:database.service.internal</span>
     <span class="hljs-attr">ports:</span>
