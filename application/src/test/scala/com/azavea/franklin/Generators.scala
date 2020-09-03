@@ -1,7 +1,7 @@
 package com.azavea.franklin
 
 import cats.data.NonEmptyVector
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.database.SearchFilters
 import com.azavea.franklin.datamodel._
 import com.azavea.stac4s._

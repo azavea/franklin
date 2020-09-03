@@ -1,6 +1,6 @@
 package com.azavea.franklin.extensions.validation
 
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.stac4s.StacItem
 import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.testing._

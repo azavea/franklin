@@ -1,7 +1,7 @@
 package com.azavea.franklin.database
 
 import cats.data.{EitherT, OptionT}
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.datamodel.{Context, PaginationToken, SearchMethod, StacSearchCollection}
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._

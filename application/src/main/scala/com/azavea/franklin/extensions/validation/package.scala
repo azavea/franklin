@@ -1,7 +1,7 @@
 package com.azavea.franklin.extensions
 
 import cats.Functor
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.extensions.validation.syntax._
 import com.azavea.stac4s.extensions.eo.EOItemExtension
 import com.azavea.stac4s.extensions.label.{LabelItemExtension, LabelLinkExtension}
