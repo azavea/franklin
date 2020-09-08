@@ -1,7 +1,7 @@
 package com.azavea.franklin.datamodel
 
-import com.azavea.stac4s._
 import cats.syntax.eq._
+import com.azavea.stac4s._
 import io.circe.generic.JsonCodec
 
 import java.net.URLEncoder
