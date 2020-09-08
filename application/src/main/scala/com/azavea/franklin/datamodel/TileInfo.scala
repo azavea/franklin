@@ -1,6 +1,6 @@
 package com.azavea.franklin.datamodel
 
-import cats.implicits._
+import cats.syntax.eq._
 import com.azavea.stac4s._
 import io.circe.generic.JsonCodec
 

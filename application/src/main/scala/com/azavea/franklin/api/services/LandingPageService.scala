@@ -2,7 +2,7 @@ package com.azavea.franklin.api.services
 
 import cats._
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin
 import com.azavea.franklin.api._
 import com.azavea.franklin.api.commands.ApiConfig

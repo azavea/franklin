@@ -1,7 +1,6 @@
 package com.azavea.franklin.api.services
 
 import cats.effect._
-import cats.implicits._
 import com.azavea.franklin.datamodel.LandingPage
 import org.http4s._
 import org.http4s.dsl.Http4sDsl

@@ -1,6 +1,6 @@
 package com.azavea.franklin.database
 
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.api.schemas.bboxToString
 import com.azavea.franklin.datamodel.{PaginationToken, Query}
 import com.azavea.stac4s.{Bbox, TemporalExtent}

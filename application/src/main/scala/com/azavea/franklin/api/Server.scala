@@ -2,7 +2,7 @@ package com.azavea.franklin.api
 
 import cats.effect._
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.api.commands.{ApiConfig, Commands, DatabaseConfig}
 import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,

@@ -2,7 +2,6 @@ package com.azavea.franklin.api.commands
 
 import cats.data._
 import cats.effect._
-import cats.implicits._
 import com.azavea.franklin.crawler._
 import com.monovore.decline.Opts
 
