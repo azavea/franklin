@@ -1,7 +1,7 @@
 package com.azavea.franklin.api.commands
 
 import cats.data.Validated
-import cats.implicits._
+import cats.syntax.all._
 import com.monovore.decline.Opts
 import com.monovore.decline.refined._
 import eu.timepit.refined.types.numeric.NonNegInt

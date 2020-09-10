@@ -1,7 +1,7 @@
 package com.azavea.franklin.crawler
 
 import cats.effect.{ContextShift, IO}
-import cats.implicits._
+import cats.syntax.all._
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.azavea.stac4s.{`application/json`, StacCollection, StacItem, StacLink, StacLinkType}
 import geotrellis.store.s3.AmazonS3URI

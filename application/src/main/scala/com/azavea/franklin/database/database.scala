@@ -1,6 +1,6 @@
 package com.azavea.franklin
 
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.stac4s.TemporalExtent
 import doobie.implicits.javasql._
 import doobie.util.meta.Meta

@@ -1,7 +1,7 @@
 package com.azavea.franklin.api.services
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.SearchEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.{SearchFilters, StacItemDao}

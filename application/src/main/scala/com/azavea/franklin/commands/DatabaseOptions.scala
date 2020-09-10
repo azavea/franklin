@@ -1,7 +1,7 @@
 package com.azavea.franklin.api.commands
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.lightbend.emoji.ShortCodes.Defaults._
 import com.lightbend.emoji.ShortCodes.Implicits._
 import com.monovore.decline.Opts

@@ -1,6 +1,6 @@
 package com.azavea.franklin.database
 
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s.TemporalExtent

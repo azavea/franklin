@@ -1,7 +1,7 @@
 package com.azavea.franklin.datamodel
 
 import cats.data.NonEmptyVector
-import cats.implicits._
+import cats.syntax.all._
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
