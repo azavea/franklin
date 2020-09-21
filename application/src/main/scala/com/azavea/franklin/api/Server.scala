@@ -144,8 +144,8 @@ $$$$
             println(s"Import failed: $error")
             ExitCode.Error
           }
-          case Right(items) => {
-            println(s"Import succesful: ${items.size} items imported")
+          case Right(numItemsImported) => {
+            println(s"Import succesful: ${numItemsImported} items imported")
             ExitCode.Success
           }
         }
