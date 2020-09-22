@@ -31,7 +31,7 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
     EitherT.right(itemUris.traverse(uri => StacIO.readItem(uri, true, Some(collection.id))))
   }
 
-  def runIO(xa: Transactor[IO]): IO[Either[String, List[StacItem]]] = {
+  def runIO(xa: Transactor[IO]): IO[Either[String, Int]] = {
     for {
       collection <- getCollection(xa)
       itemList   <- readItems(collection)
@@ -42,14 +42,8 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
           List.empty,
           itemList.toList
         ).updateLinks
-        val items = collectionWrapper.items.traverse(item =>
-          StacItemDao
-            .insertStacItem(
-              item.copy(collection = Some(collectionId))
-            )
-            .transact(xa)
-        )
-        EitherT.right[String](items)
+        val amountInserted = StacItemDao.insertManyStacItems(collectionWrapper.items).transact(xa)
+        EitherT.right[String](amountInserted)
       }
     } yield {
       stacItems
