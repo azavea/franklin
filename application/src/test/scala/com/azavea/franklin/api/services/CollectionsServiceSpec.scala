@@ -2,7 +2,7 @@ package com.azavea.franklin.api.services
 
 import cats.data.OptionT
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec

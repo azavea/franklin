@@ -3,7 +3,7 @@ package com.azavea.franklin.crawler
 import cats.data.StateT
 import cats.data.Validated.Invalid
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 import com.amazonaws.services.s3.{AmazonS3ClientBuilder, AmazonS3URI}
 import com.azavea.franklin.crawler.StacIO._
 import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}

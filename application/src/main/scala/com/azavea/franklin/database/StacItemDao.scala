@@ -1,7 +1,7 @@
 package com.azavea.franklin.database
 
 import cats.data.{EitherT, OptionT}
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.datamodel.{Context, PaginationToken, SearchMethod, StacSearchCollection}
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
@@ -11,11 +11,12 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.implicits.javatime._
 import doobie.refined.implicits._
+import doobie.util.update.Update
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.vector.Projected
+import geotrellis.vector.{Geometry, Projected}
 import io.circe.syntax._
 import io.circe.{DecodingFailure, Json}
 
@@ -120,6 +121,19 @@ object StacItemDao extends Dao[StacItem] {
       val metadata = Context(items.length, matched)
       StacSearchCollection(metadata, items, links)
     }
+  }
+
+  // This is only used to make the bulk insert happy and make the number of parameters line up
+  private case class StacItemBulkImport(id: String, geom: Projected[Geometry], item: StacItem)
+
+  def insertManyStacItems(items: List[StacItem]): ConnectionIO[Int] = {
+    val insertFragment  = """
+      INSERT INTO collection_items (id, geom, item)
+      VALUES
+      (?, ?, ?)
+      """
+    val stacItemInserts = items.map(i => StacItemBulkImport(i.id, Projected(i.geometry, 4326), i))
+    Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts)
   }
 
   def insertStacItem(item: StacItem): ConnectionIO[StacItem] = {

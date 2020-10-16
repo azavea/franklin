@@ -2,7 +2,7 @@ package com.azavea.franklin.api
 
 import cats.effect._
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.api.commands.{ApiConfig, Commands, DatabaseConfig}
 import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,
@@ -127,7 +127,7 @@ $$$$
   override def run(args: List[String]): IO[ExitCode] = {
     import Commands._
 
-    applicationCommand.parse(args) map {
+    applicationCommand.parse(args, env = sys.env) map {
       case RunServer(apiConfig, dbConfig) if !apiConfig.runMigrations =>
         createServer(apiConfig, dbConfig)
           .use(_ => IO.never)
@@ -144,8 +144,8 @@ $$$$
             println(s"Import failed: $error")
             ExitCode.Error
           }
-          case Right(items) => {
-            println(s"Import succesful: ${items.size} items imported")
+          case Right(numItemsImported) => {
+            println(s"Import succesful: ${numItemsImported} items imported")
             ExitCode.Success
           }
         }

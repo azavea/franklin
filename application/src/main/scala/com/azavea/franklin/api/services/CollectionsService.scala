@@ -1,7 +1,7 @@
 package com.azavea.franklin.api.services
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.api.implicits._

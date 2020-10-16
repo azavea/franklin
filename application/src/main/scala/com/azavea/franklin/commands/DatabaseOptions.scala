@@ -1,7 +1,7 @@
 package com.azavea.franklin.api.commands
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.lightbend.emoji.ShortCodes.Defaults._
 import com.lightbend.emoji.ShortCodes.Implicits._
 import com.monovore.decline.Opts
@@ -15,25 +15,35 @@ import scala.util.Try
 
 trait DatabaseOptions {
 
-  private val databasePort = Opts
-    .option[PosInt]("db-port", help = "Port to connect to database on")
-    .withDefault(PosInt(5432))
+  private val databaseOptionDefault = "franklin"
 
-  private val databaseHost = Opts
-    .option[String]("db-host", help = "Database host to connect to")
-    .withDefault("database.service.internal")
+  private val databasePortDefault = PosInt(5432)
+  private val databasePortHelp    = s"Port to connect to database on. Default: '$databasePortDefault'."
 
-  private val databaseName = Opts
-    .option[String]("db-name", help = "Database name to connect to")
-    .withDefault("franklin")
+  private val databasePort = (Opts.option[PosInt]("db-port", help = databasePortHelp) orElse Opts
+    .env[PosInt]("DB_PORT", help = databasePortHelp)) withDefault (databasePortDefault)
 
-  private val databasePassword = Opts
-    .option[String]("db-password", help = "Database password to use")
-    .withDefault("franklin")
+  private val databaseHostHelp = "Database host to connect to."
 
-  private val databaseUser = Opts
-    .option[String]("db-user", help = "User to connect with database with")
-    .withDefault("franklin")
+  private val databaseHost = (Opts.option[String]("db-host", help = databaseHostHelp) orElse Opts
+    .env[String]("DB_HOST", help = databaseHostHelp)) withDefault ("database.service.internal")
+
+  private val databaseNameHelp = s"Database name to connect to. Default: '$databaseOptionDefault'."
+
+  private val databaseName = (Opts.option[String]("db-name", help = databaseNameHelp) orElse Opts
+    .env[String]("DB_NAME", help = databaseNameHelp)) withDefault (databaseOptionDefault)
+
+  private val databasePasswordHelp = s"Database password to use. Default: '$databaseOptionDefault'."
+
+  private val databasePassword =
+    (Opts.option[String]("db-password", help = databasePasswordHelp) orElse Opts
+      .env[String]("DB_PASSWORD", help = databasePasswordHelp)) withDefault (databaseOptionDefault)
+
+  private val databaseUserHelp =
+    s"User to connect with database with. Default: '$databaseOptionDefault'."
+
+  private val databaseUser = Opts.option[String]("db-user", help = databaseUserHelp) orElse Opts
+    .env[String]("DB_USER", help = databaseUserHelp) withDefault (databaseOptionDefault)
 
   def databaseConfig(implicit contextShift: ContextShift[IO]): Opts[DatabaseConfig] =
     ((

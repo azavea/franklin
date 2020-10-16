@@ -3,7 +3,7 @@ package com.azavea.franklin.api.commands
 import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.effect.{ContextShift, ExitCode, IO}
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.crawler.CatalogStacImport
 import com.azavea.franklin.crawler.StacItemImporter
 import com.monovore.decline._

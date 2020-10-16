@@ -23,7 +23,7 @@ A [STAC](https://github.com/radiantearth/stac-spec) and [OGC API Features](http:
  - `serve` to start the API server
 
 ### Database configuration
-By default  `franklin` attempts to connect to a database named `franklin` at `localhost:5432` with a password of `franklin`. Using the following CLI options you can customize your database connection:
+By default  `franklin` attempts to connect to a database named `franklin` at `localhost:5432` with a password of `franklin`. Using the following CLI options you can customize your database connection*:
 
 ```bash
     --db-user <string>
@@ -37,6 +37,8 @@ By default  `franklin` attempts to connect to a database named `franklin` at `lo
     --db-name <string>
         Database name to connect to
 ```
+
+**Database connection options can also be set using environment variables: `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME`*
 
 ### Example commands
 
@@ -95,7 +97,7 @@ docker run \
 
 #### Running the service
 
-At this point you are ready to run the service. To start the service on the default port `9090` you can run the following command:
+At this point you are ready to run the service. To start the service on the default port `9090` you can run the `serve` command using `docker run`:
 
 ```bash
 docker run \
@@ -108,6 +110,30 @@ docker run \
   --db-password franklinsecret \
   --db-host franklin-database
 ```
+
+Additional API options and functionality can also be configured via the `franklin` CLI* by passing options to the `serve` command:
+
+```
+  --external-port 
+      Port users/clients hit for requests
+  --internal-port 
+      Port server listens on, this will be different from 'external-port' when service is started behind a proxy
+  --api-host 
+      Hostname Franklin is hosted it (e.g. localhost)
+  --api-path 
+      Path component for root of Franklin instance (e.g. /stac/api)
+  --api-scheme 
+      Scheme server is exposed to end users with
+  --default-limit 
+      Default limit for items returned in paginated responses
+  --with-transactions
+      Whether to respond to transaction requests, like adding or updating items
+  --with-tiles
+      Whether to include tile endpoints
+```
+
+**API options can also be set using environment variables: `API_EXTERNAL_PORT`, `API_INTERNAL_PORT`, `API_HOST`, `API_PATH`, `API_SCHEME`, `API_DEFAULT_LIMIT`, `API_WITH_TRANSACTIONS`, `API_WITH_TILES`*
+
 
 ### Using docker compose
 
@@ -141,14 +167,16 @@ services:
       - ./:/opt/franklin/
     environment:
       - ENVIRONMENT=development
-      - POSTGRES_URL=jdbc:postgresql://database.service.internal/
-      - POSTGRES_NAME=franklin
-      - POSTGRES_USER=franklin
-      - POSTGRES_PASSWORD=franklin
+      - DB_HOST=database.service.internal
+      - DB_NAME=franklin
+      - DB_USER=franklin
+      - DB_PASSWORD=franklin
+      - AWS_PROFILE
+      - AWS_REGION
     links:
       - database:database.service.internal
     ports:
       - "9090:9090"
 ```
 
-Second, you can run `docker-compose run franklin migrate` to set up the database. Next, you can import a local dataset by copying it to the same directory as the `docker-compose.yml` file you created. Assuming that the root catalog is `catalog.json` the command would be `docker-compose run franklin import --catalog-root /opt/franklin/catalog.json`. Lastly, once the import is finished you can start the webserver and go to [`localhost:9090`](http://localhost:9090) to view your catalog.
+Second, you can run `docker-compose run franklin migrate` to set up the database. Next, you can import a local dataset by copying it to the same directory as the `docker-compose.yml` file you created. Assuming that the root catalog is `catalog.json` the command would be `docker-compose run franklin import-catalog --catalog-root /opt/franklin/catalog.json`. Lastly, once the import is finished you can start the webserver and go to [`localhost:9090`](http://localhost:9090) to view your catalog.

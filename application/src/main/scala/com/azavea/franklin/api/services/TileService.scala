@@ -3,7 +3,7 @@ package com.azavea.franklin.api.services
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.api.endpoints._
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.database.StacItemDao

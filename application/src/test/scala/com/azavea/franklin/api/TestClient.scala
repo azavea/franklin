@@ -2,7 +2,7 @@ package com.azavea.franklin.api
 
 import cats.effect.Resource
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService}
 import com.azavea.stac4s.{StacCollection, StacItem}
 import eu.timepit.refined.auto._
