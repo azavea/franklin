@@ -14,7 +14,7 @@ object Versions {
   val Fs2Version              = "2.4.4"
   val GeoTrellisVersion       = "3.5.0"
   val GeotrellisServerVersion = "4.2.0"
-  val GuavaVersion            = "29.0-jre"
+  val GuavaVersion            = "30.0-jre"
   val HikariVersion           = "3.4.5"
   val Http4sVersion           = "0.21.8"
   val JtsVersion              = "1.16.1"
