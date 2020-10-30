@@ -22,7 +22,8 @@ class SearchService[F[_]: Sync](
     enableTiles: Boolean,
     xa: Transactor[F]
 )(
-    implicit contextShift: ContextShift[F]
+    implicit contextShift: ContextShift[F],
+    serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
   def search(searchFilters: SearchFilters, searchMethod: SearchMethod): F[Either[Unit, Json]] = {
