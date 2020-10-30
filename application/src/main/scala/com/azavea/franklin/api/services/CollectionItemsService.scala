@@ -31,13 +31,13 @@ import io.circe._
 import io.circe.syntax._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
+import sttp.tapir.DecodeResult
+import sttp.tapir.server.DecodeFailureContext
+import sttp.tapir.server.ServerDefaults
 import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import sttp.tapir.DecodeResult
-import sttp.tapir.server.ServerDefaults
-import sttp.tapir.server.DecodeFailureContext
 
 class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],

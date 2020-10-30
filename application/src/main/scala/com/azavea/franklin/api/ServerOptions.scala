@@ -1,10 +1,10 @@
 package com.azavea.franklin.api
 
+import cats.effect.{ContextShift, Sync}
 import io.circe.{CursorOp, DecodingFailure}
 import sttp.tapir.DecodeResult
-import sttp.tapir.server.{DecodeFailureContext, ServerDefaults}
 import sttp.tapir.server.http4s.Http4sServerOptions
-import cats.effect.{ContextShift, Sync}
+import sttp.tapir.server.{DecodeFailureContext, ServerDefaults}
 
 object ServerOptions {
 
