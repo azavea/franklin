@@ -31,6 +31,9 @@ import io.circe._
 import io.circe.syntax._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
+import sttp.tapir.DecodeResult
+import sttp.tapir.server.DecodeFailureContext
+import sttp.tapir.server.ServerDefaults
 import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
@@ -40,7 +43,8 @@ class CollectionItemsService[F[_]: Sync](
     xa: Transactor[F],
     apiConfig: ApiConfig
 )(
-    implicit contextShift: ContextShift[F]
+    implicit contextShift: ContextShift[F],
+    serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
   val apiHost            = apiConfig.apiHost
