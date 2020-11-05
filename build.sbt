@@ -54,7 +54,7 @@ lazy val commonSettings = Seq(
 
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
 scalafixDependencies in ThisBuild +=
-  "com.nequissimus" %% "sort-imports" % "0.5.4"
+  "com.nequissimus" %% "sort-imports" % "0.5.5"
 
 TwirlKeys.templateImports := Seq()
 
