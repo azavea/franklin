@@ -10,7 +10,7 @@ object Versions {
   val DeclineVersion          = "1.3.0"
   val DoobieVersion           = "0.9.2"
   val EmojiVersion            = "1.2.1"
-  val Flyway                  = "7.1.1"
+  val Flyway                  = "7.2.0"
   val Fs2Version              = "2.4.4"
   val GeoTrellisVersion       = "3.5.0"
   val GeotrellisServerVersion = "4.2.0"
