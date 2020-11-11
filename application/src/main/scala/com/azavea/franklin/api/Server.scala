@@ -43,6 +43,8 @@ object Server extends IOApp {
 
   override implicit val contextShift: ContextShift[IO] = franklinIO
 
+  implicit val serverOptions = ServerOptions.defaultServerOptions[IO]
+
   private val banner: List[String] =
     """
    $$$$$$$$$

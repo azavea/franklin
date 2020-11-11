@@ -25,7 +25,8 @@ class CollectionsService[F[_]: Sync](
     xa: Transactor[F],
     apiConfig: ApiConfig
 )(
-    implicit contextShift: ContextShift[F]
+    implicit contextShift: ContextShift[F],
+    serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
   val apiHost            = apiConfig.apiHost
