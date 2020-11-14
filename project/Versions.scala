@@ -25,7 +25,7 @@ object Versions {
   val MonocleVersion          = "2.1.0"
   val Postgis                 = "2.5.0"
   val PureConfig              = "0.12.1"
-  val Refined                 = "0.9.17"
+  val Refined                 = "0.9.18"
   val ScalaLoggingVersion     = "3.9.2"
   val ScalacacheVersion       = "0.28.0"
   val ScalacheckVersion       = "1.15.1"
