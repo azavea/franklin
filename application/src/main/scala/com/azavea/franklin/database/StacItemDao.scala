@@ -48,8 +48,7 @@ object StacItemDao extends Dao[StacItem] {
   }
 
   def collectionFilter(collectionId: String): Fragment = {
-    val jsonFilter = s"""{"collection": "$collectionId"}"""
-    fr"item @> $jsonFilter :: jsonb"
+    fr"collection = $collectionId"
   }
 
   def getPaginationToken(
@@ -124,15 +123,15 @@ object StacItemDao extends Dao[StacItem] {
   }
 
   // This is only used to make the bulk insert happy and make the number of parameters line up
-  private case class StacItemBulkImport(id: String, geom: Projected[Geometry], item: StacItem)
+  private case class StacItemBulkImport(id: String, geom: Projected[Geometry], item: StacItem, collection: Option[String])
 
   def insertManyStacItems(items: List[StacItem]): ConnectionIO[Int] = {
     val insertFragment  = """
-      INSERT INTO collection_items (id, geom, item)
+      INSERT INTO collection_items (id, geom, item, collection)
       VALUES
-      (?, ?, ?)
+      (?, ?, ?, ?)
       """
-    val stacItemInserts = items.map(i => StacItemBulkImport(i.id, Projected(i.geometry, 4326), i))
+    val stacItemInserts = items.map(i => StacItemBulkImport(i.id, Projected(i.geometry, 4326), i, i.collection))
     Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts)
   }
 
@@ -140,9 +139,9 @@ object StacItemDao extends Dao[StacItem] {
     val projectedGeometry = Projected(item.geometry, 4326)
 
     val insertFragment = fr"""
-      INSERT INTO collection_items (id, geom, item)
+      INSERT INTO collection_items (id, geom, item, collection)
       VALUES
-      (${item.id}, $projectedGeometry, $item)
+      (${item.id}, $projectedGeometry, $item, ${item.collection})
       """
     insertFragment.update
       .withUniqueGeneratedKeys[StacItem]("item")
