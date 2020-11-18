@@ -83,16 +83,12 @@ class LandingPageService[F[_]: Sync](apiConfig: ApiConfig, xa: Transactor[F])(
 
     for {
       collectionCount <- StacCollectionDao.getCollectionCount().transact(xa)
-      itemCount       <- StacItemDao.getItemCount().transact(xa)
-      assetCount      <- StacItemDao.getAssetCount().transact(xa)
       allCollections  <- StacCollectionDao.listCollections().transact(xa)
       landingPageJson <- Applicative[F].pure(landingPage.asJson)
     } yield {
       val text = franklin.html.index(
         landingPage,
         collectionCount,
-        itemCount,
-        assetCount,
         allCollections,
         apiConfig.apiHost
       )

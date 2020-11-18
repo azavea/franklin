@@ -3,7 +3,7 @@
 @import com.azavea.stac4s.StacLinkType
 @import com.azavea.stac4s.StacCollection
 
-@(landingPage: LandingPage, collectionCount: Int, itemCount: Int, assetCount: Int, collectionList: List[StacCollection],
+@(landingPage: LandingPage, collectionCount: Int, collectionList: List[StacCollection],
 apiHost: String)
 
 <!DOCTYPE html>
@@ -48,18 +48,6 @@ apiHost: String)
               <article class="tile is-child box">
                 <p class="title">@collectionCount</p>
                 <p class="subtitle">Collections</p>
-              </article>
-            </div>
-            <div class="tile is-parent">
-              <article class="tile is-child box">
-                <p class="title">@itemCount</p>
-                <p class="subtitle">Items</p>
-              </article>
-            </div>
-            <div class="tile is-parent">
-              <article class="tile is-child box">
-                <p class="title">@assetCount</p>
-                <p class="subtitle">Assets</p>
               </article>
             </div>
           </div>
