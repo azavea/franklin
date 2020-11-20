@@ -10,9 +10,11 @@ import com.azavea.stac4s._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import sttp.client.{NothingT, SttpBackend}
 
 class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[String])(
-    implicit contextShift: ContextShift[IO]
+    implicit contextShift: ContextShift[IO],
+    backend: SttpBackend[IO, Nothing, NothingT]
 ) {
 
   implicit def logger = Slf4jLogger.getLogger[IO]

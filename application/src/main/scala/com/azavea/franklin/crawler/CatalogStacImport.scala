@@ -22,6 +22,7 @@ import io.circe.Decoder
 import io.circe.JsonObject
 import io.circe.parser.decode
 import io.circe.syntax._
+import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -56,7 +57,9 @@ class CatalogStacImport(val catalogRoot: String) {
     )
   }
 
-  def readCollection(path: String, xa: Transactor[IO]): IO[StacCollection] =
+  def readCollection(path: String, xa: Transactor[IO])(
+      implicit backend: SttpBackend[IO, Nothing, NothingT]
+  ): IO[StacCollection] =
     readJsonFromPath[StacCollection](path) flatMap { collection =>
       StacCollectionDao
         .insertStacCollection(
@@ -69,7 +72,9 @@ class CatalogStacImport(val catalogRoot: String) {
         .transact(xa) map { _ => collection }
     }
 
-  def readRoot(xa: Transactor[IO]): IO[String] =
+  def readRoot(
+      xa: Transactor[IO]
+  )(implicit backend: SttpBackend[IO, Nothing, NothingT]): IO[String] =
     (readCollection(catalogRoot, xa) map { _.id }) orElse (readJsonFromPath[StacCatalog](
       catalogRoot
     ) map { _.id })
@@ -77,6 +82,8 @@ class CatalogStacImport(val catalogRoot: String) {
   private def createCollectionForGeoJsonAsset(
       forItem: StacItem,
       fromPath: String
+  )(
+      implicit backend: SttpBackend[IO, Nothing, NothingT]
   ): IO[List[(Map[String, StacItemAsset], CollectionWrapper)]] = {
     val geojsonAssets = forItem.assets.toList.filter {
       case (_, asset) => asset._type === Some(`application/geo+json`)
@@ -193,7 +200,9 @@ class CatalogStacImport(val catalogRoot: String) {
     } yield colInsert
   }
 
-  def allChildPaths(xa: Transactor[IO]): StateT[IO, String, List[String]] =
+  def allChildPaths(
+      xa: Transactor[IO]
+  )(implicit backend: SttpBackend[IO, Nothing, NothingT]): StateT[IO, String, List[String]] =
     StateT[IO, String, List[String]] { (root: String) =>
       for {
         rootLinks <- readCollection(root, xa) map { _.links } orElse {
@@ -212,7 +221,9 @@ class CatalogStacImport(val catalogRoot: String) {
       } yield childHrefs
     }
 
-  def insertItemsForAbsHref(absHref: String, xa: Transactor[IO]): IO[Unit] = {
+  def insertItemsForAbsHref(absHref: String, xa: Transactor[IO])(
+      implicit backend: SttpBackend[IO, Nothing, NothingT]
+  ): IO[Unit] = {
     ((readCollection(absHref, xa) map { collection =>
       (collection.links, Option(collection.id))
     } orElse (readJsonFromPath[
@@ -250,7 +261,7 @@ class CatalogStacImport(val catalogRoot: String) {
     }).void
   }
 
-  def runIO(xa: Transactor[IO]): IO[Unit] =
+  def runIO(xa: Transactor[IO])(implicit backend: SttpBackend[IO, Nothing, NothingT]): IO[Unit] =
     for {
       _             <- readRoot(xa)
       allChildHrefs <- allChildPaths(xa).runA(catalogRoot)
