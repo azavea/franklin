@@ -65,7 +65,7 @@ object StacIO {
 
   def readJsonFromPath[T: Decoder](
       path: String
-  )(implicit contextShift: ContextShift[IO], logger: Logger[IO]): IO[T] = {
+  )(implicit logger: Logger[IO], backend: SttpBackend[IO, Nothing, NothingT]): IO[T] = {
     if (path.startsWith("http")) {
       {
         readJsonFromHttp(path)
@@ -84,19 +84,20 @@ object StacIO {
 
   def readJsonFromHttp[T: Decoder](
       url: String
-  )(implicit contextShift: ContextShift[IO], logger: Logger[IO]): IO[T] =
-    AsyncHttpClientCatsBackend[IO]().flatMap { implicit backend =>
-      for {
-        response <- basicRequest.get(uri"$url").response(asJson[T]).send[IO]
-        decoded <- response.body match {
-          case Left(e @ DeserializationError(_, err)) =>
-            logCirceError(s"$url", err) *> IO.raiseError(e)
-          case Left(e @ HttpError(_, code)) =>
-            logBadResponse(s"$url", code.code) *> IO.raiseError(e)
-          case Right(body) => IO.pure(body)
-        }
-      } yield decoded
-    }
+  )(
+      implicit logger: Logger[IO],
+      backend: SttpBackend[IO, Nothing, NothingT]
+  ): IO[T] =
+    for {
+      response <- basicRequest.get(uri"$url").response(asJson[T]).send[IO]
+      decoded <- response.body match {
+        case Left(e @ DeserializationError(_, err)) =>
+          logCirceError(s"$url", err) *> IO.raiseError(e)
+        case Left(e @ HttpError(_, code)) =>
+          logBadResponse(s"$url", code.code) *> IO.raiseError(e)
+        case Right(body) => IO.pure(body)
+      }
+    } yield decoded
 
   private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("/")
 
@@ -120,7 +121,11 @@ object StacIO {
       path: String,
       rewriteSourceIfPresent: Boolean,
       inCollectionId: Option[String]
-  )(implicit contextShift: ContextShift[IO], logger: Logger[IO]): IO[StacItem] = {
+  )(
+      implicit contextShift: ContextShift[IO],
+      logger: Logger[IO],
+      backend: SttpBackend[IO, Nothing, NothingT]
+  ): IO[StacItem] = {
     val readIO = readJsonFromPath[StacItem](path)
     if (!rewriteSourceIfPresent) (logger.debug(s"Not rewriting source link at $path") *> readIO)
     else {

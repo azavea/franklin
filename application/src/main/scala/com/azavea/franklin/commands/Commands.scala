@@ -11,6 +11,7 @@ import doobie.Transactor
 import doobie.free.connection.{rollback, setAutoCommit, unit}
 import doobie.util.transactor.Strategy
 import org.flywaydb.core.Flyway
+import sttp.client.{NothingT, SttpBackend}
 
 object Commands {
 
@@ -78,7 +79,7 @@ object Commands {
       itemUris: NonEmptyList[String],
       config: DatabaseConfig,
       dryRun: Boolean
-  )(implicit cs: ContextShift[IO]) = {
+  )(implicit cs: ContextShift[IO], backend: SttpBackend[IO, Nothing, NothingT]) = {
     val xa = config.getTransactor(dryRun)
     new StacItemImporter(collectionId, itemUris).runIO(xa)
   }
@@ -88,7 +89,8 @@ object Commands {
       config: DatabaseConfig,
       dryRun: Boolean
   )(
-      implicit contextShift: ContextShift[IO]
+      implicit contextShift: ContextShift[IO],
+      backend: SttpBackend[IO, Nothing, NothingT]
   ): IO[Unit] = {
     val xa = config.getTransactor(dryRun)
     new CatalogStacImport(stacCatalog).runIO(xa)
