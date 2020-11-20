@@ -37,7 +37,7 @@ object StacIO {
   private def logBadResponse(path: String, code: Int)(implicit logger: Logger[IO]): IO[Unit] =
     logger.error(s"The server responsible for $path rejected my request with a status of $code")
 
-  val s3 = AmazonS3ClientBuilder
+  lazy val s3 = AmazonS3ClientBuilder
     .standard()
     .withForceGlobalBucketAccessEnabled(true)
     .build()
