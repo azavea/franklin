@@ -26,7 +26,7 @@ lazy val commonSettings = Seq(
   ),
   outputStrategy := Some(StdoutOutput),
   scalacOptions += "-Yrangepos",
-  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.0" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.11.1" cross CrossVersion.full),
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
     "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full
@@ -48,7 +48,7 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.3.24" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.0" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 

@@ -22,6 +22,7 @@ import org.http4s.implicits._
 import org.http4s.server.blaze._
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server => HTTP4sServer}
+import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.tapir.docs.openapi._
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
@@ -139,16 +140,20 @@ $$$$
           createServer(apiConfig, dbConfig).use(_ => IO.never).as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
       case RunCatalogImport(catalogRoot, dbConfig, dryRun) =>
-        runCatalogImport(catalogRoot, dbConfig, dryRun) map { _ => ExitCode.Success }
+        AsyncHttpClientCatsBackend[IO]() flatMap { implicit backend =>
+          runCatalogImport(catalogRoot, dbConfig, dryRun) map { _ => ExitCode.Success }
+        }
       case RunItemsImport(collectionId, itemUris, dbConfig, dryRun) => {
-        runStacItemImport(collectionId, itemUris, dbConfig, dryRun) map {
-          case Left(error) => {
-            println(s"Import failed: $error")
-            ExitCode.Error
-          }
-          case Right(numItemsImported) => {
-            println(s"Import succesful: ${numItemsImported} items imported")
-            ExitCode.Success
+        AsyncHttpClientCatsBackend[IO]() flatMap { implicit backend =>
+          runStacItemImport(collectionId, itemUris, dbConfig, dryRun) map {
+            case Left(error) => {
+              println(s"Import failed: $error")
+              ExitCode.Error
+            }
+            case Right(numItemsImported) => {
+              println(s"Import succesful: ${numItemsImported} items imported")
+              ExitCode.Success
+            }
           }
         }
       }
