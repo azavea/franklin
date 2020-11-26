@@ -7,7 +7,7 @@ import io.circe.generic.JsonCodec
 
 /** Product representation of the TileJson specification:
   *
-  * https://github.com/mapbox/tilejson-spec/tree/master/2.2.0
+  * https://github.com/mapbox/tilejson-spec/tree/master/2.3.0
   *
   * Included comments are inlined from field descriptions at the
   * above link. Fields are reordered for sensible order of argument
