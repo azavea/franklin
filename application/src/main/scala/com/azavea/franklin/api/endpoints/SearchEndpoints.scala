@@ -3,7 +3,8 @@ package com.azavea.franklin.api.endpoints
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database._
 import com.azavea.franklin.datamodel.PaginationToken
-import com.azavea.stac4s.{Bbox, TemporalExtent}
+import com.azavea.stac4s.Bbox
+import com.azavea.stac4s.types.TemporalExtent
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe._
 import sttp.tapir._

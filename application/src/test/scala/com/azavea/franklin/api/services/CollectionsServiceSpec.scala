@@ -8,6 +8,7 @@ import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
 import com.azavea.franklin.datamodel.CollectionsResponse
 import com.azavea.stac4s.StacCollection
+import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.{Method, Request, Uri}

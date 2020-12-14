@@ -3,6 +3,7 @@ package com.azavea.franklin.extensions.validation
 import cats.syntax.all._
 import com.azavea.stac4s.StacItem
 import com.azavea.stac4s.syntax._
+import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
 import eu.timepit.refined.types.string.NonEmptyString
 import org.specs2.{ScalaCheck, Specification}

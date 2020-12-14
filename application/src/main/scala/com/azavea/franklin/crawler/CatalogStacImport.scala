@@ -11,6 +11,7 @@ import com.azavea.stac4s.StacLinkType._
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.label.LabelItemExtension
 import com.azavea.stac4s.syntax._
+import com.azavea.stac4s.types.TemporalExtent
 import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor

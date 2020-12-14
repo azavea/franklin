@@ -1,7 +1,7 @@
 package com.azavea.franklin
 
 import cats.syntax.all._
-import com.azavea.stac4s.TemporalExtent
+import com.azavea.stac4s.types.TemporalExtent
 import doobie.implicits.javasql._
 import doobie.util.meta.Meta
 import doobie.util.{Read, Write}

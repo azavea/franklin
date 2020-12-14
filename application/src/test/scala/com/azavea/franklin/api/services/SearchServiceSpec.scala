@@ -7,6 +7,7 @@ import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.{SearchFilters, TestDatabaseSpec}
 import com.azavea.franklin.datamodel.StacSearchCollection
+import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
 import com.azavea.stac4s.{StacCollection, StacItem}
 import org.http4s.circe.CirceEntityDecoder._

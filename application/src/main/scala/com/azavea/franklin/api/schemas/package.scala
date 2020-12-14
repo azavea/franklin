@@ -5,6 +5,7 @@ import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s._
+import com.azavea.stac4s.types.TemporalExtent
 import geotrellis.vector.Geometry
 import io.circe.{Encoder, Json}
 import sttp.tapir.Codec.PlainCodec
