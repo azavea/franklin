@@ -3,7 +3,8 @@ package com.azavea.franklin.database
 import cats.syntax.all._
 import com.azavea.franklin.api.schemas.bboxToString
 import com.azavea.franklin.datamodel.{PaginationToken, Query}
-import com.azavea.stac4s.{Bbox, TemporalExtent}
+import com.azavea.stac4s.Bbox
+import com.azavea.stac4s.types.TemporalExtent
 import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
