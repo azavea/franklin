@@ -6,9 +6,9 @@ import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
 import com.azavea.franklin.datamodel.CollectionItemsResponse
-import com.azavea.stac4s.StacCollection
-import com.azavea.stac4s.StacItem
+import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
+import com.azavea.stac4s.{StacCollection, StacItem}
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.circe.CirceEntityDecoder._

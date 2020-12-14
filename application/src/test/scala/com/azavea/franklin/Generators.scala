@@ -6,6 +6,8 @@ import com.azavea.franklin.database.SearchFilters
 import com.azavea.franklin.datamodel._
 import com.azavea.stac4s._
 import com.azavea.stac4s.testing._
+import com.azavea.stac4s.testing.{JvmInstances, TestInstances}
+import com.azavea.stac4s.types._
 import eu.timepit.refined.scalacheck.NumericInstances
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
@@ -90,8 +92,8 @@ trait Generators extends NumericInstances {
 
   private def searchFiltersGen: Gen[SearchFilters] = {
     (
-      Gen.option(arbitrary[Bbox]),
-      Gen.option(arbitrary[TemporalExtent]),
+      Gen.option(arbitrary(TestInstances.arbBbox)),
+      Gen.option(arbitrary(JvmInstances.arbTemporalExtent)),
       Gen.option(rectangleGen),
       Gen.const(List.empty[String]),
       Gen.const(List.empty[String]),
