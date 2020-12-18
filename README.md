@@ -20,6 +20,8 @@ This will start a [server](http://localhost:9090) without data using a provided 
 
 ## Features Implemented
 
+Franklin serves api documentation at `/open-api/spec.yaml`, which shows what is available given then flags it is run with. 
+
 ### STAC Core
 #### Capabilities
 - [x] `GET /`
