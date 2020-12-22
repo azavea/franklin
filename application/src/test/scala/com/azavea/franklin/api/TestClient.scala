@@ -68,8 +68,8 @@ class TestClient[F[_]: Sync](
   }
 
   def getItemResource(collection: StacCollection, item: StacItem): Resource[F, StacItem] =
-    Resource.make(createItemInCollection(collection, item))(
-      item => deleteItemInCollection(collection, item)
+    Resource.make(createItemInCollection(collection, item))(item =>
+      deleteItemInCollection(collection, item)
     )
 
   def getCollectionResource(collection: StacCollection): Resource[F, StacCollection] =
