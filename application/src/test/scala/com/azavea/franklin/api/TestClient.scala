@@ -50,7 +50,7 @@ class TestClient[F[_]: Sync](
       Request(
         method = Method.POST,
         uri = Uri.unsafeFromString(s"/collections/$encodedCollectionId/items")
-      ).withEntity(item.copy(collection=None))
+      ).withEntity(item)
     ) flatMap { _.as[StacItem] }
   }
 
@@ -68,7 +68,7 @@ class TestClient[F[_]: Sync](
   }
 
   def getItemResource(collection: StacCollection, item: StacItem): Resource[F, StacItem] =
-    Resource.make(createItemInCollection(collection, item.copy(collection = Some(collection.id))))(
+    Resource.make(createItemInCollection(collection, item))(
       item => deleteItemInCollection(collection, item)
     )
 
