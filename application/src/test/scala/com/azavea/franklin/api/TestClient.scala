@@ -50,7 +50,7 @@ class TestClient[F[_]: Sync](
       Request(
         method = Method.POST,
         uri = Uri.unsafeFromString(s"/collections/$encodedCollectionId/items")
-      ).withEntity(item)
+      ).withEntity(item.copy(collection=None))
     ) flatMap { _.as[StacItem] }
   }
 
