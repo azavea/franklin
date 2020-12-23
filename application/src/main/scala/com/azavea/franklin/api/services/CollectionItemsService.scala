@@ -175,7 +175,8 @@ class CollectionItemsService[F[_]: Sync](
           )
         }
       case None =>
-        val withParent = item.copy(links = fallbackCollectionLink +: item.links)
+        val withParent =
+          item.copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
         StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
           val validated = validateItemAndLinks(inserted)
           Right((validated.asJson, validated.##.toString))
