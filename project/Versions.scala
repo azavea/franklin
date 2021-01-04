@@ -1,6 +1,6 @@
 // Versions
 object Versions {
-  val AsyncHttpClientVersion  = "2.12.1"
+  val AsyncHttpClientVersion  = "2.12.2"
   val AWSVersion              = "1.11.751"
   val CatsEffectVersion       = "2.2.0"
   val CatsScalacheckVersion   = "0.3.0"
@@ -10,8 +10,8 @@ object Versions {
   val DeclineVersion          = "1.3.0"
   val DoobieVersion           = "0.9.4"
   val EmojiVersion            = "1.2.1"
-  val Flyway                  = "7.3.2"
-  val Fs2Version              = "2.5.0"
+  val Flyway                  = "7.4.0"
+  val Fs2Version              = "2.4.6"
   val GeoTrellisVersion       = "3.5.1"
   val GeotrellisServerVersion = "4.2.0"
   val GuavaVersion            = "30.1-jre"
