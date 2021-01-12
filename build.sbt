@@ -163,6 +163,7 @@ lazy val applicationDependencies = Seq(
   "org.tpolecat"                 %% "doobie-refined"                 % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-scalatest"               % Versions.DoobieVersion % Test,
   "org.tpolecat"                 %% "doobie-specs2"                  % Versions.DoobieVersion % Test,
+  "org.tpolecat"                 %% "typename"                       % Versions.TypenameVersion,
   "org.typelevel"                %% "cats-core"                      % Versions.CatsVersion,
   "org.typelevel"                %% "cats-effect"                    % Versions.CatsEffectVersion,
   "org.typelevel"                %% "cats-free"                      % Versions.CatsVersion,

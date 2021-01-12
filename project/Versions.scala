@@ -40,4 +40,5 @@ object Versions {
   val SttpClientVersion       = "2.2.9"
   val SttpModelVersion        = "1.1.4"
   val TapirVersion            = "0.16.16"
+  val TypenameVersion         = "0.1.3"
 }
