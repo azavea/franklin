@@ -48,7 +48,7 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.1" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.5" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
@@ -97,8 +97,6 @@ lazy val applicationDependencies = Seq(
   "com.github.julien-truffaut"   %% "monocle-macro"                  % Versions.MonocleVersion,
   "com.google.guava"             % "guava"                           % Versions.GuavaVersion,
   "com.lightbend"                %% "emoji"                          % Versions.EmojiVersion,
-  "com.lihaoyi"                  %% "sourcecode"                     % Versions.SourceCodeVersion,
-  "com.lihaoyi"                  %% "sourcecode"                     % Versions.SourceCodeVersion,
   "com.monovore"                 %% "decline-refined"                % Versions.DeclineVersion,
   "com.monovore"                 %% "decline"                        % Versions.DeclineVersion,
   "com.propensive"               %% "magnolia"                       % Versions.MagnoliaVersion,
@@ -163,6 +161,7 @@ lazy val applicationDependencies = Seq(
   "org.tpolecat"                 %% "doobie-refined"                 % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-scalatest"               % Versions.DoobieVersion % Test,
   "org.tpolecat"                 %% "doobie-specs2"                  % Versions.DoobieVersion % Test,
+  "org.tpolecat"                 %% "typename"                       % Versions.TypenameVersion,
   "org.typelevel"                %% "cats-core"                      % Versions.CatsVersion,
   "org.typelevel"                %% "cats-effect"                    % Versions.CatsEffectVersion,
   "org.typelevel"                %% "cats-free"                      % Versions.CatsVersion,
