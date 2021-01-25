@@ -1,7 +1,6 @@
 package com.azavea.franklin.api
 
 import cats.effect._
-import cats.effect._
 import cats.syntax.all._
 import com.azavea.franklin.api.commands.{ApiConfig, Commands, DatabaseConfig}
 import com.azavea.franklin.api.endpoints.{
@@ -34,15 +33,15 @@ import java.util.concurrent.Executors
 
 object Server extends IOApp {
 
-  val franklinIO: ContextShift[IO] = IO.contextShift(
-    ExecutionContext.fromExecutor(
+  val franklinContextShift: Resource[IO, ContextShift[IO]] = Resource.make(
+    IO.delay {
       Executors.newCachedThreadPool(
         new ThreadFactoryBuilder().setNameFormat("raster-io-%d").build()
       )
-    )
-  )
-
-  override implicit val contextShift: ContextShift[IO] = franklinIO
+    }
+  )(pool => IO.delay(pool.shutdown)) map { service =>
+    IO.contextShift(ExecutionContext.fromExecutor(service))
+  }
 
   implicit val serverOptions = ServerOptions.defaultServerOptions[IO]
 
@@ -64,7 +63,7 @@ $$$$
   private def createServer(
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
-  ): Resource[IO, HTTP4sServer[IO]] =
+  ) = franklinContextShift flatMap { implicit contextShift =>
     for {
       connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
       transactionEc <- ExecutionContexts.cachedThreadPool[IO]
@@ -126,6 +125,7 @@ $$$$
     } yield {
       server
     }
+  }
 
   override def run(args: List[String]): IO[ExitCode] = {
     import Commands._
