@@ -30,18 +30,25 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
-object Server extends IOApp {
+object Server extends IOApp.WithContext {
 
-  val franklinContextShift: Resource[IO, ContextShift[IO]] = Resource.make(
-    IO.delay {
-      Executors.newCachedThreadPool(
-        new ThreadFactoryBuilder().setNameFormat("raster-io-%d").build()
+  def executionContextResource: Resource[SyncIO, ExecutionContext] =
+    Resource
+      .make(
+        SyncIO(
+          Executors.newCachedThreadPool(
+            new ThreadFactoryBuilder().setNameFormat("raster-io-%d").build()
+          )
+        )
+      )(pool =>
+        SyncIO {
+          pool.shutdown()
+          val _ = pool.awaitTermination(10, TimeUnit.SECONDS)
+        }
       )
-    }
-  )(pool => IO.delay(pool.shutdown)) map { service =>
-    IO.contextShift(ExecutionContext.fromExecutor(service))
-  }
+      .map(ExecutionContext.fromExecutor _)
 
   implicit val serverOptions = ServerOptions.defaultServerOptions[IO]
 
@@ -63,7 +70,7 @@ $$$$
   private def createServer(
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
-  ) = franklinContextShift flatMap { implicit contextShift =>
+  ) =
     for {
       connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
       transactionEc <- ExecutionContexts.cachedThreadPool[IO]
@@ -125,7 +132,6 @@ $$$$
     } yield {
       server
     }
-  }
 
   override def run(args: List[String]): IO[ExitCode] = {
     import Commands._
