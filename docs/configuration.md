@@ -13,7 +13,7 @@ the server's OpenAPI specification at `<host>/open-api/spec.yaml`
 
 ## `--with-tiles`
 
-Enabling the `--with-tiles` flags will add a few different sorts of tile rendering.
+Enabling the `--with-tiles` flag will add a few different sorts of tile rendering.
 
 ### Item raster tiles
 
@@ -46,7 +46,7 @@ be rendered into the resulting MVT.
 
 ## `--with-transactions`
 
-Enabling transactions will add endpoints for creating, editing, and deleting items and
+Enabling the `--with-transactions` flag will add endpoints for creating, editing, and deleting items and
 creating collections. These endpoints are useful for deployment scenarios where you
 don't have all of the data you'll want to serve up front.
 
