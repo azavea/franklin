@@ -1,12 +1,15 @@
 package com.azavea.franklin.database
 
 import cats.data.OptionT
+import cats.syntax.foldable._
+import cats.syntax.list._
 import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
 import com.azavea.stac4s._
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
+import eu.timepit.refined.types.string.NonEmptyString
 
 object StacCollectionDao extends Dao[StacCollection] {
 
@@ -48,6 +51,14 @@ object StacCollectionDao extends Dao[StacCollection] {
 
   }
 
+  private def sanitizeField(s: NonEmptyString): NonEmptyString =
+    NonEmptyString.unsafeFrom(s.value.replace(":", "_"))
+
+  private def fieldSelectF(request: MapboxVectorTileFootprintRequest): Fragment =
+    (request.withField map { field =>
+      Fragment.const(s", item -> 'properties' ->> '$field' as ${sanitizeField(field)}")
+    }).intercalate(fr"")
+
   def getCollectionFootprintTile(
       request: MapboxVectorTileFootprintRequest
   ): ConnectionIO[Option[Array[Byte]]] = {
@@ -58,9 +69,8 @@ object StacCollectionDao extends Dao[StacCollection] {
           ST_AsMVTGeom(
             ST_Transform(geom, 3857),
             ST_TileEnvelope(${request.z},${request.x},${request.y})
-          ) AS geom,
-          item -> 'properties' ->> ${request.colorField} as color,
-          item -> 'properties' as item_properties
+          ) AS geom
+          """ ++ fieldSelectF(request) ++ fr"""
         FROM collection_items
         WHERE
           ST_Intersects(
