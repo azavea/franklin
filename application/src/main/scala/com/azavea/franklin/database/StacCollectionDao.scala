@@ -62,7 +62,6 @@ object StacCollectionDao extends Dao[StacCollection] {
   def getCollectionFootprintTile(
       request: MapboxVectorTileFootprintRequest
   ): ConnectionIO[Option[Array[Byte]]] = {
-    println(s"Request z/x/y: ${request.z}, ${request.x}, ${request.y}")
     val fragment = fr"""
     WITH mvtgeom AS
       (
