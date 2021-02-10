@@ -53,7 +53,7 @@ case class MapboxVectorTileFootprintRequest(
     z: Int,
     x: Int,
     y: Int,
-    colorField: NonEmptyString
+    withField: List[NonEmptyString]
 ) extends TileMatrixRequest {
   val collection = urlDecode(collectionRaw)
 }

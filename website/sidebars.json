@@ -1,7 +1,8 @@
 {
   "docs": {
     "Overview": [
-      "introduction"
+      "introduction",
+      "configuration"
     ],
     "ADRs": [
       "0001-record-architecture-decisions",

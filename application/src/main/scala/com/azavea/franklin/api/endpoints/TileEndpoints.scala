@@ -25,8 +25,9 @@ class TileEndpoints(enableTiles: Boolean) {
   val collectionFootprintTilePath: EndpointInput[(String, Int, Int, Int)] =
     (basePath / path[String] / "footprint" / "WebMercatorQuad" / zxyPath)
 
-  val collectionFootprintTileParameters: EndpointInput[(String, Int, Int, Int, NonEmptyString)] =
-    collectionFootprintTilePath.and(query[NonEmptyString]("colorField"))
+  val collectionFootprintTileParameters
+      : EndpointInput[(String, Int, Int, Int, List[NonEmptyString])] =
+    collectionFootprintTilePath.and(query[List[NonEmptyString]]("withField"))
 
   val collectionFootprintTileJsonPath: EndpointInput[String] =
     (basePath / path[String] / "footprint" / "tile-json")
