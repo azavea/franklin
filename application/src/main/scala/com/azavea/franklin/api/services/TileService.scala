@@ -144,10 +144,10 @@ class TileService[F[_]: Concurrent: LiftIO](
   }
 
   val routes: HttpRoutes[F] =
-    tileEndpoints.itemRasterTileEndpoint.toRoutes(getItemRasterTile) <+>
-      tileEndpoints.collectionFootprintTileEndpoint.toRoutes(
+    Http4sServerInterpreter.toRoutes(tileEndpoints.itemRasterTileEndpoint)(getItemRasterTile) <+>
+      Http4sServerInterpreter.toRoutes(tileEndpoints.collectionFootprintTileEndpoint)(
         getCollectionFootprintTile
-      ) <+> tileEndpoints.collectionFootprintTileJson.toRoutes(
+      ) <+> Http4sServerInterpreter.toRoutes(tileEndpoints.collectionFootprintTileJson)(
       getCollectionFootprintTileJson
     )
 

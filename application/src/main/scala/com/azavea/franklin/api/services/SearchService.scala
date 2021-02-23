@@ -51,8 +51,9 @@ class SearchService[F[_]: Concurrent](
   }
 
   val routes: HttpRoutes[F] =
-    searchEndpoints.searchGet.toRoutes(searchFilters => search(searchFilters, SearchMethod.Get)) <+> searchEndpoints.searchPost
-      .toRoutes({
-        case searchFilters => search(searchFilters, SearchMethod.Post)
-      })
+    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)(searchFilters =>
+      search(searchFilters, SearchMethod.Get)
+    ) <+> Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({
+      case searchFilters => search(searchFilters, SearchMethod.Post)
+    })
 }

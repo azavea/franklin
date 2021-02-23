@@ -127,21 +127,24 @@ class CollectionsService[F[_]: Concurrent](
   val collectionEndpoints = new CollectionEndpoints[F](enableTransactions, enableTiles)
 
   val routesList = List(
-    collectionEndpoints.collectionsList.toRoutes(_ => listCollections()),
-    collectionEndpoints.collectionUnique.toRoutes({
+    Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionsList)(_ => listCollections()),
+    Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionUnique)({
       case collectionId => getCollectionUnique(collectionId)
     })
   ) ++
     (if (enableTiles) {
        List(
-         collectionEndpoints.collectionTiles.toRoutes(getCollectionTiles)
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionTiles)(getCollectionTiles)
        )
      } else Nil) ++
     (if (enableTransactions) {
        List(
-         collectionEndpoints.createCollection.toRoutes(collection => createCollection(collection)),
-         collectionEndpoints.deleteCollection
-           .toRoutes(rawCollectionId => deleteCollection(rawCollectionId))
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.createCollection)(collection =>
+           createCollection(collection)
+         ),
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.deleteCollection)(rawCollectionId =>
+           deleteCollection(rawCollectionId)
+         )
        )
      } else Nil)
 
