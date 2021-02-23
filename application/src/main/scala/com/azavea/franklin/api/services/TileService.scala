@@ -32,13 +32,14 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-class TileService[F[_]: Sync: LiftIO](
+class TileService[F[_]: Concurrent: LiftIO](
     serverHost: NonEmptyString,
     enableTiles: Boolean,
     xa: Transactor[F]
 )(
     implicit cs: ContextShift[F],
-    csIO: ContextShift[IO]
+    csIO: ContextShift[IO],
+    timerF: Timer[F]
 ) extends Http4sDsl[F]
     with RenderImplicits {
 
@@ -142,8 +143,12 @@ class TileService[F[_]: Sync: LiftIO](
     }
   }
 
-  val routes: HttpRoutes[F] = tileEndpoints.itemRasterTileEndpoint.toRoutes(getItemRasterTile) <+>
-    tileEndpoints.collectionFootprintTileEndpoint.toRoutes(getCollectionFootprintTile) <+>
-    tileEndpoints.collectionFootprintTileJson.toRoutes(getCollectionFootprintTileJson)
+  val routes: HttpRoutes[F] =
+    Http4sServerInterpreter.toRoutes(tileEndpoints.itemRasterTileEndpoint)(getItemRasterTile) <+>
+      Http4sServerInterpreter.toRoutes(tileEndpoints.collectionFootprintTileEndpoint)(
+        getCollectionFootprintTile
+      ) <+> Http4sServerInterpreter.toRoutes(tileEndpoints.collectionFootprintTileJson)(
+      getCollectionFootprintTileJson
+    )
 
 }

@@ -21,11 +21,12 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-class CollectionsService[F[_]: Sync](
+class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig
 )(
     implicit contextShift: ContextShift[F],
+    timer: Timer[F],
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
@@ -123,24 +124,27 @@ class CollectionsService[F[_]: Sync](
     }
   }
 
-  val collectionEndpoints = new CollectionEndpoints(enableTransactions, enableTiles)
+  val collectionEndpoints = new CollectionEndpoints[F](enableTransactions, enableTiles)
 
   val routesList = List(
-    collectionEndpoints.collectionsList.toRoutes(_ => listCollections()),
-    collectionEndpoints.collectionUnique
-      .toRoutes {
-        case collectionId => getCollectionUnique(collectionId)
-      }
+    Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionsList)(_ => listCollections()),
+    Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionUnique)({
+      case collectionId => getCollectionUnique(collectionId)
+    })
   ) ++
     (if (enableTiles) {
-       List(collectionEndpoints.collectionTiles.toRoutes(getCollectionTiles))
+       List(
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionTiles)(getCollectionTiles)
+       )
      } else Nil) ++
     (if (enableTransactions) {
        List(
-         collectionEndpoints.createCollection
-           .toRoutes(collection => createCollection(collection)),
-         collectionEndpoints.deleteCollection
-           .toRoutes(rawCollectionId => deleteCollection(rawCollectionId))
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.createCollection)(collection =>
+           createCollection(collection)
+         ),
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.deleteCollection)(rawCollectionId =>
+           deleteCollection(rawCollectionId)
+         )
        )
      } else Nil)
 

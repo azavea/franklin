@@ -2,33 +2,31 @@
 
 set -e
 
-
 if [[ -n "${FRANKLIN_DEBUG}" ]]; then
     set -x
 fi
 
 function usage() {
     echo -n \
-         "Usage: $(basename "$0")
+        "Usage: $(basename "$0")
 Setup external project dependencies.
 "
 }
 
-
-if [ "${BASH_SOURCE[0]}" = "${0}" ]
-then
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     case "${1}" in
-        --help)
-            usage
-            ;;
-        *)
-            echo -e "\e[32m[franklin] Configuring bloop...\e[0m"
-            sbt ";bloopInstall; scalafmt; scalafmtSbt; twirlCompileTemplates"
-            echo -e "\e[32m[franklin] Configuring npm...\e[0m"
-            npm install
-            npm run build
-            echo -e "\e[32m[franklin] Running migrations...\e[0m"
-            docker-compose up -d database
-            ./scripts/migrate
+    --help)
+        usage
+        ;;
+    *)
+        echo -e "\e[32m[franklin] Configuring bloop...\e[0m"
+        sbt ";bloopInstall; scalafmt; scalafmtSbt"
+        echo -e "\e[32m[franklin] Configuring npm...\e[0m"
+        npm install
+        npm run build
+        echo -e "\e[32m[franklin] Running migrations...\e[0m"
+        docker-compose up -d database
+        ./scripts/migrate
+        ;;
     esac
 fi

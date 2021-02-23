@@ -56,8 +56,6 @@ lazy val commonSettings = Seq(
 scalafixDependencies in ThisBuild +=
   "com.nequissimus" %% "sort-imports" % "0.5.5"
 
-TwirlKeys.templateImports := Seq()
-
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
   .aggregate(application)
@@ -83,7 +81,6 @@ lazy val applicationSettings = commonSettings ++ Seq(
 
 lazy val applicationDependencies = Seq(
   "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
-  "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
   "com.azavea.geotrellis"        %% "geotrellis-server-core"         % Versions.GeotrellisServerVersion,
@@ -105,13 +102,15 @@ lazy val applicationDependencies = Seq(
   "com.softwaremill.sttp.client" %% "circe"                          % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "core"                           % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "json-common"                    % Versions.SttpClientVersion,
+  "com.softwaremill.sttp.shared" %% "core"                           % Versions.SttpShared,
+  "com.softwaremill.sttp.shared" %% "fs2"                            % Versions.SttpShared,
   "com.softwaremill.sttp.model"  %% "core"                           % Versions.SttpModelVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-core"                     % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-http4s-server"            % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-json-circe"               % Versions.TapirVersion,
-  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-circe-yaml"       % Versions.TapirVersion,
-  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-docs"             % Versions.TapirVersion,
-  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-model"            % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-circe-yaml"       % Versions.TapirOpenAPIVersion,
+  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-docs"             % Versions.TapirOpenAPIVersion,
+  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-model"            % Versions.TapirOpenAPIVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-refined"                  % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-sttp-client"              % Versions.TapirVersion % Test,
   "com.softwaremill.sttp.tapir"  %% "tapir-swagger-ui-http4s"        % Versions.TapirVersion,
@@ -124,7 +123,6 @@ lazy val applicationDependencies = Seq(
   "io.chrisdavenport"            %% "log4cats-slf4j"                 % Versions.Log4CatsVersion,
   "io.circe"                     %% "circe-core"                     % Versions.CirceVersion,
   "io.circe"                     %% "circe-generic"                  % Versions.CirceVersion,
-  "io.circe"                     %% "circe-numbers"                  % Versions.CirceVersion,
   "io.circe"                     %% "circe-parser"                   % Versions.CirceVersion,
   "io.circe"                     %% "circe-refined"                  % Versions.CirceVersion,
   "io.circe"                     %% "circe-testing"                  % Versions.CirceVersion % Test,
@@ -173,7 +171,6 @@ lazy val application = (project in file("application"))
   .settings({
     libraryDependencies ++= applicationDependencies
   })
-  .enablePlugins(SbtTwirl)
 
 //////////
 // DOCS //
