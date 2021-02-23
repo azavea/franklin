@@ -1,12 +1,13 @@
 package com.azavea.franklin.crawler
 
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.{ContextShift, IO}
 import cats.syntax.all._
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.azavea.stac4s.{`application/json`, StacCollection, StacItem, StacLink, StacLinkType}
 import geotrellis.store.s3.AmazonS3URI
 import io.chrisdavenport.log4cats.Logger
-import io.circe.parser.decode
+import io.circe.parser.decodeAccumulating
 import io.circe.{CursorOp, Decoder, DecodingFailure, Error => CirceError, ParsingFailure}
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
@@ -18,7 +19,31 @@ import java.nio.charset.StandardCharsets
 
 object StacIO {
 
-  private def logCirceError(path: String, error: CirceError)(
+  def collectionCatalogFallback[T](
+      path: String,
+      collectionAttempt: ValidatedNel[CirceError, T],
+      catalogAttempt: ValidatedNel[CirceError, T]
+  )(implicit logger: Logger[IO]) =
+    (collectionAttempt, catalogAttempt) match {
+      case (Validated.Valid(s), _) => IO.pure(s)
+      case (_, Validated.Valid(s)) => IO.pure(s)
+      case (Validated.Invalid(collErrs), Validated.Invalid(catalogErrs)) =>
+        StacIO.logFailedCollectionCatalogFallback(path, collErrs, catalogErrs)
+    }
+
+  def logFailedCollectionCatalogFallback[T](
+      path: String,
+      collectionErrs: NonEmptyList[CirceError],
+      catalogErrs: NonEmptyList[CirceError]
+  )(implicit logger: Logger[IO]): IO[T] =
+    logger.error(s"Could not read $path as either a collection or a catalog") *>
+      logger.error("Collection errors:") *> (collectionErrs traverse {
+      StacIO.logCirceError(path, _)
+    }) *> logger.error("Catalog errors:") *> (catalogErrs traverse {
+      StacIO.logCirceError(path, _)
+    }) *> IO.raiseError(collectionErrs.head)
+
+  def logCirceError(path: String, error: CirceError)(
       implicit logger: Logger[IO]
   ): IO[Unit] =
     error match {
@@ -33,9 +58,6 @@ object StacIO {
           s"In $path, I found something unexpected at ${CursorOp.opsToPath(history)}. I expected a value of type $s 🤔"
         )
     }
-
-  private def logBadResponse(path: String, code: Int)(implicit logger: Logger[IO]): IO[Unit] =
-    logger.error(s"The server responsible for $path rejected my request with a status of $code")
 
   lazy val s3 = AmazonS3ClientBuilder
     .standard()
@@ -65,7 +87,9 @@ object StacIO {
 
   def readJsonFromPath[T: Decoder](
       path: String
-  )(implicit logger: Logger[IO], backend: SttpBackend[IO, Nothing, NothingT]): IO[T] = {
+  )(
+      implicit backend: SttpBackend[IO, Nothing, NothingT]
+  ): IO[ValidatedNel[CirceError, T]] = {
     if (path.startsWith("http")) {
       {
         readJsonFromHttp(path)
@@ -74,10 +98,9 @@ object StacIO {
       val str = readLinesFromPath(path)
 
       str.flatMap { s =>
-        decode[T](s.mkString) match {
-          case Left(e)  => logCirceError(path, e) *> IO.raiseError(e)
-          case Right(t) => IO.pure(t)
-        }
+        IO.pure(
+          decodeAccumulating[T](s.mkString)
+        )
       }
     }
   }
@@ -85,19 +108,23 @@ object StacIO {
   def readJsonFromHttp[T: Decoder](
       url: String
   )(
-      implicit logger: Logger[IO],
-      backend: SttpBackend[IO, Nothing, NothingT]
-  ): IO[T] =
+      implicit backend: SttpBackend[IO, Nothing, NothingT]
+  ): IO[ValidatedNel[CirceError, T]] =
     for {
       response <- basicRequest.get(uri"$url").response(asJson[T]).send[IO]
-      decoded <- response.body match {
-        case Left(e @ DeserializationError(_, err)) =>
-          logCirceError(s"$url", err) *> IO.raiseError(e)
+    } yield {
+      response.body match {
+        case Left(DeserializationError(_, err)) =>
+          Validated.Invalid(NonEmptyList.of(err))
         case Left(e @ HttpError(_, code)) =>
-          logBadResponse(s"$url", code.code) *> IO.raiseError(e)
-        case Right(body) => IO.pure(body)
+          Validated.Invalid(
+            NonEmptyList.of(
+              ParsingFailure(s"Something went wrong reading json from $url with code $code", e)
+            )
+          )
+        case Right(body) => Validated.Valid(body)
       }
-    } yield decoded
+    }
 
   private def getPrefix(absPath: String): String = absPath.split("/").dropRight(1).mkString("/")
 
@@ -127,11 +154,20 @@ object StacIO {
       backend: SttpBackend[IO, Nothing, NothingT]
   ): IO[StacItem] = {
     val readIO = readJsonFromPath[StacItem](path)
-    if (!rewriteSourceIfPresent) (logger.debug(s"Not rewriting source link at $path") *> readIO)
-    else {
+    val preLog =
+      if (!rewriteSourceIfPresent)(logger.debug(s"Not rewriting source link at $path"))
+      else IO.unit
+    preLog *> {
       for {
-        item <- readIO
-        _    <- logger.debug(s"Rewriting item source link for item ${item.id}")
+        itemParseResult <- readIO
+        item <- itemParseResult match {
+          case Validated.Valid(item) => IO.pure(item)
+          case Validated.Invalid(errs) =>
+            (errs traverse { err =>
+              logCirceError(path, err)
+            }) *> IO.raiseError(errs.head)
+        }
+        _ <- logger.debug(s"Rewriting item source link for item ${item.id}")
         sourceLinkO = item.links.find(_.rel === StacLinkType.Source)
         sourceItemO <- sourceLinkO traverse { link =>
           val sourcePath = makeAbsPath(path, link.href)
