@@ -1,5 +1,6 @@
 package com.azavea.franklin.api.endpoints
 
+import cats.effect.Concurrent
 import com.azavea.franklin.datamodel.{
   ItemRasterTileRequest,
   MapboxVectorTileFootprintRequest,
@@ -15,7 +16,6 @@ import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
-import cats.effect.Concurrent
 
 class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean) {
 

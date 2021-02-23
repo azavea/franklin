@@ -1,5 +1,6 @@
 package com.azavea.franklin.api.endpoints
 
+import cats.effect.Concurrent
 import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
 import io.circe._
@@ -8,7 +9,6 @@ import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
-import cats.effect.Concurrent
 
 class CollectionEndpoints[F[_]: Concurrent](enableTransactions: Boolean, enableTiles: Boolean) {
 
