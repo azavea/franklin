@@ -41,5 +41,5 @@ object Versions {
   val SttpModelVersion        = "1.3.3"
   val TapirVersion            = "0.17.12"
   val TapirOpenAPIVersion     = "0.17.0-M2"
-  val TypenameVersion         = "0.1.3"
+  val TypenameVersion         = "0.1.5"
 }
