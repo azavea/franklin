@@ -1,6 +1,6 @@
 package com.azavea.franklin.database
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.{ContextShift, IO, Timer}
 import cats.syntax.all._
 import doobie._
 import doobie.free.connection.unit
@@ -55,6 +55,8 @@ trait TestDatabaseSpec extends Specification with BeforeAll with AfterAll {
   val templateDbName: String = SetupTemplateDB.templateDbName
 
   implicit val cs: ContextShift[IO] = IO.contextShift(global)
+
+  implicit val timer: Timer[IO] = IO.timer(global)
 
   // Transactor used by tests with rollback behavior and transactions
   def transactor: Transactor[IO] = DatabaseConfig.nonHikariTransactor[IO](dbName)

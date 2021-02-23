@@ -16,15 +16,18 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
-class SearchService[F[_]: Sync](
+class SearchService[F[_]: Concurrent](
     apiHost: NonEmptyString,
     defaultLimit: NonNegInt,
     enableTiles: Boolean,
     xa: Transactor[F]
 )(
     implicit contextShift: ContextShift[F],
+    timerF: Timer[F],
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
+
+  val searchEndpoints = new SearchEndpoints[F]
 
   def search(searchFilters: SearchFilters, searchMethod: SearchMethod): F[Either[Unit, Json]] = {
     for {
@@ -48,8 +51,8 @@ class SearchService[F[_]: Sync](
   }
 
   val routes: HttpRoutes[F] =
-    SearchEndpoints.searchGet.toRoutes(searchFilters => search(searchFilters, SearchMethod.Get)) <+> SearchEndpoints.searchPost
-      .toRoutes {
+    searchEndpoints.searchGet.toRoutes(searchFilters => search(searchFilters, SearchMethod.Get)) <+> searchEndpoints.searchPost
+      .toRoutes({
         case searchFilters => search(searchFilters, SearchMethod.Post)
-      }
+      })
 }

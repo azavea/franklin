@@ -21,11 +21,12 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-class CollectionsService[F[_]: Sync](
+class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig
 )(
     implicit contextShift: ContextShift[F],
+    timer: Timer[F],
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
@@ -123,22 +124,22 @@ class CollectionsService[F[_]: Sync](
     }
   }
 
-  val collectionEndpoints = new CollectionEndpoints(enableTransactions, enableTiles)
+  val collectionEndpoints = new CollectionEndpoints[F](enableTransactions, enableTiles)
 
   val routesList = List(
     collectionEndpoints.collectionsList.toRoutes(_ => listCollections()),
-    collectionEndpoints.collectionUnique
-      .toRoutes {
-        case collectionId => getCollectionUnique(collectionId)
-      }
+    collectionEndpoints.collectionUnique.toRoutes({
+      case collectionId => getCollectionUnique(collectionId)
+    })
   ) ++
     (if (enableTiles) {
-       List(collectionEndpoints.collectionTiles.toRoutes(getCollectionTiles))
+       List(
+         collectionEndpoints.collectionTiles.toRoutes(getCollectionTiles)
+       )
      } else Nil) ++
     (if (enableTransactions) {
        List(
-         collectionEndpoints.createCollection
-           .toRoutes(collection => createCollection(collection)),
+         collectionEndpoints.createCollection.toRoutes(collection => createCollection(collection)),
          collectionEndpoints.deleteCollection
            .toRoutes(rawCollectionId => deleteCollection(rawCollectionId))
        )

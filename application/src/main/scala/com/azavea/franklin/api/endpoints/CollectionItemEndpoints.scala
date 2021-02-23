@@ -13,13 +13,16 @@ import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s.StacItem
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.{Codec => _, _}
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.model.StatusCode
 import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
+import cats.effect.Concurrent
 
-class CollectionItemEndpoints(
+class CollectionItemEndpoints[F[_]: Concurrent](
     defaultLimit: NonNegInt,
     enableTransactions: Boolean,
     enableTiles: Boolean
@@ -31,7 +34,7 @@ class CollectionItemEndpoints(
     (String, Option[PaginationToken], Option[NonNegInt], List[ExtensionName]),
     Unit,
     Json,
-    Nothing
+    Fs2Streams[F]
   ] =
     base.get
       .in(path[String])
@@ -52,7 +55,7 @@ class CollectionItemEndpoints(
       .description("A feature collection of collection items")
       .name("collectionItems")
 
-  val collectionItemsUnique: Endpoint[(String, String), NotFound, (Json, String), Nothing] =
+  val collectionItemsUnique: Endpoint[(String, String), NotFound, (Json, String), Fs2Streams[F]] =
     base.get
       .in(path[String] / "items" / path[String])
       .out(jsonBody[Json])
@@ -61,7 +64,7 @@ class CollectionItemEndpoints(
       .description("A single feature")
       .name("collectionItemUnique")
 
-  val collectionItemTiles: Endpoint[(String, String), NotFound, (Json, String), Nothing] =
+  val collectionItemTiles: Endpoint[(String, String), NotFound, (Json, String), Fs2Streams[F]] =
     base.get
       .in(path[String] / "items" / path[String] / "tiles")
       .out(jsonBody[Json])
@@ -70,7 +73,7 @@ class CollectionItemEndpoints(
       .description("An item's tile endpoints")
       .name("collectionItemTiles")
 
-  val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Nothing] =
+  val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Fs2Streams[F]] =
     base.post
       .in(path[String] / "items")
       .in(jsonBody[StacItem])
@@ -88,7 +91,8 @@ class CollectionItemEndpoints(
       .description("Create a new feature in a collection")
       .name("postItem")
 
-  val putItem: Endpoint[(String, String, StacItem, String), CrudError, (Json, String), Nothing] =
+  val putItem
+      : Endpoint[(String, String, StacItem, String), CrudError, (Json, String), Fs2Streams[F]] =
     base.put
       .in(path[String] / "items" / path[String])
       .in(jsonBody[StacItem])
@@ -114,13 +118,14 @@ class CollectionItemEndpoints(
         )
       )
 
-  val deleteItem: Endpoint[(String, String), Unit, Unit, Nothing] =
+  val deleteItem: Endpoint[(String, String), Unit, Unit, Fs2Streams[F]] =
     base.delete
       .in(path[String] / "items" / path[String])
       .out(emptyOutput)
       .out(statusCode(StatusCode.NoContent))
 
-  val patchItem: Endpoint[(String, String, Json, String), CrudError, (Json, String), Nothing] =
+  val patchItem
+      : Endpoint[(String, String, Json, String), CrudError, (Json, String), Fs2Streams[F]] =
     base.patch
       .in(path[String] / "items" / path[String])
       .in(jsonBody[Json])

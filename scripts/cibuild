@@ -34,7 +34,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         npm run build
 
         echo "Building JAR for API subproject"
-        ./sbt ";twirlCompileTemplates; application/assembly"
+        ./sbt "application/assembly"
 
         popd
 

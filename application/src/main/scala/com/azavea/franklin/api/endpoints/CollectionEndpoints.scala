@@ -3,21 +3,24 @@ package com.azavea.franklin.api.endpoints
 import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
 import io.circe._
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
+import cats.effect.Concurrent
 
-class CollectionEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
+class CollectionEndpoints[F[_]: Concurrent](enableTransactions: Boolean, enableTiles: Boolean) {
 
   val base = endpoint.in("collections")
 
-  val collectionsList: Endpoint[Unit, Unit, Json, Nothing] =
+  val collectionsList: Endpoint[Unit, Unit, Json, Fs2Streams[F]] =
     base.get
       .out(jsonBody[Json])
       .description("A list of collections")
       .name("collections")
 
-  val createCollection: Endpoint[StacCollection, Unit, Json, Nothing] =
+  val createCollection: Endpoint[StacCollection, Unit, Json, Fs2Streams[F]] =
     base.post
       .in(jsonBody[StacCollection])
       .out(jsonBody[Json])
@@ -28,13 +31,13 @@ class CollectionEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
         | """.trim.stripMargin)
       .name("postCollection")
 
-  val deleteCollection: Endpoint[String, NotFound, Unit, Nothing] =
+  val deleteCollection: Endpoint[String, NotFound, Unit, Fs2Streams[F]] =
     base.get
       .in(path[String])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .name("collectionDelete")
 
-  val collectionUnique: Endpoint[String, NotFound, Json, Nothing] =
+  val collectionUnique: Endpoint[String, NotFound, Json, Fs2Streams[F]] =
     base.get
       .in(path[String])
       .out(jsonBody[Json])
@@ -42,7 +45,7 @@ class CollectionEndpoints(enableTransactions: Boolean, enableTiles: Boolean) {
       .description("A single collection")
       .name("collectionUnique")
 
-  val collectionTiles: Endpoint[String, NotFound, (Json, String), Nothing] =
+  val collectionTiles: Endpoint[String, NotFound, (Json, String), Fs2Streams[F]] =
     base.get
       .in(path[String] / "tiles")
       .out(jsonBody[Json])

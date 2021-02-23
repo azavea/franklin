@@ -7,11 +7,14 @@ import com.azavea.stac4s.Bbox
 import com.azavea.stac4s.types.TemporalExtent
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe._
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
 import sttp.tapir.codec.refined._
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
+import cats.effect.Concurrent
 
-object SearchEndpoints {
+class SearchEndpoints[F[_]: Concurrent] {
 
   val base = endpoint.in("search")
 
@@ -60,14 +63,14 @@ object SearchEndpoints {
         filters.copy(next = filters.next orElse token)
       })(filters => (filters, filters.next))
 
-  val searchGet: Endpoint[SearchFilters, Unit, Json, Nothing] =
+  val searchGet: Endpoint[SearchFilters, Unit, Json, Fs2Streams[F]] =
     base.get
       .in(searchFilters)
       .out(jsonBody[Json])
       .description("Search endpoint for all collections")
       .name("search-get")
 
-  val searchPost: Endpoint[SearchFilters, Unit, Json, Nothing] =
+  val searchPost: Endpoint[SearchFilters, Unit, Json, Fs2Streams[F]] =
     base.post
       .in(searchPostInput)
       .out(jsonBody[Json])

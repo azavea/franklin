@@ -39,11 +39,12 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-class CollectionItemsService[F[_]: Sync](
+class CollectionItemsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig
 )(
     implicit contextShift: ContextShift[F],
+    timer: Timer[F],
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 

@@ -56,8 +56,6 @@ lazy val commonSettings = Seq(
 scalafixDependencies in ThisBuild +=
   "com.nequissimus" %% "sort-imports" % "0.5.5"
 
-TwirlKeys.templateImports := Seq()
-
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
   .aggregate(application)
@@ -109,9 +107,8 @@ lazy val applicationDependencies = Seq(
   "com.softwaremill.sttp.tapir"  %% "tapir-core"                     % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-http4s-server"            % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-json-circe"               % Versions.TapirVersion,
-  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-circe-yaml"       % Versions.TapirVersion,
-  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-docs"             % Versions.TapirVersion,
-  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-model"            % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-circe-yaml"       % Versions.TapirOpenAPIVersion,
+  "com.softwaremill.sttp.tapir"  %% "tapir-openapi-docs"             % Versions.TapirOpenAPIVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-refined"                  % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-sttp-client"              % Versions.TapirVersion % Test,
   "com.softwaremill.sttp.tapir"  %% "tapir-swagger-ui-http4s"        % Versions.TapirVersion,
@@ -173,7 +170,6 @@ lazy val application = (project in file("application"))
   .settings({
     libraryDependencies ++= applicationDependencies
   })
-  .enablePlugins(SbtTwirl)
 
 //////////
 // DOCS //

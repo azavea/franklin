@@ -6,12 +6,10 @@ import com.azavea.franklin.api.commands.{ApiConfig, Commands, DatabaseConfig}
 import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,
   CollectionItemEndpoints,
-  LandingPageEndpoints,
   SearchEndpoints,
   TileEndpoints
 }
 import com.azavea.franklin.api.services._
-import com.azavea.franklin.datamodel.LandingPage
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
@@ -82,30 +80,31 @@ $$$$
         connectionEc,
         Blocker.liftExecutionContext(transactionEc)
       )
-      collectionItemEndpoints = new CollectionItemEndpoints(
+      collectionItemEndpoints = new CollectionItemEndpoints[IO](
         apiConfig.defaultLimit,
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       )
-      collectionEndpoints = new CollectionEndpoints(
+      collectionEndpoints = new CollectionEndpoints[IO](
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       )
-      landingPage = new LandingPageEndpoints[IO]()
-      allEndpoints = landingPage.endpoints ++ collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ SearchEndpoints.endpoints ++ new TileEndpoints(
+      allEndpoints = collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ new SearchEndpoints[
+        IO
+      ].endpoints ++ new TileEndpoints[
+        IO
+      ](
         apiConfig.enableTiles
       ).endpoints
-      docs              = allEndpoints.toOpenAPI("Franklin", "0.0.1")
-      docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
-      landingPageRoutes = new LandingPageService[IO](apiConfig, xa).routes
+      docs      = allEndpoints.toOpenAPI("Franklin", "0.0.1")
+      docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       searchRoutes = new SearchService[IO](
         apiConfig.apiHost,
         apiConfig.defaultLimit,
         apiConfig.enableTiles,
         xa
       ).routes
-      staticService = new StaticService[IO](Blocker.liftExecutionContext(transactionEc))
-      tileRoutes    = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+      tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
       collectionRoutes = new CollectionsService[IO](xa, apiConfig).routes <+> new CollectionItemsService[
         IO
       ](
@@ -115,9 +114,8 @@ $$$$
       router = CORS(
         Router(
           "/" -> ResponseLogger.httpRoutes(false, false)(
-            landingPageRoutes <+> collectionRoutes <+> searchRoutes <+> tileRoutes <+> docRoutes
-          ),
-          "/assets" -> staticService.routes
+            collectionRoutes <+> searchRoutes <+> tileRoutes <+> docRoutes
+          )
         )
       ).orNotFound
       serverBuilderBlocker <- Blocker[IO]

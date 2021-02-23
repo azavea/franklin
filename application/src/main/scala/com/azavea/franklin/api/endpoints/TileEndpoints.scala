@@ -9,12 +9,15 @@ import com.azavea.franklin.error.NotFound
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.Json
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
+import cats.effect.Concurrent
 
-class TileEndpoints(enableTiles: Boolean) {
+class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean) {
 
   val basePath = "tiles" / "collections"
   val zxyPath  = path[Int] / path[Int] / path[Int]
@@ -43,7 +46,8 @@ class TileEndpoints(enableTiles: Boolean) {
       .and(query[Option[NonNegInt]]("singleBand"))
       .mapTo(ItemRasterTileRequest)
 
-  val itemRasterTileEndpoint: Endpoint[ItemRasterTileRequest, NotFound, Array[Byte], Nothing] =
+  val itemRasterTileEndpoint
+      : Endpoint[ItemRasterTileRequest, NotFound, Array[Byte], Fs2Streams[F]] =
     endpoint.get
       .in(itemRasterTileParameters)
       .out(rawBinaryBody[Array[Byte]])
@@ -53,7 +57,7 @@ class TileEndpoints(enableTiles: Boolean) {
       .name("collectionItemTiles")
 
   val collectionFootprintTileEndpoint
-      : Endpoint[MapboxVectorTileFootprintRequest, NotFound, Array[Byte], Nothing] =
+      : Endpoint[MapboxVectorTileFootprintRequest, NotFound, Array[Byte], Fs2Streams[F]] =
     endpoint.get
       .in(collectionFootprintTileParameters.mapTo(MapboxVectorTileFootprintRequest))
       .out(rawBinaryBody[Array[Byte]])
@@ -62,7 +66,7 @@ class TileEndpoints(enableTiles: Boolean) {
       .description("MVT endpoint for a collection's footprint")
       .name("collectionFootprintTiles")
 
-  val collectionFootprintTileJson: Endpoint[String, NotFound, Json, Nothing] =
+  val collectionFootprintTileJson: Endpoint[String, NotFound, Json, Any] =
     endpoint.get
       .in(collectionFootprintTileJsonPath)
       .out(jsonBody[Json])
