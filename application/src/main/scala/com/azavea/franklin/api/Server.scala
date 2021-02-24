@@ -13,6 +13,7 @@ import com.azavea.franklin.api.services._
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
@@ -31,6 +32,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 object Server extends IOApp.WithContext {
+
+  implicit def unsafeLogger[F[_]: Sync] = Slf4jLogger.getLogger[F]
 
   def executionContextResource: Resource[SyncIO, ExecutionContext] =
     Resource

@@ -1,5 +1,6 @@
 package com.azavea.franklin.api.services
 
+import cats.Parallel
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.effect._
@@ -23,6 +24,7 @@ import geotrellis.raster.render.{Implicits => RenderImplicits}
 import geotrellis.raster.{io => _, _}
 import geotrellis.server.LayerTms
 import geotrellis.server._
+import io.chrisdavenport.log4cats.Logger
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.HttpRoutes
@@ -32,14 +34,15 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-class TileService[F[_]: Concurrent: LiftIO](
+class TileService[F[_]: Concurrent](
     serverHost: NonEmptyString,
     enableTiles: Boolean,
     xa: Transactor[F]
 )(
     implicit cs: ContextShift[F],
-    csIO: ContextShift[IO],
-    timerF: Timer[F]
+    timerF: Timer[F],
+    logger: Logger[F],
+    parallel: Parallel[F]
 ) extends Http4sDsl[F]
     with RenderImplicits {
 
@@ -71,14 +74,14 @@ class TileService[F[_]: Concurrent: LiftIO](
         }
       )
       histograms <- EitherT.liftF[F, NF, List[Histogram[Int]]](
-        LiftIO[F].liftIO(cogAssetNode.getHistograms)
+        cogAssetNode.getHistograms
       )
       rs <- EitherT.liftF[F, NF, GeoTiffRasterSource] {
-        LiftIO[F].liftIO(cogAssetNode.getRasterSource)
+        cogAssetNode.getRasterSource
       }
       tile <- EitherT {
-        val eval = LayerTms.identity(cogAssetNode)
-        LiftIO[F].liftIO(eval(z, x, y).map {
+        val eval = LayerTms.concurrent(cogAssetNode)
+        eval(z, x, y).map {
           case Valid(mbt: MultibandTile) if mbt.bandCount > 1 => {
             Either.right {
               val bands = mbt.bands.zip(histograms).map {
@@ -109,7 +112,7 @@ class TileService[F[_]: Concurrent: LiftIO](
             val renderedTile = cmap.render(mbt.band(0))
             Either.right(renderedTile.renderPng.bytes)
           case Invalid(e) => Either.left(NF(s"Could not produce tile: $e"))
-        })
+        }
       }
     } yield tile
     tileEither.value

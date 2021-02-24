@@ -1,7 +1,8 @@
 package com.azavea.franklin.tile
 
-import cats.effect.ContextShift
-import cats.effect.IO
+import cats.effect.{Concurrent, ContextShift}
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 import geotrellis.proj4.WebMercator
 import geotrellis.raster._
 import geotrellis.raster.io.geotiff.AutoHigherResolution
@@ -12,16 +13,16 @@ import geotrellis.vector.Extent
 
 object CogAssetNodeImplicits extends TileUtil {
 
-  implicit def cogAssetNodeTmsReification: TmsReification[CogAssetNode] =
-    new TmsReification[CogAssetNode] {
+  implicit def cogAssetNodeTmsReification[F[_]: Concurrent]: TmsReification[F, CogAssetNode[F]] =
+    new TmsReification[F, CogAssetNode[F]] {
 
       def tmsReification(
-          self: CogAssetNode,
+          self: CogAssetNode[F],
           buffer: Int
-      )(implicit cs: ContextShift[IO]): (Int, Int, Int) => IO[ProjectedRaster[MultibandTile]] =
+      ): (Int, Int, Int) => F[ProjectedRaster[MultibandTile]] =
         (z: Int, x: Int, y: Int) => {
-          def fetch(xCoord: Int, yCoord: Int): IO[Raster[MultibandTile]] = {
-            self.fetchTile(z, xCoord, yCoord, WebMercator).flatMap(a => IO(a))
+          def fetch(xCoord: Int, yCoord: Int): F[Raster[MultibandTile]] = {
+            self.fetchTile(z, xCoord, yCoord, WebMercator)
           }
 
           fetch(x, y).map { tile =>
@@ -31,12 +32,13 @@ object CogAssetNodeImplicits extends TileUtil {
         }
     }
 
-  implicit def cogAssetNodeExtentReification: ExtentReification[CogAssetNode] =
-    new ExtentReification[CogAssetNode] {
+  implicit def cogAssetNodeExtentReification[F[_]: Concurrent]
+      : ExtentReification[F, CogAssetNode[F]] =
+    new ExtentReification[F, CogAssetNode[F]] {
 
       def extentReification(
-          self: CogAssetNode
-      )(implicit cs: ContextShift[IO]): (Extent, CellSize) => IO[ProjectedRaster[MultibandTile]] =
+          self: CogAssetNode[F]
+      ): (Extent, CellSize) => F[ProjectedRaster[MultibandTile]] =
         (extent: Extent, cs: CellSize) => {
           self.getRasterSource map { rs =>
             rs.resample(
