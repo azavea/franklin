@@ -87,7 +87,7 @@ docker run \
   --link franklin-database:franklin-database \
   -v $HOME/projects/franklin/data/:/opt/data/ \
   quay.io/azavea/franklin:latest \
-  import \
+  import-catalog \
   --db-user benjamin \
   --db-name franklin \
   --db-password franklinsecret \

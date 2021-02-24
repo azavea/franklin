@@ -39,11 +39,12 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-class CollectionItemsService[F[_]: Sync](
+class CollectionItemsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig
 )(
     implicit contextShift: ContextShift[F],
+    timer: Timer[F],
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
@@ -258,33 +259,34 @@ class CollectionItemsService[F[_]: Sync](
   val collectionItemEndpoints =
     new CollectionItemEndpoints(defaultLimit, enableTransactions, enableTiles)
 
-  val collectionItemTileRoutes = collectionItemEndpoints.collectionItemTiles.toRoutes {
-    case (collectionId, itemId) => getCollectionItemTileInfo(collectionId, itemId)
-  }
+  val collectionItemTileRoutes =
+    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemTiles)({
+      case (collectionId, itemId) => getCollectionItemTileInfo(collectionId, itemId)
+    })
 
   val transactionRoutes: List[HttpRoutes[F]] = List(
-    collectionItemEndpoints.postItem.toRoutes {
+    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.postItem)({
       case (collectionId, stacItem) => postItem(collectionId, stacItem)
-    },
-    collectionItemEndpoints.putItem.toRoutes {
+    }),
+    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.putItem)({
       case (collectionId, itemId, stacItem, etag) => putItem(collectionId, itemId, stacItem, etag)
-    },
-    collectionItemEndpoints.deleteItem.toRoutes {
+    }),
+    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.deleteItem)({
       case (collectionId, itemId) => deleteItem(collectionId, itemId)
-    },
-    collectionItemEndpoints.patchItem.toRoutes {
+    }),
+    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.patchItem)({
       case (collectionId, itemId, jsonPatch, etag) =>
         patchItem(collectionId, itemId, jsonPatch, etag)
-    }
+    })
   )
 
   val routesList: NonEmptyList[HttpRoutes[F]] = NonEmptyList.of(
-    collectionItemEndpoints.collectionItemsList.toRoutes { query =>
+    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemsList)({ query =>
       Function.tupled(listCollectionItems _)(query)
-    },
-    collectionItemEndpoints.collectionItemsUnique.toRoutes {
+    }),
+    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemsUnique)({
       case (collectionId, itemId) => getCollectionItemUnique(collectionId, itemId)
-    }
+    })
   ) ++ (if (enableTransactions) {
           transactionRoutes
         } else {

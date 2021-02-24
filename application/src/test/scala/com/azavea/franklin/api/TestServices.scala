@@ -1,12 +1,15 @@
 package com.azavea.franklin.api
 
-import cats.effect.{ContextShift, Sync}
+import cats.effect.{Concurrent, ContextShift, Timer}
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService, SearchService}
 import doobie.Transactor
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 
-class TestServices[F[_]: Sync](xa: Transactor[F])(implicit cs: ContextShift[F]) {
+class TestServices[F[_]: Concurrent](xa: Transactor[F])(
+    implicit cs: ContextShift[F],
+    timer: Timer[F]
+) {
 
   val apiConfig: ApiConfig =
     ApiConfig(
