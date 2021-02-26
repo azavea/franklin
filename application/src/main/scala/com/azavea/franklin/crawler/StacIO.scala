@@ -6,7 +6,7 @@ import cats.syntax.all._
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.azavea.stac4s.{`application/json`, StacCollection, StacItem, StacLink, StacLinkType}
 import geotrellis.store.s3.AmazonS3URI
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe.parser.decodeAccumulating
 import io.circe.{CursorOp, Decoder, DecodingFailure, Error => CirceError, ParsingFailure}
 import sttp.client._
