@@ -17,7 +17,7 @@ object Versions {
   val GuavaVersion            = "30.1-jre"
   val HikariVersion           = "4.0.2"
   val Http4sVersion           = "0.21.19"
-  val JtsVersion              = "1.16.1"
+  val JtsVersion              = "1.18.1"
   val LogbackVersion          = "1.2.3"
   val Log4CatsVersion         = "1.1.1"
   val MagnoliaVersion         = "0.17.0"
