@@ -4,7 +4,8 @@ import cats.effect.Concurrent
 import com.azavea.franklin.datamodel.{
   ItemRasterTileRequest,
   MapboxVectorTileFootprintRequest,
-  Quantile
+  Quantile,
+  TileJson
 }
 import com.azavea.franklin.error.NotFound
 import eu.timepit.refined.types.numeric.NonNegInt
@@ -66,10 +67,10 @@ class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean) {
       .description("MVT endpoint for a collection's footprint")
       .name("collectionFootprintTiles")
 
-  val collectionFootprintTileJson: Endpoint[String, NotFound, Json, Any] =
+  val collectionFootprintTileJson: Endpoint[String, NotFound, TileJson, Any] =
     endpoint.get
       .in(collectionFootprintTileJsonPath)
-      .out(jsonBody[Json])
+      .out(jsonBody[TileJson])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .description("TileJSON representation of this collection's footprint tiles")
       .name("collectionFootprintTileJSON")

@@ -6,11 +6,11 @@ import cats.data._
 import cats.effect._
 import cats.syntax.all._
 import com.azavea.franklin.api.endpoints._
-import com.azavea.franklin.database.StacCollectionDao
-import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 import com.azavea.franklin.datamodel.{
   ItemRasterTileRequest,
   MapboxVectorTileFootprintRequest,
+  TileInfo,
   TileJson
 }
 import com.azavea.franklin.error.{NotFound => NF}
@@ -132,15 +132,13 @@ class TileService[F[_]: Concurrent](
 
   def getCollectionFootprintTileJson(
       collectionId: String
-  ): F[Either[NF, Json]] = {
+  ): F[Either[NF, TileJson]] = {
     val decoded = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionO <- StacCollectionDao.getCollectionUnique(decoded).transact(xa)
     } yield {
       Either.fromOption(
-        collectionO map { collection =>
-          TileJson.fromStacCollection(collection, serverHost).asJson
-        },
+        collectionO map { collection => TileJson.fromStacCollection(collection, serverHost) },
         NF(s"Could not produce tile json for collection: $decoded")
       )
     }

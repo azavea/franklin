@@ -3,7 +3,7 @@ package com.azavea.franklin.api.endpoints
 import cats.effect.Concurrent
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database._
-import com.azavea.franklin.datamodel.PaginationToken
+import com.azavea.franklin.datamodel.{PaginationToken, StacSearchCollection}
 import com.azavea.stac4s.Bbox
 import com.azavea.stac4s.types.TemporalExtent
 import eu.timepit.refined.types.numeric.NonNegInt
@@ -63,17 +63,17 @@ class SearchEndpoints[F[_]: Concurrent] {
         filters.copy(next = filters.next orElse token)
       })(filters => (filters, filters.next))
 
-  val searchGet: Endpoint[SearchFilters, Unit, Json, Fs2Streams[F]] =
+  val searchGet: Endpoint[SearchFilters, Unit, StacSearchCollection, Fs2Streams[F]] =
     base.get
       .in(searchFilters)
-      .out(jsonBody[Json])
+      .out(jsonBody[StacSearchCollection])
       .description("Search endpoint for all collections")
       .name("search-get")
 
-  val searchPost: Endpoint[SearchFilters, Unit, Json, Fs2Streams[F]] =
+  val searchPost: Endpoint[SearchFilters, Unit, StacSearchCollection, Fs2Streams[F]] =
     base.post
       .in(searchPostInput)
-      .out(jsonBody[Json])
+      .out(jsonBody[StacSearchCollection])
       .description("Search endpoint using POST for all collections")
       .name("search-post")
 

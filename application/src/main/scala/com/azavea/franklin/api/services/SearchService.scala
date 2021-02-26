@@ -5,7 +5,7 @@ import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.SearchEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.{SearchFilters, StacItemDao}
-import com.azavea.franklin.datamodel.SearchMethod
+import com.azavea.franklin.datamodel.{SearchMethod, StacSearchCollection}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.numeric.NonNegInt
@@ -29,7 +29,10 @@ class SearchService[F[_]: Concurrent](
 
   val searchEndpoints = new SearchEndpoints[F]
 
-  def search(searchFilters: SearchFilters, searchMethod: SearchMethod): F[Either[Unit, Json]] = {
+  def search(
+      searchFilters: SearchFilters,
+      searchMethod: SearchMethod
+  ): F[Either[Unit, StacSearchCollection]] = {
     for {
       searchResult <- StacItemDao
         .getSearchResult(
@@ -46,7 +49,7 @@ class SearchService[F[_]: Concurrent](
           case _                          => item
         }
       }
-      Either.right(searchResult.copy(features = updatedFeatures).asJson)
+      Either.right(searchResult.copy(features = updatedFeatures))
     }
   }
 

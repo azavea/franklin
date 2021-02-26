@@ -46,7 +46,7 @@ class CollectionsService[F[_]: Concurrent](
 
   }
 
-  def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
+  def getCollectionUnique(rawCollectionId: String): F[Either[NF, StacCollection]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionOption <- StacCollectionDao
@@ -55,14 +55,14 @@ class CollectionsService[F[_]: Concurrent](
     } yield {
       Either.fromOption(
         collectionOption map { _.maybeAddTilesLink(enableTiles, apiHost) } map {
-          _.updateLinksWithHost(apiConfig).asJson
+          _.updateLinksWithHost(apiConfig)
         },
         NF(s"Collection $collectionId not found")
       )
     }
   }
 
-  def getCollectionTiles(rawCollectionId: String): F[Either[NF, (Json, String)]] = {
+  def getCollectionTiles(rawCollectionId: String): F[Either[NF, (TileInfo, String)]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionOption <- StacCollectionDao
@@ -72,7 +72,7 @@ class CollectionsService[F[_]: Concurrent](
       Either.fromOption(
         collectionOption.map(collection =>
           (
-            TileInfo.fromStacCollection(apiHost, collection).asJson,
+            TileInfo.fromStacCollection(apiHost, collection),
             collection.##.toString
           )
         ),
@@ -81,7 +81,7 @@ class CollectionsService[F[_]: Concurrent](
     }
   }
 
-  def createCollection(collection: StacCollection): F[Either[Unit, Json]] = {
+  def createCollection(collection: StacCollection): F[Either[Unit, StacCollection]] = {
     val newCollection = collection.copy(links =
       collection.links.filter({ link =>
         !Set[StacLinkType](StacLinkType.Item, StacLinkType.StacRoot, StacLinkType.Self)
@@ -104,7 +104,7 @@ class CollectionsService[F[_]: Concurrent](
     )
     for {
       inserted <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
-    } yield Right(inserted.asJson)
+    } yield Right(inserted)
   }
 
   def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = {

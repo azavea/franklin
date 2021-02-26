@@ -28,7 +28,8 @@ package object schemas {
   )
   implicit val schemaForGeometry: Schema[Geometry] = Schema(schemaForCirceJson.schemaType)
 
-  implicit val schemaForStacItem: Schema[StacItem]         = Schema(schemaForCirceJson.schemaType)
+  implicit val schemaForStacItem: Schema[StacItem] = Schema(schemaForCirceJson.schemaType)
+
   implicit val schemaForInvalidPatch: Schema[InvalidPatch] = Schema(schemaForCirceJson.schemaType)
 
   def decode(s: String): DecodeResult[TemporalExtent] = {
@@ -81,9 +82,6 @@ package object schemas {
   def encStacItem(stacItem: StacItem): Json = Encoder[StacItem].apply(stacItem)
 
   val jsonCodec: Codec.JsonCodec[Json] = implicitly[Codec.JsonCodec[Json]]
-
-  implicit val codecStacItem: Codec.JsonCodec[StacItem] =
-    jsonCodec.mapDecode(decStacItem)(encStacItem)
 
   implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
     Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
