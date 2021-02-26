@@ -12,11 +12,15 @@ import com.azavea.stac4s.types.TemporalExtent
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
 import io.circe.{Encoder, Json}
+import sttp.tapir.{SchemaType}
 import sttp.tapir.Codec.PlainCodec
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, DecodeResult, Schema}
 
 import scala.util.Try
+import sttp.tapir.Validator
+import sttp.tapir.FieldName
 
 package object schemas {
 
@@ -26,9 +30,6 @@ package object schemas {
   implicit val schemaForTemporalExtent: Schema[TemporalExtent] = Schema(
     schemaForCirceJson.schemaType
   )
-  implicit val schemaForGeometry: Schema[Geometry] = Schema(schemaForCirceJson.schemaType)
-
-  implicit val schemaForStacItem: Schema[StacItem] = Schema(schemaForCirceJson.schemaType)
 
   implicit val schemaForInvalidPatch: Schema[InvalidPatch] = Schema(schemaForCirceJson.schemaType)
 
@@ -86,4 +87,7 @@ package object schemas {
   implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
     Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
 
+  implicit val geometrySchema: Schema[Geometry] = implicitly[Schema[Geometry]]
+
+  implicit val itemSchema: Schema[StacItem] = implicitly[Schema[StacItem]]
 }
