@@ -8,19 +8,20 @@ import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s._
+import com.azavea.stac4s.extensions.layer.StacLayer
 import com.azavea.stac4s.types.TemporalExtent
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
 import io.circe.{Encoder, Json}
-import sttp.tapir.{SchemaType}
 import sttp.tapir.Codec.PlainCodec
+import sttp.tapir.FieldName
+import sttp.tapir.{SchemaType}
+import sttp.tapir.Validator
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, DecodeResult, Schema}
 
 import scala.util.Try
-import sttp.tapir.Validator
-import sttp.tapir.FieldName
 
 package object schemas {
 
@@ -90,4 +91,6 @@ package object schemas {
   implicit val geometrySchema: Schema[Geometry] = implicitly[Schema[Geometry]]
 
   implicit val itemSchema: Schema[StacItem] = implicitly[Schema[StacItem]]
+
+  implicit val layerSchema: Schema[StacLayer] = implicitly[Schema[StacLayer]]
 }
