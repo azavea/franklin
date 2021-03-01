@@ -10,6 +10,7 @@ import org.postgis.PGgeometry
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
+import com.azavea.stac4s.TwoDimBbox
 
 trait GeotrellisWktMeta {
 
@@ -35,6 +36,20 @@ trait GeotrellisWktMeta {
       val pgGeom = GeometryBuilder.geomFromString(wkt)
       new PGgeometry(pgGeom)
     })
+
+  private val extentToBbox = (extent: Extent) => {
+    TwoDimBbox(extent.xmin, extent.ymin, extent.xmax, extent.ymax)
+  }
+
+  private val bboxToExtent = (bbox: TwoDimBbox) => {
+    Extent(bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax)
+  }
+
+  implicit val TwodimBboxMeta: Meta[TwoDimBbox] =
+    GeometryMeta.imap(geom => extentToBbox(geom.extent))(bboxToExtent(_))
+
+  implicit val GeometryMeta: Meta[Geometry] =
+    GeometryType.imap(_.geom)(geom => Projected(geom, 4326))
 
   implicit val GeometryType: Meta[Projected[Geometry]] =
     geometryType[Geometry]
