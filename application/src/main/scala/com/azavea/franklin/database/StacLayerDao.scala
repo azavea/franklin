@@ -25,9 +25,105 @@ import java.time.Instant
 import com.azavea.stac4s.extensions.layer.StacLayer
 import doobie.util.Get
 import com.azavea.stac4s.extensions.layer.StacLayerProperties
+import cats.data.NonEmptyVector
+import com.azavea.franklin.datamodel.Superset
+import com.azavea.stac4s.extensions.layer.LayerItemExtension
+import cats.data.NonEmptyList
+import cats.data.Validated
 
 object StacLayerDao extends Dao[StacLayer] {
   val tableName = "layers"
 
   val selectF = fr"SELECT id, extent, geom, properties, links"
+
+  private def layerQuery(layer: StacLayer) = SearchFilters(
+    None,
+    None,
+    None,
+    Nil,
+    Nil,
+    None,
+    Map("layer:ids" -> List(Superset(NonEmptyVector.of(layer.id.toString.asJson)))),
+    None
+  )
+
+  def createLayer(layer: StacLayer): ConnectionIO[StacLayer] =
+    fr"""
+    INSERT INTO layers (id, extent, geom, properties, links) VALUES (
+      ${layer.id}, ${layer.bbox}, ${layer.geometry}, ${layer.properties}, ${layer.links}
+    )""".update.withUniqueGeneratedKeys[StacLayer]("id", "extent", "geom", "properties", "links")
+
+  def streamLayerItems(layer: StacLayer): fs2.Stream[ConnectionIO, StacItem] =
+    StacItemDao.query
+      .filter(layerQuery(layer))
+      .stream
+
+  def pageLayerItems(layer: StacLayer, page: Page): fs2.Stream[ConnectionIO, StacItem] =
+    StacItemDao.query.filter(layerQuery(layer)).pageStream(page)
+
+  def addItem(layer: StacLayer, itemId: String): ConnectionIO[Option[StacItem]] =
+    for {
+      itemO <- StacItemDao.query.filter(fr"id = ${itemId}").selectOption
+      updated <- itemO map { item =>
+        val itemLayers = item.getExtensionFields[LayerItemExtension] map { layers =>
+          layers.ids.append(layer.id)
+        } getOrElse { NonEmptyList.of(layer.id) }
+        item.addExtensionFields(LayerItemExtension(itemLayers))
+      } traverse { item => StacItemDao.updateStacItemUnsafe(item.id, item) }
+    } yield updated
+
+  private def removeOnlyLayer(item: StacItem): ConnectionIO[StacItem] = {
+    val patch          = Map("properties" -> Map("layer:ids" -> Option.empty[String]).asJson).asJsonObject
+    val itemProperties = item.properties
+    val patched        = item.copy(properties = itemProperties.deepMerge(patch.asJsonObject))
+    StacItemDao.updateStacItemUnsafe(item.id, patched)
+  }
+
+  /** Remove one layer from several layers on an item
+    *
+    * The type signature here requires you to be able to pass a layer id and a NonEmptyList
+    * of other layer ids, so this can only be called with an item that exists in at least two
+    * layers.
+    */
+  private def removeThisLayer(
+      item: StacItem,
+      layerIdsHead: NonEmptyString,
+      layerIdsTail: NonEmptyList[NonEmptyString],
+      layerId: NonEmptyString
+  ): ConnectionIO[StacItem] = {
+    val newLayerIds = if (layerIdsHead == layerId) {
+      layerIdsTail
+    } else if (layerIdsTail.head == layerId) {
+      NonEmptyList(layerIdsHead, layerIdsTail.tail)
+    } else {
+      NonEmptyList(
+        layerIdsHead,
+        List(layerIdsTail.head) ++ layerIdsTail.tail.filter(_ != layerId)
+      )
+    }
+
+    val patched = item.addExtensionFields(LayerItemExtension(newLayerIds))
+    StacItemDao.updateStacItemUnsafe(item.id, patched)
+  }
+
+  // if this is the only layer the item is in, patch it not to have the layer
+  // extension anymore.
+  // if it has multiple layers currently, update it to have the other layers, but
+  // not this one.
+  def removeItem(layer: StacLayer, itemId: String): ConnectionIO[Option[StacItem]] =
+    for {
+      itemO <- StacItemDao.query.filter(fr"id = ${itemId}").selectOption
+      updated <- itemO flatTraverse { item =>
+        item.getExtensionFields[LayerItemExtension] match {
+          case Validated.Valid(layerIds) =>
+            (layerIds.ids.tail.toNel match {
+              case None => removeOnlyLayer(item)
+              case Some(tail) =>
+                removeThisLayer(item, layerIds.ids.head, tail, layer.id)
+            }) map { Option(_) }
+          case Validated.Invalid(_) =>
+            Option.empty[StacItem].pure[ConnectionIO]
+        }
+      }
+    } yield updated
 }

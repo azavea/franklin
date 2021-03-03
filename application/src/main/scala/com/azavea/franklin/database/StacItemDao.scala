@@ -169,6 +169,16 @@ object StacItemDao extends Dao[StacItem] {
     fragment.update.withUniqueGeneratedKeys[StacItem]("item")
   }
 
+  /** Unsafe update the STAC Item
+    *
+    * In what sense is this unsafe? This does not check whether the update is starting
+    * from a stale / non-stale item and doesn't check whether the the new item refers to
+    * an existing collection. This should only be called in the same transaction in which
+    * an item has been fetched, for instance, when adding an item to a layer.
+    */
+  def updateStacItemUnsafe(itemId: String, updateItem: StacItem): ConnectionIO[StacItem] =
+    doUpdate(itemId, updateItem)
+
   def updateStacItem(
       collectionId: String,
       itemId: String,

@@ -4,6 +4,7 @@ import doobie.implicits._
 import doobie.postgres.implicits._
 import doobie.util.{Read, Write}
 import doobie.{LogHandler => _, _}
+import eu.timepit.refined.auto._
 
 import java.util.UUID
 
@@ -87,11 +88,17 @@ object Dao {
         .to[List]
     }
 
+    def stream: fs2.Stream[ConnectionIO, Model] =
+      (selectF ++ Fragments.whereAndOpt(filters: _*) ++ fr"ORDER BY created_at asc, serial_id, asc")
+        .query[Model]
+        .stream
+
     def count: ConnectionIO[Int] = (countF ++ Fragments.whereAndOpt(filters: _*)).query[Int].unique
 
-    def page(page: Page): ConnectionIO[List[Model]] = {
-      this.filter(page.next).list(page.limit.value)
-    }
+    def pageStream(page: Page): fs2.Stream[ConnectionIO, Model] =
+      this.filter(page.next).stream.take(page.limit.toLong)
+
+    def page(page: Page): ConnectionIO[List[Model]] = pageStream(page).compile.toList
 
     def selectQ: Query0[Model] =
       (selectF ++ Fragments.whereAndOpt(filters: _*)).query[Model]
