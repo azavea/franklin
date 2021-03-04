@@ -1,5 +1,6 @@
 package com.azavea.franklin.database
 
+import com.azavea.stac4s.TwoDimBbox
 import doobie._
 import doobie.postgres.pgisimplicits._
 import doobie.util.invariant.InvalidObjectMapping
@@ -10,7 +11,6 @@ import org.postgis.PGgeometry
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
-import com.azavea.stac4s.TwoDimBbox
 
 trait GeotrellisWktMeta {
 

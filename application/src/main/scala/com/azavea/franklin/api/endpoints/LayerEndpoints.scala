@@ -4,22 +4,32 @@ import cats.data.NonEmptyList
 import cats.effect.Concurrent
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.datamodel.CollectionItemsResponse
+import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.{CrudError, NotFound, ValidationError}
 import com.azavea.stac4s.extensions.layer.StacLayer
 import com.azavea.stac4s.{StacCatalog, StacItem}
+import eu.timepit.refined.types.numeric
+import eu.timepit.refined.types.string
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.model.StatusCode.{NotFound => NF, BadRequest}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
-import eu.timepit.refined.types.string
 
-class LayerEndpoints[F[_]: Concurrent](enableLayers: Boolean) {
+class LayerEndpoints[F[_]: Concurrent](enableLayers: Boolean, defaultLimit: numeric.NonNegInt) {
   val basePath = endpoint.in("layers")
 
   val listLayers =
     basePath
+      .in(
+        query[Option[PaginationToken]]("next")
+          .description("Opaque token to retrieve the next page of items")
+      )
+      .in(
+        query[Option[numeric.NonNegInt]]("limit")
+          .description(s"How many layers to return. Defaults to ${defaultLimit}")
+      )
       .out(jsonBody[StacCatalog])
       .description("List available ad hoc groups of items called \"layers\"")
 
@@ -34,12 +44,22 @@ class LayerEndpoints[F[_]: Concurrent](enableLayers: Boolean) {
     .errorOut(oneOf[CrudError](statusMapping(NF, jsonBody[NotFound].description("not found"))))
     .description("Fetch a specific STAC layer")
 
-  val deleteLayer = basePath.delete.errorOut(
-    oneOf[CrudError](statusMapping(NF, jsonBody[NotFound].description("not found")))
-  )
+  val deleteLayer = basePath.delete
+    .in(path[String])
+    .errorOut(
+      oneOf[CrudError](statusMapping(NF, jsonBody[NotFound].description("not found")))
+    )
 
   val getLayerItems = basePath.get
     .in(path[String] / "items")
+    .in(
+      query[Option[PaginationToken]]("next")
+        .description("Opaque token to retrieve the next page of items")
+    )
+    .in(
+      query[Option[numeric.NonNegInt]]("limit")
+        .description(s"How many items to return. Defaults to ${defaultLimit}")
+    )
     .out(jsonBody[CollectionItemsResponse])
     .errorOut(oneOf[CrudError](statusMapping(NF, jsonBody[NotFound].description("not found"))))
     .description("Fetch paginated items in a STAC layer")
@@ -58,6 +78,7 @@ class LayerEndpoints[F[_]: Concurrent](enableLayers: Boolean) {
         .description("Item IDs to use to replace items currently in this layer")
     )
     .out(jsonBody[StacLayer])
+    .errorOut(oneOf[CrudError](statusMapping(NF, jsonBody[NotFound].description("not found"))))
     .description("Replace items in this layer with other items by ID")
 
   val getLayerItem = basePath.get
@@ -90,7 +111,7 @@ class LayerEndpoints[F[_]: Concurrent](enableLayers: Boolean) {
     .out(jsonBody[StacLayer])
 
   val allEndpoints = if (enableLayers) {
-    NonEmptyList.of(
+    List(
       listLayers,
       createLayer,
       getLayer,
@@ -101,5 +122,5 @@ class LayerEndpoints[F[_]: Concurrent](enableLayers: Boolean) {
       getLayerItem,
       removeLayerItem
     )
-  }
+  } else Nil
 }

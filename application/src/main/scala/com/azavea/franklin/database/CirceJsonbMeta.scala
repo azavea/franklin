@@ -1,6 +1,8 @@
 package com.azavea.franklin.database
 
 import cats.syntax.all._
+import com.azavea.stac4s.StacLink
+import com.azavea.stac4s.extensions.layer.StacLayerProperties
 import com.azavea.stac4s.{StacCollection, StacItem}
 import doobie._
 import doobie.postgres.circe.jsonb.implicits._
@@ -8,8 +10,6 @@ import io.circe._
 import io.circe.syntax._
 
 import scala.reflect.runtime.universe.TypeTag
-import com.azavea.stac4s.extensions.layer.StacLayerProperties
-import com.azavea.stac4s.StacLink
 
 object CirceJsonbMeta {
 

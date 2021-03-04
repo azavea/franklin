@@ -1,17 +1,25 @@
 package com.azavea.franklin.database
 
+import cats.data.NonEmptyList
+import cats.data.NonEmptyVector
+import cats.data.Validated
 import cats.data.{EitherT, OptionT}
 import cats.syntax.all._
 import com.azavea.franklin.database
+import com.azavea.franklin.datamodel.Superset
 import com.azavea.franklin.datamodel.{Context, PaginationToken, SearchMethod, StacSearchCollection}
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
+import com.azavea.stac4s.extensions.layer.LayerItemExtension
+import com.azavea.stac4s.extensions.layer.StacLayer
+import com.azavea.stac4s.extensions.layer.StacLayerProperties
 import com.azavea.stac4s.syntax._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.implicits.javatime._
 import doobie.refined.implicits._
+import doobie.util.Get
 import doobie.util.update.Update
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
@@ -22,14 +30,6 @@ import io.circe.syntax._
 import io.circe.{DecodingFailure, Json}
 
 import java.time.Instant
-import com.azavea.stac4s.extensions.layer.StacLayer
-import doobie.util.Get
-import com.azavea.stac4s.extensions.layer.StacLayerProperties
-import cats.data.NonEmptyVector
-import com.azavea.franklin.datamodel.Superset
-import com.azavea.stac4s.extensions.layer.LayerItemExtension
-import cats.data.NonEmptyList
-import cats.data.Validated
 
 object StacLayerDao extends Dao[StacLayer] {
   val tableName = "layers"
@@ -110,10 +110,10 @@ object StacLayerDao extends Dao[StacLayer] {
   // extension anymore.
   // if it has multiple layers currently, update it to have the other layers, but
   // not this one.
-  def removeItem(layer: StacLayer, itemId: String): ConnectionIO[Option[StacItem]] =
+  def removeItem(layer: StacLayer, itemId: String): ConnectionIO[Option[StacLayer]] =
     for {
       itemO <- StacItemDao.query.filter(fr"id = ${itemId}").selectOption
-      updated <- itemO flatTraverse { item =>
+      _ <- itemO flatTraverse { item =>
         item.getExtensionFields[LayerItemExtension] match {
           case Validated.Valid(layerIds) =>
             (layerIds.ids.tail.toNel match {
@@ -125,5 +125,11 @@ object StacLayerDao extends Dao[StacLayer] {
             Option.empty[StacItem].pure[ConnectionIO]
         }
       }
-    } yield updated
+      postRemoval <- itemO traverse { _ => query.filter(fr"id = ${layer.id}").select }
+    } yield postRemoval
+
+  def getLayerItem(layer: StacLayer, itemId: String): ConnectionIO[Option[StacItem]] =
+    StacItemDao.query.filter(layerQuery(layer)).filter(fr"id=${itemId}").selectOption
+
+  def removeLayerItems(layer: StacLayer): ConnectionIO[Unit] = ???
 }
