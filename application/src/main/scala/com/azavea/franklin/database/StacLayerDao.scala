@@ -22,6 +22,7 @@ import doobie.refined.implicits._
 import doobie.util.Get
 import doobie.util.update.Update
 import eu.timepit.refined.auto._
+import eu.timepit.refined.cats._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
@@ -67,7 +68,7 @@ object StacLayerDao extends Dao[StacLayer] {
       itemO <- StacItemDao.query.filter(fr"id = ${itemId}").selectOption
       updated <- itemO map { item =>
         val itemLayers = item.getExtensionFields[LayerItemExtension] map { layers =>
-          layers.ids.append(layer.id)
+          layers.ids.append(layer.id).distinct
         } getOrElse { NonEmptyList.of(layer.id) }
         item.addExtensionFields(LayerItemExtension(itemLayers))
       } traverse { item => StacItemDao.updateStacItemUnsafe(item.id, item) }
