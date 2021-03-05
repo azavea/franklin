@@ -83,14 +83,8 @@ package object schemas {
   }
   def encStacItem(stacItem: StacItem): Json = Encoder[StacItem].apply(stacItem)
 
-  val jsonCodec: Codec.JsonCodec[Json] = implicitly[Codec.JsonCodec[Json]]
-
   implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
     Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
 
-  implicit val geometrySchema: Schema[Geometry] = implicitly[Schema[Geometry]]
-
-  implicit val itemSchema: Schema[StacItem] = implicitly[Schema[StacItem]]
-
-  implicit val layerSchema: Schema[StacLayer] = implicitly[Schema[StacLayer]]
+  implicit val geometrySchema: Schema[Geometry] = Schema(schemaForCirceJson.schemaType)
 }
