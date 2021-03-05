@@ -34,7 +34,7 @@ import java.time.Instant
 object StacLayerDao extends Dao[StacLayer] {
   val tableName = "layers"
 
-  val selectF = fr"SELECT id, extent, geom, properties, links"
+  val selectF = fr"SELECT id, geom, properties, links FROM" ++ tableF
 
   private def layerQuery(layer: StacLayer) = SearchFilters(
     None,
@@ -49,9 +49,15 @@ object StacLayerDao extends Dao[StacLayer] {
 
   def createLayer(layer: StacLayer): ConnectionIO[StacLayer] =
     fr"""
-    INSERT INTO layers (id, extent, geom, properties, links) VALUES (
-      ${layer.id}, ${layer.bbox}, ${layer.geometry}, ${layer.properties}, ${layer.links}
-    )""".update.withUniqueGeneratedKeys[StacLayer]("id", "extent", "geom", "properties", "links")
+    INSERT INTO layers (id, geom, properties, links) VALUES (
+      ${layer.id}, ${layer.geometry}, ${layer.properties}, ${layer.links}
+    )""".update
+      .withUniqueGeneratedKeys[
+        (String, Projected[Geometry], StacLayerProperties, List[StacLink])
+      ]("id", "geom", "properties", "links")
+      .map({
+        case (_1, _2, _3, _4) => StacLayer(NonEmptyString.unsafeFrom(_1), _2, _3, _4)
+      })
 
   def streamLayerItems(layer: StacLayer): fs2.Stream[ConnectionIO, StacItem] =
     StacItemDao.query
@@ -130,6 +136,4 @@ object StacLayerDao extends Dao[StacLayer] {
 
   def getLayerItem(layer: StacLayer, itemId: String): ConnectionIO[Option[StacItem]] =
     StacItemDao.query.filter(layerQuery(layer)).filter(fr"id=${itemId}").selectOption
-
-  def removeLayerItems(layer: StacLayer): ConnectionIO[Unit] = ???
 }

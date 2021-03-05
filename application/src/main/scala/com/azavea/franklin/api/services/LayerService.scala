@@ -59,7 +59,7 @@ class LayerService[F[_]: Concurrent](
         Right(
           StacCatalog(
             "1.0.0-beta2",
-            List("layers"),
+            Nil,
             "layers-response",
             None,
             "Available layers",
@@ -184,26 +184,29 @@ class LayerService[F[_]: Concurrent](
       Either.fromOption(_, NotFound())
     }
 
-  def routes = if (enableLayers) {
-    Http4sServerInterpreter.toRoutes(endpoints.listLayers)({
-      case (tokenO, limit) => listLayers(tokenO, limit)
-    }) <+>
-      Http4sServerInterpreter.toRoutes(endpoints.createLayer)(createLayer) <+>
-      Http4sServerInterpreter.toRoutes(endpoints.getLayer)(getLayer) <+>
-      Http4sServerInterpreter.toRoutes(endpoints.deleteLayer)(deleteLayer) <+>
-      Http4sServerInterpreter.toRoutes(endpoints.getLayerItems)({
-        case (layerId, tokenO, limit) => getLayerItems(layerId, tokenO, limit)
+  def routes =
+    if (enableLayers) {
+      Http4sServerInterpreter.toRoutes(endpoints.listLayers)({
+        case (tokenO, limit) => listLayers(tokenO, limit)
       }) <+>
-      Http4sServerInterpreter.toRoutes(endpoints.addLayerItems)({
-        case (layerId, itemIds) => addLayerItems(layerId, itemIds)
-      }) <+>
-      Http4sServerInterpreter.toRoutes(endpoints.replaceLayerItems)({
-        case (layerId, itemIds) => replaceLayerItems(layerId, itemIds)
-      }) <+>
-      Http4sServerInterpreter.toRoutes(endpoints.getLayerItem)({
-        case (layerId, itemId) => getLayerItem(layerId, itemId)
-      }) <+> Http4sServerInterpreter.toRoutes(endpoints.removeLayerItem)({
-      case (layerId, itemId) => removeLayerItem(layerId, itemId)
-    })
-  }
+        Http4sServerInterpreter.toRoutes(endpoints.createLayer)(createLayer) <+>
+        Http4sServerInterpreter.toRoutes(endpoints.getLayer)(getLayer) <+>
+        Http4sServerInterpreter.toRoutes(endpoints.deleteLayer)(deleteLayer) <+>
+        Http4sServerInterpreter.toRoutes(endpoints.getLayerItems)({
+          case (layerId, tokenO, limit) => getLayerItems(layerId, tokenO, limit)
+        }) <+>
+        Http4sServerInterpreter.toRoutes(endpoints.addLayerItems)({
+          case (layerId, itemIds) => addLayerItems(layerId, itemIds)
+        }) <+>
+        Http4sServerInterpreter.toRoutes(endpoints.replaceLayerItems)({
+          case (layerId, itemIds) => replaceLayerItems(layerId, itemIds)
+        }) <+>
+        Http4sServerInterpreter.toRoutes(endpoints.getLayerItem)({
+          case (layerId, itemId) => getLayerItem(layerId, itemId)
+        }) <+> Http4sServerInterpreter.toRoutes(endpoints.removeLayerItem)({
+        case (layerId, itemId) => removeLayerItem(layerId, itemId)
+      })
+    } else {
+      HttpRoutes.empty[F]
+    }
 }

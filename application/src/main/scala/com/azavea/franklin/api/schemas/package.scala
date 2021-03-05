@@ -87,4 +87,6 @@ package object schemas {
     Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
 
   implicit val geometrySchema: Schema[Geometry] = Schema(schemaForCirceJson.schemaType)
+
+  implicit val catalogSchema: Schema[StacCatalog] = Schema(schemaForCirceJson.schemaType)
 }

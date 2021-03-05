@@ -144,12 +144,15 @@ class TileService[F[_]: Concurrent](
     }
   }
 
-  val routes: HttpRoutes[F] =
+  val routes: HttpRoutes[F] = if (enableTiles) {
     Http4sServerInterpreter.toRoutes(tileEndpoints.itemRasterTileEndpoint)(getItemRasterTile) <+>
       Http4sServerInterpreter.toRoutes(tileEndpoints.collectionFootprintTileEndpoint)(
         getCollectionFootprintTile
       ) <+> Http4sServerInterpreter.toRoutes(tileEndpoints.collectionFootprintTileJson)(
       getCollectionFootprintTileJson
     )
+  } else {
+    HttpRoutes.empty[F]
+  }
 
 }

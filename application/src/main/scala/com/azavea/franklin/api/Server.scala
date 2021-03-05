@@ -30,6 +30,7 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import com.azavea.franklin.api.endpoints.LayerEndpoints
 
 object Server extends IOApp.WithContext {
 
@@ -98,7 +99,7 @@ $$$$
         IO
       ](
         apiConfig.enableTiles
-      ).endpoints
+      ).endpoints ++ new LayerEndpoints[IO](apiConfig.enableLayers, apiConfig.defaultLimit).allEndpoints
       docs      = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       searchRoutes = new SearchService[IO](
@@ -107,7 +108,8 @@ $$$$
         apiConfig.enableTiles,
         xa
       ).routes
-      tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+      tileRoutes  = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+      layerRoutes = new LayerService[IO](apiConfig, xa).routes
       collectionRoutes = new CollectionsService[IO](xa, apiConfig).routes <+> new CollectionItemsService[
         IO
       ](
@@ -117,7 +119,7 @@ $$$$
       router = CORS(
         Router(
           "/" -> ResponseLogger.httpRoutes(false, false)(
-            collectionRoutes <+> searchRoutes <+> tileRoutes <+> docRoutes
+            collectionRoutes <+> searchRoutes <+> tileRoutes <+> layerRoutes <+> docRoutes
           )
         )
       ).orNotFound

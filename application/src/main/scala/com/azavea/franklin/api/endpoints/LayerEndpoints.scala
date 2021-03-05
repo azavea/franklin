@@ -21,7 +21,7 @@ class LayerEndpoints[F[_]: Concurrent](enableLayers: Boolean, defaultLimit: nume
   val basePath = endpoint.in("layers")
 
   val listLayers =
-    basePath
+    basePath.get
       .in(
         query[Option[PaginationToken]]("next")
           .description("Opaque token to retrieve the next page of items")
