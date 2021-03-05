@@ -1,15 +1,14 @@
 CREATE TABLE layers (
     id text primary key,
     geom geometry ('GEOMETRY', 4326) not null,
-    properties jsonb not null,
-    links jsonb not null,
+    layer jsonb not null,
     created_at timestamp with time zone not null default now(),
     serial_id serial not null
 );
 
-CREATE INDEX IF NOT EXISTS layers_start_datetime_idx ON layers USING gin ((properties -> 'start_datetime'));
+CREATE INDEX IF NOT EXISTS layers_start_datetime_idx ON layers USING gin ((layer -> 'properties' -> 'start_datetime'));
 
-CREATE INDEX IF NOT EXISTS layers_end_datetime_idx ON layers USING gin ((properties -> 'end_datetime'));
+CREATE INDEX IF NOT EXISTS layers_end_datetime_idx ON layers USING gin ((layer -> 'properties' -> 'end_datetime'));
 
 CREATE INDEX IF NOT EXISTS layers_geometry_idx ON layers USING gist(geom);
 

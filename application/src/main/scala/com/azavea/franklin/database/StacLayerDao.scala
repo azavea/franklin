@@ -34,7 +34,7 @@ import java.time.Instant
 object StacLayerDao extends Dao[StacLayer] {
   val tableName = "layers"
 
-  val selectF = fr"SELECT id, geom, properties, links FROM" ++ tableF
+  val selectF = fr"SELECT layer FROM" ++ tableF
 
   private def layerQuery(layer: StacLayer) = SearchFilters(
     None,
@@ -49,15 +49,10 @@ object StacLayerDao extends Dao[StacLayer] {
 
   def createLayer(layer: StacLayer): ConnectionIO[StacLayer] =
     fr"""
-    INSERT INTO layers (id, geom, properties, links) VALUES (
-      ${layer.id}, ${layer.geometry}, ${layer.properties}, ${layer.links}
+    INSERT INTO layers (id, geom, layer) VALUES (
+      ${layer.id}, ${layer.geometry}, $layer
     )""".update
-      .withUniqueGeneratedKeys[
-        (String, Projected[Geometry], StacLayerProperties, List[StacLink])
-      ]("id", "geom", "properties", "links")
-      .map({
-        case (_1, _2, _3, _4) => StacLayer(NonEmptyString.unsafeFrom(_1), _2, _3, _4)
-      })
+      .withUniqueGeneratedKeys[StacLayer]("layer")
 
   def streamLayerItems(layer: StacLayer): fs2.Stream[ConnectionIO, StacItem] =
     StacItemDao.query

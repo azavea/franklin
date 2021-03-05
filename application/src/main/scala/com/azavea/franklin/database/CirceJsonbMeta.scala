@@ -10,6 +10,7 @@ import io.circe._
 import io.circe.syntax._
 
 import scala.reflect.runtime.universe.TypeTag
+import com.azavea.stac4s.extensions.layer.StacLayer
 
 object CirceJsonbMeta {
 
@@ -23,9 +24,5 @@ object CirceJsonbMeta {
 trait CirceJsonbMeta {
   implicit val stacItemMeta: Meta[StacItem]             = CirceJsonbMeta[StacItem]
   implicit val stacCollectionMeta: Meta[StacCollection] = CirceJsonbMeta[StacCollection]
-
-  implicit val stacLayerPropertiesMeta: Meta[StacLayerProperties] =
-    CirceJsonbMeta[StacLayerProperties]
-
-  implicit val listStacLinkMeta: Meta[List[StacLink]] = CirceJsonbMeta[List[StacLink]]
+  implicit val stacLayerMeta: Meta[StacLayer]           = CirceJsonbMeta[StacLayer]
 }

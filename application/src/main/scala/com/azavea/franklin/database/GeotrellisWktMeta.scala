@@ -1,6 +1,5 @@
 package com.azavea.franklin.database
 
-import com.azavea.stac4s.TwoDimBbox
 import doobie._
 import doobie.postgres.pgisimplicits._
 import doobie.util.invariant.InvalidObjectMapping
