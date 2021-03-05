@@ -12,7 +12,7 @@ CREATE INDEX IF NOT EXISTS layers_end_datetime_idx ON layers USING gin ((layer -
 
 CREATE INDEX IF NOT EXISTS layers_geometry_idx ON layers USING gist(geom);
 
-CREATE INDEX IF NOT EXISTS item_layer_idx ON items USING gist ((item -> 'properties' -> 'layer:ids'));
+CREATE INDEX IF NOT EXISTS item_layer_idx ON collection_items USING gin ((item -> 'properties' -> 'layer:ids'));
 
 CREATE INDEX layers_serial_id_idx ON layers (serial_id);
 
