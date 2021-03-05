@@ -144,11 +144,11 @@ $$$$
           createServer(apiConfig, dbConfig).use(_ => IO.never).as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
       case RunCatalogImport(catalogRoot, dbConfig, dryRun) =>
-        AsyncHttpClientCatsBackend[IO]() flatMap { implicit backend =>
+        AsyncHttpClientCatsBackend.resource[IO]() use { implicit backend =>
           runCatalogImport(catalogRoot, dbConfig, dryRun) map { _ => ExitCode.Success }
         }
       case RunItemsImport(collectionId, itemUris, dbConfig, dryRun) => {
-        AsyncHttpClientCatsBackend[IO]() flatMap { implicit backend =>
+        AsyncHttpClientCatsBackend.resource[IO]() use { implicit backend =>
           runStacItemImport(collectionId, itemUris, dbConfig, dryRun) map {
             case Left(error) => {
               println(s"Import failed: $error")
