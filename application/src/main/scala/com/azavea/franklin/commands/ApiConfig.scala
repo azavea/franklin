@@ -12,6 +12,7 @@ case class ApiConfig(
     defaultLimit: NonNegInt,
     enableTransactions: Boolean,
     enableTiles: Boolean,
+    enableLayers: Boolean,
     runMigrations: Boolean
 ) {
 

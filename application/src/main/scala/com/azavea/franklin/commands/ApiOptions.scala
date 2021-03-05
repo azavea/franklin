@@ -97,6 +97,22 @@ trait ApiOptions {
         .toValidatedNel
     } withDefault (false)
 
+  private val enableLayersHelp = "Whether to include layer endpoints. Default: 'false'."
+
+  private val enableLayers = Opts
+    .flag(
+      "with-layers",
+      help = enableLayersHelp
+    )
+    .orFalse orElse Opts
+    .env[String]("API_WITH_LAYERS", help = enableLayersHelp, metavar = "true||false")
+    .mapValidated { s =>
+      Validated
+        .fromTry(Try(s.toBoolean))
+        .leftMap(_ => s"Expected to find a value that can convert to a Boolean, but got $s")
+        .toValidatedNel
+    } withDefault (false)
+
   private val runMigrations =
     Opts.flag("run-migrations", "Run migrations before the API server starts").orFalse
 
@@ -109,6 +125,7 @@ trait ApiOptions {
     defaultLimit,
     enableTransactions,
     enableTiles,
+    enableLayers,
     runMigrations
   ) mapN ApiConfig
 }
