@@ -4,8 +4,7 @@ import cats.data.EitherT
 import cats.data.NonEmptyList
 import cats.effect.{ContextShift, IO}
 import cats.syntax.all._
-import com.azavea.franklin.database.StacCollectionDao
-import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.database.{getItemsBulkExtent, StacCollectionDao, StacItemDao}
 import com.azavea.stac4s._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -44,7 +43,13 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
           List.empty,
           itemList.toList
         ).updateLinks
-        val amountInserted = StacItemDao.insertManyStacItems(collectionWrapper.items).transact(xa)
+        val amountInserted = (
+          StacItemDao.insertManyStacItems(collectionWrapper.items)
+            <* StacCollectionDao.updateExtent(
+              collectionId,
+              getItemsBulkExtent(collectionWrapper.items)
+            )
+        ).transact(xa)
         EitherT.right[String](amountInserted)
       }
     } yield {

@@ -137,28 +137,6 @@ object StacItemDao extends Dao[StacItem] {
   )
 
   def insertManyStacItems(items: List[StacItem]): ConnectionIO[Int] = {
-    val bulkExtent = items.foldLeft(BulkExtent(None, None, None))({
-      case (BulkExtent(start, end, bbox), item) => {
-        val itemDt   = item.properties.asJson.hcursor.downField("datetime").as[Instant].toOption
-        val itemBbox = item.bbox
-        val newBbox  = bbox.map(box => box.union(itemBbox)) getOrElse itemBbox
-        val newEndpoints = itemDt flatMap { newDt =>
-          (start map { dt =>
-            if (dt.isBefore(newDt)) { dt }
-            else newDt
-          } orElse Some(newDt), end map { dt =>
-            if (dt.isAfter(newDt)) dt else newDt
-          } orElse Some(newDt)).tupled
-        }
-
-        newEndpoints match {
-          case Some((newStart, newEnd)) =>
-            ExtentUpdate(Some(newStart), Some(newEnd), Some(newBbox))
-          case None => ExtentUpdate(start, end, Some(newBbox))
-        }
-
-      }
-    })
     val insertFragment = """
       INSERT INTO collection_items (id, geom, item, collection)
       VALUES
@@ -178,7 +156,9 @@ object StacItemDao extends Dao[StacItem] {
       (${item.id}, $projectedGeometry, $item, ${item.collection})
       """
     insertFragment.update
-      .withUniqueGeneratedKeys[StacItem]("item")
+      .withUniqueGeneratedKeys[StacItem]("item") <* (item.collection traverse { collectionId =>
+      StacCollectionDao.updateExtent(collectionId, getItemsBulkExtent(List(item)))
+    })
   }
 
   def getCollectionItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] =
@@ -197,6 +177,12 @@ object StacItemDao extends Dao[StacItem] {
     fragment.update.withUniqueGeneratedKeys[StacItem]("item")
   }
 
+  // TODO if an item's new geometry _at least contains_ its previous geometry,
+  // update the item's collection's extent the normal way
+  // if it's smaller, we have less information -- the extent _might_ need to change
+  // but might not, so recalculate the item's collection's extent in the background
+  // also recalculate extent in the background for deletes.
+  // actual "ship it to the background" will happen in services.
   def updateStacItem(
       collectionId: String,
       itemId: String,

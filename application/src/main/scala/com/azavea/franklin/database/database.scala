@@ -6,9 +6,12 @@ import doobie.implicits.javasql._
 import doobie.util.meta.Meta
 import doobie.util.{Read, Write}
 import io.circe.{Decoder, Encoder}
+import io.circe.syntax._
 
 import java.sql.Timestamp
 import java.time.Instant
+import com.azavea.stac4s.StacItem
+import com.azavea.franklin.datamodel.BulkExtent
 
 package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filterables {
 
@@ -56,6 +59,30 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
         }
     }
   }
+
+  def getItemsBulkExtent(items: List[StacItem]) =
+    items.foldLeft(BulkExtent(None, None, None))({
+      case (BulkExtent(start, end, bbox), item) => {
+        val itemDt   = item.properties.asJson.hcursor.downField("datetime").as[Instant].toOption
+        val itemBbox = item.bbox
+        val newBbox  = bbox.map(box => box.union(itemBbox)) getOrElse itemBbox
+        val newEndpoints = itemDt flatMap { newDt =>
+          (start map { dt =>
+            if (dt.isBefore(newDt)) { dt }
+            else newDt
+          } orElse Some(newDt), end map { dt =>
+            if (dt.isAfter(newDt)) dt else newDt
+          } orElse Some(newDt)).tupled
+        }
+
+        newEndpoints match {
+          case Some((newStart, newEnd)) =>
+            BulkExtent(Some(newStart), Some(newEnd), Some(newBbox))
+          case None => BulkExtent(start, end, Some(newBbox))
+        }
+
+      }
+    })
 
   implicit val encoderTemporalExtent: Encoder[TemporalExtent] =
     Encoder.encodeString.contramap[TemporalExtent] { extent => temporalExtentToString(extent) }

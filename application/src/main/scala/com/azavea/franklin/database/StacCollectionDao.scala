@@ -21,7 +21,7 @@ object StacCollectionDao extends Dao[StacCollection] {
     selectF.query[StacCollection].to[List]
   }
 
-  private[database] def updateExtent(
+  def updateExtent(
       collectionId: String,
       bulkExtent: BulkExtent
   ): ConnectionIO[Option[StacCollection]] = ???
