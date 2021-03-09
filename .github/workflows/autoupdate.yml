@@ -1,0 +1,18 @@
+name: Rebase on main
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+
+jobs:
+  rebase-on-master:
+    name: "Rebase experimental on master"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Rebase on master
+        run: "git checkout experimental && git rebase master"
+
+      - name: Update upstream
+        run: "git push -f origin experimental"
