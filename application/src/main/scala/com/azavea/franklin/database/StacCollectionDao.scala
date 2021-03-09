@@ -3,7 +3,7 @@ package com.azavea.franklin.database
 import cats.data.OptionT
 import cats.syntax.foldable._
 import cats.syntax.list._
-import com.azavea.franklin.datamodel.MapboxVectorTileFootprintRequest
+import com.azavea.franklin.datamodel.{BulkExtent, MapboxVectorTileFootprintRequest}
 import com.azavea.stac4s._
 import doobie._
 import doobie.free.connection.ConnectionIO
@@ -20,6 +20,11 @@ object StacCollectionDao extends Dao[StacCollection] {
   def listCollections(): ConnectionIO[List[StacCollection]] = {
     selectF.query[StacCollection].to[List]
   }
+
+  private[database] def updateExtent(
+      collectionId: String,
+      bulkExtent: BulkExtent
+  ): ConnectionIO[Option[StacCollection]] = ???
 
   def getCollectionCount(): ConnectionIO[Int] = {
     sql"select count(*) from collections".query[Int].unique

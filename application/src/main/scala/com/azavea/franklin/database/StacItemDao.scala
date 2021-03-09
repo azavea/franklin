@@ -2,7 +2,13 @@ package com.azavea.franklin.database
 
 import cats.data.{EitherT, OptionT}
 import cats.syntax.all._
-import com.azavea.franklin.datamodel.{Context, PaginationToken, SearchMethod, StacSearchCollection}
+import com.azavea.franklin.datamodel.{
+  BulkExtent,
+  Context,
+  PaginationToken,
+  SearchMethod,
+  StacSearchCollection
+}
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.syntax._
@@ -131,6 +137,28 @@ object StacItemDao extends Dao[StacItem] {
   )
 
   def insertManyStacItems(items: List[StacItem]): ConnectionIO[Int] = {
+    val bulkExtent = items.foldLeft(BulkExtent(None, None, None))({
+      case (BulkExtent(start, end, bbox), item) => {
+        val itemDt   = item.properties.asJson.hcursor.downField("datetime").as[Instant].toOption
+        val itemBbox = item.bbox
+        val newBbox  = bbox.map(box => box.union(itemBbox)) getOrElse itemBbox
+        val newEndpoints = itemDt flatMap { newDt =>
+          (start map { dt =>
+            if (dt.isBefore(newDt)) { dt }
+            else newDt
+          } orElse Some(newDt), end map { dt =>
+            if (dt.isAfter(newDt)) dt else newDt
+          } orElse Some(newDt)).tupled
+        }
+
+        newEndpoints match {
+          case Some((newStart, newEnd)) =>
+            ExtentUpdate(Some(newStart), Some(newEnd), Some(newBbox))
+          case None => ExtentUpdate(start, end, Some(newBbox))
+        }
+
+      }
+    })
     val insertFragment = """
       INSERT INTO collection_items (id, geom, item, collection)
       VALUES
