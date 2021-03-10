@@ -8,7 +8,7 @@ object Versions {
   val CirceFs2Version         = "0.13.0"
   val CirceVersion            = "0.13.0"
   val DeclineVersion          = "1.4.0"
-  val DoobieVersion           = "0.10.0"
+  val DoobieVersion           = "0.12.1"
   val EmojiVersion            = "1.2.1"
   val Flyway                  = "7.6.0"
   val Fs2Version              = "2.5.0"
