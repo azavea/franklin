@@ -17,6 +17,10 @@ ALTER TABLE
 ADD
     COLUMN datetime timestamp with time zone;
 
+-- in a testing setting, this temp table hasn't disappeared
+-- by the time migration 8 needs to be applied 🤦🏻‍♂️
+DROP TABLE IF EXISTS collection_items_tmp;
+
 CREATE TEMP TABLE collection_items_tmp AS (
     SELECT
         id,
