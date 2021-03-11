@@ -63,23 +63,22 @@ object StacItemDao extends Dao[StacItem] {
       case (serialId, createdAt) => PaginationToken(createdAt, serialId)
     }).value
 
-  def getSearchResult(
-      searchFilters: SearchFilters,
+  def getSearchLinks(
+      items: List[StacItem],
       limit: NonNegInt,
+      searchFilters: SearchFilters,
       apiHost: NonEmptyString,
       searchMethod: SearchMethod
-  ): ConnectionIO[StacSearchCollection] = {
+  ): ConnectionIO[List[StacLink]] =
     for {
-      items <- query.filter(searchFilters).list(limit.value)
       nextToken <- items.lastOption traverse { item =>
         getPaginationToken(item.id)
       } map { _.flatten }
       nextExists <- nextToken traverse { token =>
         query.filter(searchFilters.copy(next = Some(token), limit = Some(1))).exists
       }
-      matched <- query.filter(searchFilters.copy(next = None)).count
     } yield {
-      val links = (nextExists, nextToken, searchMethod, searchFilters.asQueryParameters) match {
+      (nextExists, nextToken, searchMethod, searchFilters.asQueryParameters) match {
         case (Some(true), Some(token), SearchMethod.Get, "") =>
           List(
             StacLink(
@@ -117,10 +116,11 @@ object StacItemDao extends Dao[StacItem] {
           )
         case _ => Nil
       }
-      val metadata = Context(items.length, matched)
-      StacSearchCollection(metadata, items, links)
     }
-  }
+
+  def getSearchContext(
+      searchFilters: SearchFilters
+  ): ConnectionIO[Int] = query.filter(searchFilters.copy(next = None)).count
 
   // This is only used to make the bulk insert happy and make the number of parameters line up
   private case class StacItemBulkImport(
