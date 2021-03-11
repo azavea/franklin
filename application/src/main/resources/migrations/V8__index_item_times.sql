@@ -61,3 +61,7 @@ INSERT INTO
         from
             collection_items_tmp
     );
+
+-- this cleanup will mean that future migrations won't have to drop
+-- the table twice to be applicable in test settings, just once at the end
+DROP TABLE IF EXISTS collection_items_tmp;
