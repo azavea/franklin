@@ -10,6 +10,7 @@ import doobie.refined.implicits._
 import doobie.{Query => _, _}
 import geotrellis.vector.Projected
 import io.circe.syntax._
+import io.circe.Json
 
 trait FilterHelpers {
 
@@ -30,13 +31,18 @@ trait FilterHelpers {
 
   implicit class QueryWithFilter(query: Query) {
 
+    private val printJson = (js: Json) => js.noSpaces.replace("\"", "")
+
+    private def eqCheck(field: String, value: Json): Fragment =
+      Fragment.const(s"""item -> 'properties' @> '{"$field": "${printJson(value)}"}' :: jsonb""")
+
     def toFilterFragment(field: String) = {
       val fieldFragment = Fragment.const(s"item -> 'properties' -> '$field'")
       query match {
         case Equals(value) =>
-          fieldFragment ++ fr"= $value"
+          eqCheck(field, value)
         case NotEqualTo(value) =>
-          fieldFragment ++ fr"<> $value"
+          fr"NOT" ++ eqCheck(field, value)
         case GreaterThan(floor) =>
           fieldFragment ++ fr"> $floor"
         case GreaterThanEqual(floor) =>
@@ -51,7 +57,10 @@ trait FilterHelpers {
           Fragment.const(s"right(item ->> '$field', ${postfix.value.length})") ++ fr"= $postfix"
         case Contains(substring) =>
           Fragment.const(s"strpos(item ->> '$field', '$substring') > 0")
-        case In(values)       => Fragments.in(fieldFragment, values)
+        case In(values) =>
+          values.tail.foldLeft(eqCheck(field, values.head))({
+            case (acc, v) => acc ++ fr"OR" ++ eqCheck(field, v)
+          })
         case Superset(values) => fieldFragment ++ fr"@> ${values.asJson}"
       }
     }
@@ -117,12 +126,14 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
             )
         }).toList map { Some(_) }
 
-      List(collectionsFilter, idFilter, geometryFilter, bboxFilter, temporalExtentFilter) ++ queryExtFilter ++ Filterable
-        .summon[
-          Any,
-          Option[PaginationToken]
-        ]
-        .toFilters(searchFilters.next)
+      val out =
+        List(collectionsFilter, idFilter, geometryFilter, bboxFilter, temporalExtentFilter) ++ queryExtFilter ++ Filterable
+          .summon[
+            Any,
+            Option[PaginationToken]
+          ]
+          .toFilters(searchFilters.next)
+      out
     }
 
   implicit val extensionNamesFilter: Filterable[Any, List[ExtensionName]] =
