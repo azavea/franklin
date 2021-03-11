@@ -18,13 +18,11 @@ trait FilterHelpers {
     def toFilterFragment: Option[Fragment] = {
       temporalExtent.value match {
         case Some(start) :: Some(end) :: _ =>
-          Some(
-            fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ >= $start AND (item #>> '{properties, datetime}') :: TIMESTAMPTZ <= $end"
-          )
+          Some(fr"(datetime >= $start AND datetime <= $end)")
         case Some(start) :: _ =>
-          Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ >= $start")
+          Some(fr"datetime >= $start")
         case _ :: Some(end) :: _ =>
-          Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ <= $end")
+          Some(fr"datetime <= $end")
         case _ => None
       }
     }
