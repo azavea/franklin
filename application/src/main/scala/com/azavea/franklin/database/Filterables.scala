@@ -9,8 +9,8 @@ import doobie.postgres.circe.jsonb.implicits._
 import doobie.refined.implicits._
 import doobie.{Query => _, _}
 import geotrellis.vector.Projected
-import io.circe.syntax._
 import io.circe.Json
+import io.circe.syntax._
 
 trait FilterHelpers {
 
