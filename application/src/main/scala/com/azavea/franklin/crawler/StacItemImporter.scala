@@ -20,7 +20,7 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
 
   private def getCollection(xa: Transactor[IO]): EitherT[IO, String, StacCollection] =
     EitherT {
-      StacCollectionDao.getCollectionUnique(collectionId).transact(xa).map { collectionOption =>
+      StacCollectionDao.getCollection(collectionId).transact(xa).map { collectionOption =>
         Either
           .fromOption(collectionOption, s"Could not read collection: $collectionId from database")
       }

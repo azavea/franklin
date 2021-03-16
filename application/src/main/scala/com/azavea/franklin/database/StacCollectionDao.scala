@@ -30,20 +30,16 @@ object StacCollectionDao extends Dao[StacCollection] {
     sql"select count(*) from collections".query[Int].unique
   }
 
-  def getCollectionUnique(
+  def getCollection(
       collectionId: String
-  ): ConnectionIO[Option[StacCollection]] = {
-    (selectF ++ Fragments.whereAnd(
-      fr"id = $collectionId"
-    )).query[StacCollection].option
-  }
+  ): ConnectionIO[Option[StacCollection]] = query.filter(fr"id = $collectionId").selectOption
 
   def insertStacCollection(
       collection: StacCollection,
       parentId: Option[String]
   ): ConnectionIO[StacCollection] = {
 
-    OptionT { getCollectionUnique(collection.id) } getOrElseF {
+    OptionT { getCollection(collection.id) } getOrElseF {
       val insertFragment = fr"""
       INSERT INTO collections (id, parent, collection)
       VALUES

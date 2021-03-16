@@ -190,10 +190,13 @@ object StacItemDao extends Dao[StacItem] {
       etag: String
   ): ConnectionIO[Either[StacItemDaoError, StacItem]] =
     (for {
-      itemInDB <- EitherT.fromOptionF[ConnectionIO, StacItemDaoError, StacItem](
-        getCollectionItem(collectionId, itemId),
-        ItemNotFound: StacItemDaoError
-      )
+      (itemInDB, collectionInDb) <- EitherT
+        .fromOptionF[ConnectionIO, StacItemDaoError, (StacItem, StacCollection)](
+          (getCollectionItem(collectionId, itemId), StacCollectionDao.getCollection(collectionId)).tupled map {
+            _.tupled
+          },
+          ItemNotFound: StacItemDaoError
+        )
       etagInDb = itemInDB.##
       update <- if (etagInDb.toString == etag) {
         EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }

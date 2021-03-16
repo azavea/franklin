@@ -50,7 +50,7 @@ class CollectionsService[F[_]: Concurrent](
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionOption <- StacCollectionDao
-        .getCollectionUnique(collectionId)
+        .getCollection(collectionId)
         .transact(xa)
     } yield {
       Either.fromOption(
@@ -66,7 +66,7 @@ class CollectionsService[F[_]: Concurrent](
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionOption <- StacCollectionDao
-        .getCollectionUnique(collectionId)
+        .getCollection(collectionId)
         .transact(xa)
     } yield {
       Either.fromOption(
@@ -111,7 +111,7 @@ class CollectionsService[F[_]: Concurrent](
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionOption <- StacCollectionDao
-        .getCollectionUnique(collectionId)
+        .getCollection(collectionId)
         .transact(xa)
       deleted <- collectionOption traverse { _ =>
         StacCollectionDao.query.filter(fr"id = $collectionId").delete.transact(xa).void
