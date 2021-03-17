@@ -1,7 +1,8 @@
 package com.azavea.franklin.datamodel
 
-import java.time.Instant
 import com.azavea.stac4s.Bbox
+
+import java.time.Instant
 
 final case class BulkExtent(
     start: Option[Instant],

@@ -5,12 +5,13 @@ import cats.syntax.foldable._
 import cats.syntax.list._
 import com.azavea.franklin.datamodel.{BulkExtent, MapboxVectorTileFootprintRequest}
 import com.azavea.stac4s._
+import com.azavea.stac4s.types.TemporalExtent
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
-import com.azavea.stac4s.types.TemporalExtent
+
 import java.time.Instant
 
 object StacCollectionDao extends Dao[StacCollection] {

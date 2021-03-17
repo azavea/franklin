@@ -1,14 +1,13 @@
 package com.azavea.franklin.database
 
-import cats.data.{EitherT, OptionT}
+import cats.data.EitherT
+import cats.data.OptionT
 import cats.syntax.all._
-import com.azavea.franklin.datamodel.{
-  BulkExtent,
-  Context,
-  PaginationToken,
-  SearchMethod,
-  StacSearchCollection
-}
+import com.azavea.franklin.datamodel.BulkExtent
+import com.azavea.franklin.datamodel.Context
+import com.azavea.franklin.datamodel.PaginationToken
+import com.azavea.franklin.datamodel.SearchMethod
+import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.syntax._
@@ -22,9 +21,11 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.vector.{Geometry, Projected}
+import geotrellis.vector.Geometry
+import geotrellis.vector.Projected
+import io.circe.DecodingFailure
+import io.circe.Json
 import io.circe.syntax._
-import io.circe.{DecodingFailure, Json}
 
 import java.time.Instant
 
