@@ -63,13 +63,20 @@ class CollectionItemsServiceSpec
   }
 
   // since creation / deletion is a part of the collection item resource, and accurate creation is checked
-  // in getCollectionItemExpectation, this test just makes sure that if other tests are failing, it's
-  // not because create/delete are broken
+  // in getCollectionItemExpectation, this test just:
+  // - makes sure that if other tests are failing, it's not because create/delete are broken.
+  // - makes sure that the collection extent is correctly grown to include the item (because the generators
+  //   have two wholly independent samples for the bboxes)
+
   def createDeleteItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
-    (testClient
-      .getCollectionItemResource(stacItem, stacCollection) use { _ => IO.unit }).unsafeRunSync must beTypedEqualTo(
-      ()
-    )
+    val testIO: IO[Boolean] = testClient
+      .getCollectionItemResource(stacItem, stacCollection) use {
+      case (item, collection) =>
+        val collectionBbox = collection.extent.spatial.bbox.head
+        IO.pure(collectionBbox.union(item.bbox) == collectionBbox)
+    }
+
+    testIO.unsafeRunSync must beTrue
   }
 
   def getCollectionItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
