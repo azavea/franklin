@@ -237,7 +237,8 @@ class CollectionItemsService[F[_]: Concurrent](
         etag
       )
       .transact(xa) map {
-      case None | Some(Left(StacItemDao.ItemNotFound)) =>
+      case None | Some(Left(StacItemDao.ItemNotFound)) |
+          Some(Left(StacItemDao.CollectionNotFound)) =>
         Left(NF(s"Item $itemId in collection $collectionId not found"))
       case Some(Left(StacItemDao.StaleObject)) =>
         Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))

@@ -34,6 +34,7 @@ object StacItemDao extends Dao[StacItem] {
   case object UpdateFailed                                extends StacItemDaoError("Failed to update STAC item")
   case object StaleObject                                 extends StacItemDaoError("Server-side object updated")
   case object ItemNotFound                                extends StacItemDaoError("Not found")
+  case object CollectionNotFound                          extends StacItemDaoError("Collection not found")
 
   case class PatchInvalidatesItem(err: DecodingFailure)
       extends StacItemDaoError("Applying patch would create an invalid patch item")
@@ -198,11 +199,22 @@ object StacItemDao extends Dao[StacItem] {
           ItemNotFound: StacItemDaoError
         )
       etagInDb = itemInDB.##
+      // todo expand spatial extents
       update <- if (etagInDb.toString == etag) {
         EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }
       } else {
         EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
       }
+      // only the first bbox / interval will be expanded. While technically these are plural, OGC
+      // added a clarification about the intent of the plurality in
+      // https://github.com/opengeospatial/ogcapi-features/pull/520.
+      // it's still not clear how you should expand the non-first bbox for an item that's outside
+      // of all of them, but that's a problem for future implementers who are actually using
+      // the plural bbox thing.
+      expansion = getItemsBulkExtent(List(update))
+      _ <- EitherT.liftF[ConnectionIO, StacItemDaoError, Int](
+        StacCollectionDao.updateExtent(collectionId, expansion)
+      )
     } yield update).value
 
   def patchItem(
@@ -228,6 +240,11 @@ object StacItemDao extends Dao[StacItem] {
             (Either.left[StacItemDaoError, StacItem](PatchInvalidatesItem(err))).pure[ConnectionIO]
         }
       }
+      expansion = getItemsBulkExtent(update.fold(List.empty[StacItem])({
+        case Left(_)     => Nil
+        case Right(item) => List(item)
+      }))
+      _ <- StacCollectionDao.updateExtent(collectionId, expansion)
     } yield update)
   }
 

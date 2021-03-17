@@ -10,6 +10,8 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
+import com.azavea.stac4s.types.TemporalExtent
+import java.time.Instant
 
 object StacCollectionDao extends Dao[StacCollection] {
 
@@ -24,7 +26,57 @@ object StacCollectionDao extends Dao[StacCollection] {
   def updateExtent(
       collectionId: String,
       bulkExtent: BulkExtent
-  ): ConnectionIO[Option[StacCollection]] = ???
+  ): ConnectionIO[Int] =
+    (OptionT(getCollection(collectionId)) flatMap { collection =>
+      val existingExtent = collection.extent
+      val newBbox = existingExtent.spatial.bbox match {
+        case h :: t => (bulkExtent.bbox map { h.union(_) } getOrElse h) :: t
+        case Nil    => bulkExtent.bbox.toList
+      }
+
+      val newTemporal = existingExtent.temporal.interval.map(_.value) match {
+        case (s :: e :: Nil) :: _ =>
+          val newStart: Option[Instant] = bulkExtent.start map { start =>
+            s map { priorStart =>
+              if (start.isBefore(priorStart)) { start }
+              else priorStart
+            }
+          } getOrElse s
+
+          val newEnd: Option[Instant] = bulkExtent.end map { end =>
+            e map { priorEnd =>
+              if (priorEnd.isBefore(end)) { end }
+              else priorEnd
+            }
+          } getOrElse e
+
+          val newTemporalExtent: List[TemporalExtent] = TemporalExtent
+            .from(List(newStart, newEnd))
+            .fold({ _ =>
+              List.empty[TemporalExtent]
+            }, List(_)) ++ existingExtent.temporal.interval.tail
+
+          newTemporalExtent
+        case _ =>
+          TemporalExtent
+            .from(List(bulkExtent.start, bulkExtent.end))
+            .fold(
+              _ => Nil,
+              List(_)
+            )
+      }
+
+      val newCollection: StacCollection = collection.copy(
+        extent = StacExtent(
+          SpatialExtent(newBbox),
+          Interval(newTemporal)
+        )
+      )
+
+      OptionT.liftF {
+        fr"update collections set collection = ${newCollection} where id = ${collectionId};".update.run
+      }
+    }).getOrElse(0)
 
   def getCollectionCount(): ConnectionIO[Int] = {
     sql"select count(*) from collections".query[Int].unique
