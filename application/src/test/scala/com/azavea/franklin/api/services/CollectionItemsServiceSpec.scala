@@ -72,8 +72,20 @@ class CollectionItemsServiceSpec
     val testIO: IO[Boolean] = testClient
       .getCollectionItemResource(stacItem, stacCollection) use {
       case (item, collection) =>
-        val collectionBbox = collection.extent.spatial.bbox.head
-        IO.pure(collectionBbox.union(item.bbox) == collectionBbox)
+        val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+        val request = Request[IO](
+          method = Method.GET,
+          Uri.unsafeFromString(s"/collections/$encodedCollectionId")
+        )
+
+        (for {
+          resp              <- testServices.collectionsService.routes.run(request)
+          decodedCollection <- OptionT.liftF(resp.as[StacCollection])
+        } yield {
+          val collectionBbox = decodedCollection.extent.spatial.bbox.head
+          collectionBbox.union(item.bbox) == collectionBbox
+        }).getOrElse(false)
+
     }
 
     testIO.unsafeRunSync must beTrue
