@@ -15,6 +15,8 @@ import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.{Header, Headers}
 import org.http4s.{Method, Request, Uri}
+import org.specs2.execute.Result
+import org.specs2.matcher.MatchResult
 import org.specs2.{ScalaCheck, Specification}
 
 import java.net.URLEncoder
@@ -69,7 +71,7 @@ class CollectionItemsServiceSpec
   //   have two wholly independent samples for the bboxes)
 
   def createDeleteItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
-    val testIO: IO[Boolean] = testClient
+    val testIO: IO[Result] = testClient
       .getCollectionItemResource(stacItem, stacCollection) use {
       case (item, collection) =>
         val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
@@ -83,12 +85,17 @@ class CollectionItemsServiceSpec
           decodedCollection <- OptionT.liftF(resp.as[StacCollection])
         } yield {
           val collectionBbox = decodedCollection.extent.spatial.bbox.head
-          collectionBbox.union(item.bbox) == collectionBbox
-        }).getOrElse(false)
+          val testA: Result = collectionBbox
+            .union(collection.extent.spatial.bbox.head) must beTypedEqualTo(collectionBbox)
+          val testB: Result = collectionBbox.union(item.bbox) must beTypedEqualTo(collectionBbox)
+          testA and testB
+        }).getOrElse({
+          failure: Result
+        })
 
     }
 
-    testIO.unsafeRunSync must beTrue
+    testIO.unsafeRunSync
   }
 
   def getCollectionItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
