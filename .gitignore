@@ -64,6 +64,7 @@ TAGS
 *.log
 
 # sbt specific
+.bsp
 .cache
 .coursier-cache
 .history
