@@ -60,7 +60,7 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
     }
   }
 
-  def getItemsBulkExtent(items: List[StacItem]) =
+  def getItemsBulkExtent(items: List[StacItem]): BulkExtent =
     items.foldLeft(BulkExtent(None, None, None))({
       case (BulkExtent(start, end, bbox), item) => {
         val itemDt   = item.properties.asJson.hcursor.downField("datetime").as[Instant].toOption
