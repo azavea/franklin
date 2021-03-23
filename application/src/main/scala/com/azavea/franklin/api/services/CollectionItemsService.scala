@@ -152,6 +152,10 @@ class CollectionItemsService[F[_]: Concurrent](
       Some(`application/json`),
       Some("Parent collection")
     )
+    val collectionNotFound: String => Either[ValidationError, (Json, String)] = (s: String) =>
+      Left(
+        ValidationError(s"Cannot create an item in non-existent collection: $s")
+      )
     item.collection match {
       case Some(collId) =>
         if (collectionId == collId) {
@@ -162,9 +166,12 @@ class CollectionItemsService[F[_]: Concurrent](
           }
           val withParent =
             item.copy(links = parentLink +: item.links.filter(_.rel != StacLinkType.Parent))
-          StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-            val validated = validateItemAndLinks(inserted)
-            Right((validated.asJson, validated.##.toString))
+          StacItemDao.insertStacItem(withParent).transact(xa) map {
+            case Right(inserted) =>
+              val validated = validateItemAndLinks(inserted)
+              Right((validated.asJson, validated.##.toString))
+            case Left(_) =>
+              collectionNotFound(collId)
           }
         } else {
           Applicative[F].pure(
@@ -178,9 +185,12 @@ class CollectionItemsService[F[_]: Concurrent](
       case None =>
         val withParent =
           item.copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
-        StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-          val validated = validateItemAndLinks(inserted)
-          Right((validated.asJson, validated.##.toString))
+        StacItemDao.insertStacItem(withParent).transact(xa) map {
+          case Right(inserted) =>
+            val validated = validateItemAndLinks(inserted)
+            Right((validated.asJson, validated.##.toString))
+          case Left(_) =>
+            collectionNotFound(collectionId)
         }
     }
   }

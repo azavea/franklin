@@ -149,7 +149,8 @@ object StacItemDao extends Dao[StacItem] {
     Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts)
   }
 
-  def insertStacItem(item: StacItem): ConnectionIO[StacItem] = {
+  def insertStacItem(item: StacItem): ConnectionIO[Either[CollectionNotFound.type, StacItem]] = {
+
     val projectedGeometry = Projected(item.geometry, 4326)
 
     val insertFragment = fr"""
@@ -157,10 +158,24 @@ object StacItemDao extends Dao[StacItem] {
       VALUES
       (${item.id}, $projectedGeometry, $item, ${item.collection})
       """
-    insertFragment.update
-      .withUniqueGeneratedKeys[StacItem]("item") <* (item.collection traverse { collectionId =>
-      StacCollectionDao.updateExtent(collectionId, getItemsBulkExtent(List(item)))
-    })
+    for {
+      collection <- item.collection.flatTraverse(collectionId =>
+        StacCollectionDao.getCollection(collectionId)
+      )
+      itemInsert <- collection traverse { _ =>
+        insertFragment.update
+          .withUniqueGeneratedKeys[StacItem]("item") <* (item.collection traverse { collectionId =>
+          StacCollectionDao.updateExtent(collectionId, getItemsBulkExtent(List(item)))
+
+        })
+      }
+    } yield {
+      Either.fromOption(
+        itemInsert,
+        CollectionNotFound
+      )
+    }
+
   }
 
   def getCollectionItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] =
