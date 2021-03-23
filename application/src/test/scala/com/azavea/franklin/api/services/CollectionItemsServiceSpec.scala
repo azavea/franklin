@@ -46,7 +46,7 @@ class CollectionItemsServiceSpec
   def listCollectionItemsExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem) =>
       val listIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-        case (_, collection) =>
+        case (collection, _) =>
           val encodedCollectionId =
             URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
           val request = Request[IO](
@@ -73,7 +73,7 @@ class CollectionItemsServiceSpec
   def createDeleteItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
     val testIO: IO[Result] = testClient
       .getCollectionItemResource(stacItem, stacCollection) use {
-      case (item, collection) =>
+      case (collection, item) =>
         val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
         val request = Request[IO](
           method = Method.GET,
@@ -85,10 +85,7 @@ class CollectionItemsServiceSpec
           decodedCollection <- OptionT.liftF(resp.as[StacCollection])
         } yield {
           val collectionBbox = decodedCollection.extent.spatial.bbox.head
-          val testA: Result = collectionBbox
-            .union(collection.extent.spatial.bbox.head) must beTypedEqualTo(collectionBbox)
-          val testB: Result = collectionBbox.union(item.bbox) must beTypedEqualTo(collectionBbox)
-          testA and testB
+          (collectionBbox.union(item.bbox) must beTypedEqualTo(collectionBbox)): Result
         }).getOrElse({
           failure: Result
         })
@@ -100,7 +97,7 @@ class CollectionItemsServiceSpec
 
   def getCollectionItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
     val fetchIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-      case (item, collection) =>
+      case (collection, item) =>
         val encodedCollectionId =
           URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
         val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
@@ -129,7 +126,7 @@ class CollectionItemsServiceSpec
   def updateItemExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem, update: StacItem) =>
       val updateIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-        case (item, collection) =>
+        case (collection, item) =>
           val encodedCollectionId =
             URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
           val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
@@ -160,7 +157,7 @@ class CollectionItemsServiceSpec
 
   def patchItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
     val updateIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-      case (item, collection) =>
+      case (collection, item) =>
         val encodedCollectionId =
           URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
         val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
