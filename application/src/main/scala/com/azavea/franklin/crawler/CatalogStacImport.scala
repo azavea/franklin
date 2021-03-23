@@ -239,17 +239,16 @@ class CatalogStacImport(val catalogRoot: String) {
     val catalogAttemptIO = readJsonFromPath[StacCatalog](absHref) map { catalogValidated =>
       catalogValidated map { catalog => (catalog.links, None) }
     }
-    ((collectionAttemptIO, catalogAttemptIO).mapN { (collectionAttempt, catalogAttempt) =>
-      StacIO.collectionCatalogFallback(absHref, collectionAttempt, catalogAttempt) flatMap {
-        case (links, collectionO) =>
-          val filtered =
-            links.filter(_.rel == StacLinkType.Item)
-          logger
-            .debug(s"Links to read for $absHref: ${filtered map { _.href }}") <* (filtered traverse {
-            link =>
-              val itemPath = makeAbsPath(absHref, link.href)
-              readItem(itemPath, true, collectionO) flatMap {
-                item =>
+    (collectionAttemptIO, catalogAttemptIO).tupled flatMap {
+      case (collectionAttempt, catalogAttempt) =>
+        StacIO.collectionCatalogFallback(absHref, collectionAttempt, catalogAttempt) flatMap {
+          case (links, collectionO) =>
+            val filtered = links.filter(_.rel == StacLinkType.Item)
+            logger
+              .debug(s"Links to read for $absHref: ${filtered map { _.href }}") <* (filtered traverse {
+              link =>
+                val itemPath = makeAbsPath(absHref, link.href)
+                readItem(itemPath, true, collectionO) flatMap { item =>
                   logger
                     .debug(s"Item links after read for ${item.id}: ${item.links map { _.href }}") *>
                     createCollectionForGeoJsonAsset(
@@ -273,10 +272,10 @@ class CatalogStacImport(val catalogRoot: String) {
                         }))
                         .transact(xa)
                   }
-              }
-          })
-      }
-    }).void
+                }
+            })
+        }
+    }
   }
 
   def runIO(xa: Transactor[IO])(implicit backend: SttpBackend[IO, Nothing, NothingT]): IO[Unit] =
