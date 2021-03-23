@@ -194,12 +194,6 @@ object StacItemDao extends Dao[StacItem] {
     fragment.update.withUniqueGeneratedKeys[StacItem]("item")
   }
 
-  // TODO if an item's new geometry _at least contains_ its previous geometry,
-  // update the item's collection's extent the normal way
-  // if it's smaller, we have less information -- the extent _might_ need to change
-  // but might not, so recalculate the item's collection's extent in the background
-  // also recalculate extent in the background for deletes.
-  // actual "ship it to the background" will happen in services.
   def updateStacItem(
       collectionId: String,
       itemId: String,
@@ -215,7 +209,6 @@ object StacItemDao extends Dao[StacItem] {
           ItemNotFound: StacItemDaoError
         )
       etagInDb = itemInDB.##
-      // todo expand spatial extents
       update <- if (etagInDb.toString == etag) {
         EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }
       } else {
