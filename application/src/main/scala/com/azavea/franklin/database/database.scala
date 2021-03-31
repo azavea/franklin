@@ -1,22 +1,19 @@
 package com.azavea.franklin
 
+import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.azavea.franklin.datamodel.BulkExtent
-import com.azavea.stac4s.StacItem
+import com.azavea.stac4s.{Bbox, StacItem, ThreeDimBbox, TwoDimBbox}
 import com.azavea.stac4s.types.TemporalExtent
 import doobie.implicits.javasql._
 import doobie.util.meta.Meta
 import doobie.util.{Read, Write}
+import geotrellis.vector.Extent
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
 
 import java.sql.Timestamp
 import java.time.Instant
-import cats.data.NonEmptyList
-import com.azavea.stac4s.Bbox
-import geotrellis.vector.Extent
-import com.azavea.stac4s.ThreeDimBbox
-import com.azavea.stac4s.TwoDimBbox
 
 package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filterables {
 

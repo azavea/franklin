@@ -1,6 +1,7 @@
 package com.azavea.franklin.database
 
 import cats.data.EitherT
+import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.syntax.all._
 import com.azavea.franklin.datamodel.BulkExtent
@@ -28,7 +29,6 @@ import io.circe.Json
 import io.circe.syntax._
 
 import java.time.Instant
-import cats.data.NonEmptyList
 
 object StacItemDao extends Dao[StacItem] {
 
