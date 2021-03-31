@@ -3,8 +3,8 @@ package com.azavea.franklin
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.azavea.franklin.datamodel.BulkExtent
-import com.azavea.stac4s.{Bbox, StacItem, ThreeDimBbox, TwoDimBbox}
 import com.azavea.stac4s.types.TemporalExtent
+import com.azavea.stac4s.{Bbox, StacItem, ThreeDimBbox, TwoDimBbox}
 import doobie.implicits.javasql._
 import doobie.util.meta.Meta
 import doobie.util.{Read, Write}
