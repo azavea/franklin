@@ -12,6 +12,11 @@ import io.circe.{Decoder, Encoder}
 
 import java.sql.Timestamp
 import java.time.Instant
+import cats.data.NonEmptyList
+import com.azavea.stac4s.Bbox
+import geotrellis.vector.Extent
+import com.azavea.stac4s.ThreeDimBbox
+import com.azavea.stac4s.TwoDimBbox
 
 package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filterables {
 
@@ -60,12 +65,11 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
     }
   }
 
-  def getItemsBulkExtent(items: List[StacItem]): BulkExtent =
-    items.foldLeft(BulkExtent(None, None, None))({
+  def getItemsBulkExtent(items: NonEmptyList[StacItem]): BulkExtent =
+    items.foldLeft(BulkExtent(None, None, items.head.bbox))({
       case (BulkExtent(start, end, bbox), item) => {
-        val itemDt   = item.properties.asJson.hcursor.downField("datetime").as[Instant].toOption
-        val itemBbox = item.bbox
-        val newBbox  = bbox.map(box => box.union(itemBbox)) getOrElse itemBbox
+        val itemDt  = item.properties.asJson.hcursor.downField("datetime").as[Instant].toOption
+        val newBbox = bbox.union(item.bbox)
         val newEndpoints = itemDt flatMap { newDt =>
           (start map { dt =>
             if (dt.isBefore(newDt)) { dt }
@@ -77,8 +81,8 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
 
         newEndpoints match {
           case Some((newStart, newEnd)) =>
-            BulkExtent(Some(newStart), Some(newEnd), Some(newBbox))
-          case None => BulkExtent(start, end, Some(newBbox))
+            BulkExtent(Some(newStart), Some(newEnd), newBbox.toTwoDim)
+          case None => BulkExtent(start, end, newBbox.toTwoDim)
         }
 
       }
@@ -89,5 +93,16 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
 
   implicit val decoderTemporalExtent: Decoder[TemporalExtent] = Decoder.decodeString.emap { str =>
     temporalExtentFromString(str)
+  }
+
+  implicit class bboxToTwoDim(bbox: Bbox) {
+
+    def toTwoDim: TwoDimBbox = bbox match {
+      case ThreeDimBbox(xmin, ymin, _, xmax, ymax, _) =>
+        TwoDimBbox(xmin, ymin, xmax, ymax)
+
+      case twoD: TwoDimBbox => twoD
+    }
+
   }
 }

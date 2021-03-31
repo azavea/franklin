@@ -30,10 +30,10 @@ object StacCollectionDao extends Dao[StacCollection] {
   ): ConnectionIO[Int] =
     (OptionT(getCollection(collectionId)) flatMap { collection =>
       val existingExtent = collection.extent
-      val newBbox = existingExtent.spatial.bbox match {
+      val newBbox: List[Bbox] = existingExtent.spatial.bbox match {
         case h :: t =>
-          (bulkExtent.bbox map { h.union(_) } getOrElse h) :: t
-        case Nil => bulkExtent.bbox.toList
+          h.union(bulkExtent.bbox) :: t
+        case Nil => List(bulkExtent.bbox)
       }
 
       val newTemporal = existingExtent.temporal.interval.map(_.value) match {

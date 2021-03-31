@@ -45,10 +45,12 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
         ).updateLinks
         val amountInserted = (
           StacItemDao.insertManyStacItems(collectionWrapper.items)
-            <* StacCollectionDao.updateExtent(
-              collectionId,
-              getItemsBulkExtent(collectionWrapper.items)
-            )
+            <* (collectionWrapper.items.toNel traverse { itemNel =>
+              StacCollectionDao.updateExtent(
+                collectionId,
+                getItemsBulkExtent(itemNel)
+              )
+            })
         ).transact(xa)
         EitherT.right[String](amountInserted)
       }

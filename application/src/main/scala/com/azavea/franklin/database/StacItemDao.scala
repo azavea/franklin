@@ -28,6 +28,7 @@ import io.circe.Json
 import io.circe.syntax._
 
 import java.time.Instant
+import cats.data.NonEmptyList
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -165,7 +166,7 @@ object StacItemDao extends Dao[StacItem] {
       itemInsert <- collection traverse { _ =>
         insertFragment.update
           .withUniqueGeneratedKeys[StacItem]("item") <* (item.collection traverse { collectionId =>
-          StacCollectionDao.updateExtent(collectionId, getItemsBulkExtent(List(item)))
+          StacCollectionDao.updateExtent(collectionId, getItemsBulkExtent(NonEmptyList.of(item)))
 
         })
       }
@@ -220,7 +221,7 @@ object StacItemDao extends Dao[StacItem] {
       // it's still not clear how you should expand the non-first bbox for an item that's outside
       // of all of them, but that's a problem for future implementers who are actually using
       // the plural bbox thing.
-      expansion = getItemsBulkExtent(List(update))
+      expansion = getItemsBulkExtent(NonEmptyList.of(update))
       _ <- EitherT.liftF[ConnectionIO, StacItemDaoError, Int](
         StacCollectionDao.updateExtent(collectionId, expansion)
       )
@@ -249,11 +250,14 @@ object StacItemDao extends Dao[StacItem] {
             (Either.left[StacItemDaoError, StacItem](PatchInvalidatesItem(err))).pure[ConnectionIO]
         }
       }
-      expansion = getItemsBulkExtent(update.fold(List.empty[StacItem])({
-        case Left(_)     => Nil
-        case Right(item) => List(item)
-      }))
-      _ <- StacCollectionDao.updateExtent(collectionId, expansion)
+
+      _ <- update.flatMap({
+        case Left(_)     => Option.empty[NonEmptyList[StacItem]]
+        case Right(item) => Some(NonEmptyList.of(item))
+      }) traverse { itemsNel =>
+        val expansion = getItemsBulkExtent(itemsNel)
+        StacCollectionDao.updateExtent(collectionId, expansion)
+      }
     } yield update)
   }
 
