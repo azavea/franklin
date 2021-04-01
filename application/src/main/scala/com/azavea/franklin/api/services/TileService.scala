@@ -132,7 +132,7 @@ class TileService[F[_]: Concurrent: LiftIO](
   ): F[Either[NF, Json]] = {
     val decoded = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
-      collectionO <- StacCollectionDao.getCollectionUnique(decoded).transact(xa)
+      collectionO <- StacCollectionDao.getCollection(decoded).transact(xa)
     } yield {
       Either.fromOption(
         collectionO map { collection =>
