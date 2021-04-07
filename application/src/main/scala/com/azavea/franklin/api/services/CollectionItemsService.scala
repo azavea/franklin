@@ -152,6 +152,10 @@ class CollectionItemsService[F[_]: Concurrent](
       Some(`application/json`),
       Some("Parent collection")
     )
+    val collectionNotFound: String => Either[ValidationError, (Json, String)] = (s: String) =>
+      Left(
+        ValidationError(s"Cannot create an item in non-existent collection: $s")
+      )
     item.collection match {
       case Some(collId) =>
         if (collectionId == collId) {
@@ -162,9 +166,12 @@ class CollectionItemsService[F[_]: Concurrent](
           }
           val withParent =
             item.copy(links = parentLink +: item.links.filter(_.rel != StacLinkType.Parent))
-          StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-            val validated = validateItemAndLinks(inserted)
-            Right((validated.asJson, validated.##.toString))
+          StacItemDao.insertStacItem(withParent).transact(xa) map {
+            case Right(inserted) =>
+              val validated = validateItemAndLinks(inserted)
+              Right((validated.asJson, validated.##.toString))
+            case Left(_) =>
+              collectionNotFound(collId)
           }
         } else {
           Applicative[F].pure(
@@ -178,9 +185,12 @@ class CollectionItemsService[F[_]: Concurrent](
       case None =>
         val withParent =
           item.copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
-        StacItemDao.insertStacItem(withParent).transact(xa) map { inserted =>
-          val validated = validateItemAndLinks(inserted)
-          Right((validated.asJson, validated.##.toString))
+        StacItemDao.insertStacItem(withParent).transact(xa) map {
+          case Right(inserted) =>
+            val validated = validateItemAndLinks(inserted)
+            Right((validated.asJson, validated.##.toString))
+          case Left(_) =>
+            collectionNotFound(collectionId)
         }
     }
   }
@@ -237,7 +247,8 @@ class CollectionItemsService[F[_]: Concurrent](
         etag
       )
       .transact(xa) map {
-      case None | Some(Left(StacItemDao.ItemNotFound)) =>
+      case None | Some(Left(StacItemDao.ItemNotFound)) |
+          Some(Left(StacItemDao.CollectionNotFound)) =>
         Left(NF(s"Item $itemId in collection $collectionId not found"))
       case Some(Left(StacItemDao.StaleObject)) =>
         Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))

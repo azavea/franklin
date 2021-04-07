@@ -15,6 +15,8 @@ import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.{Header, Headers}
 import org.http4s.{Method, Request, Uri}
+import org.specs2.execute.Result
+import org.specs2.matcher.MatchResult
 import org.specs2.{ScalaCheck, Specification}
 
 import java.net.URLEncoder
@@ -44,7 +46,7 @@ class CollectionItemsServiceSpec
   def listCollectionItemsExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem) =>
       val listIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-        case (_, collection) =>
+        case (collection, _) =>
           val encodedCollectionId =
             URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
           val request = Request[IO](
@@ -63,18 +65,39 @@ class CollectionItemsServiceSpec
   }
 
   // since creation / deletion is a part of the collection item resource, and accurate creation is checked
-  // in getCollectionItemExpectation, this test just makes sure that if other tests are failing, it's
-  // not because create/delete are broken
+  // in getCollectionItemExpectation, this test just:
+  // - makes sure that if other tests are failing, it's not because create/delete are broken.
+  // - makes sure that the collection extent is correctly grown to include the item (because the generators
+  //   have two wholly independent samples for the bboxes)
+
   def createDeleteItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
-    (testClient
-      .getCollectionItemResource(stacItem, stacCollection) use { _ => IO.unit }).unsafeRunSync must beTypedEqualTo(
-      ()
-    )
+    val testIO: IO[Result] = testClient
+      .getCollectionItemResource(stacItem, stacCollection) use {
+      case (collection, item) =>
+        val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+        val request = Request[IO](
+          method = Method.GET,
+          Uri.unsafeFromString(s"/collections/$encodedCollectionId")
+        )
+
+        (for {
+          resp              <- testServices.collectionsService.routes.run(request)
+          decodedCollection <- OptionT.liftF(resp.as[StacCollection])
+        } yield {
+          val collectionBbox = decodedCollection.extent.spatial.bbox.head
+          (collectionBbox.union(item.bbox) must beTypedEqualTo(collectionBbox)): Result
+        }).getOrElse({
+          failure: Result
+        })
+
+    }
+
+    testIO.unsafeRunSync
   }
 
   def getCollectionItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
     val fetchIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-      case (item, collection) =>
+      case (collection, item) =>
         val encodedCollectionId =
           URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
         val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
@@ -103,7 +126,7 @@ class CollectionItemsServiceSpec
   def updateItemExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem, update: StacItem) =>
       val updateIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-        case (item, collection) =>
+        case (collection, item) =>
           val encodedCollectionId =
             URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
           val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
@@ -134,7 +157,7 @@ class CollectionItemsServiceSpec
 
   def patchItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
     val updateIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-      case (item, collection) =>
+      case (collection, item) =>
         val encodedCollectionId =
           URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
         val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)

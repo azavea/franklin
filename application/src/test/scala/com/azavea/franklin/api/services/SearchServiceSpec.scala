@@ -95,7 +95,7 @@ class SearchServiceSpec
   def findItemWhenExpected = prop { (stacItem: StacItem, stacCollection: StacCollection) =>
     val resource = testClient.getCollectionItemResource(stacItem, stacCollection)
     val requestIO = resource.use {
-      case (item, collection) =>
+      case (collection, item) =>
         val inclusiveParams =
           FiltersFor.inclusiveFilters(collection, item)
         val request =

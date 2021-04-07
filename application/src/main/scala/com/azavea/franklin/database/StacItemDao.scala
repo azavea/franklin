@@ -1,8 +1,14 @@
 package com.azavea.franklin.database
 
-import cats.data.{EitherT, OptionT}
+import cats.data.EitherT
+import cats.data.NonEmptyList
+import cats.data.OptionT
 import cats.syntax.all._
-import com.azavea.franklin.datamodel.{Context, PaginationToken, SearchMethod, StacSearchCollection}
+import com.azavea.franklin.datamodel.BulkExtent
+import com.azavea.franklin.datamodel.Context
+import com.azavea.franklin.datamodel.PaginationToken
+import com.azavea.franklin.datamodel.SearchMethod
+import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.syntax._
@@ -16,9 +22,11 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.vector.{Geometry, Projected}
+import geotrellis.vector.Geometry
+import geotrellis.vector.Projected
+import io.circe.DecodingFailure
+import io.circe.Json
 import io.circe.syntax._
-import io.circe.{DecodingFailure, Json}
 
 import java.time.Instant
 
@@ -28,6 +36,7 @@ object StacItemDao extends Dao[StacItem] {
   case object UpdateFailed                                extends StacItemDaoError("Failed to update STAC item")
   case object StaleObject                                 extends StacItemDaoError("Server-side object updated")
   case object ItemNotFound                                extends StacItemDaoError("Not found")
+  case object CollectionNotFound                          extends StacItemDaoError("Collection not found")
 
   case class PatchInvalidatesItem(err: DecodingFailure)
       extends StacItemDaoError("Applying patch would create an invalid patch item")
@@ -141,7 +150,8 @@ object StacItemDao extends Dao[StacItem] {
     Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts)
   }
 
-  def insertStacItem(item: StacItem): ConnectionIO[StacItem] = {
+  def insertStacItem(item: StacItem): ConnectionIO[Either[CollectionNotFound.type, StacItem]] = {
+
     val projectedGeometry = Projected(item.geometry, 4326)
 
     val insertFragment = fr"""
@@ -149,8 +159,24 @@ object StacItemDao extends Dao[StacItem] {
       VALUES
       (${item.id}, $projectedGeometry, $item, ${item.collection})
       """
-    insertFragment.update
-      .withUniqueGeneratedKeys[StacItem]("item")
+    for {
+      collection <- item.collection.flatTraverse(collectionId =>
+        StacCollectionDao.getCollection(collectionId)
+      )
+      itemInsert <- collection traverse { _ =>
+        insertFragment.update
+          .withUniqueGeneratedKeys[StacItem]("item") <* (item.collection traverse { collectionId =>
+          StacCollectionDao.updateExtent(collectionId, getItemsBulkExtent(NonEmptyList.of(item)))
+
+        })
+      }
+    } yield {
+      Either.fromOption(
+        itemInsert,
+        CollectionNotFound
+      )
+    }
+
   }
 
   def getCollectionItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] =
@@ -176,16 +202,29 @@ object StacItemDao extends Dao[StacItem] {
       etag: String
   ): ConnectionIO[Either[StacItemDaoError, StacItem]] =
     (for {
-      itemInDB <- EitherT.fromOptionF[ConnectionIO, StacItemDaoError, StacItem](
-        getCollectionItem(collectionId, itemId),
-        ItemNotFound: StacItemDaoError
-      )
+      (itemInDB, collectionInDb) <- EitherT
+        .fromOptionF[ConnectionIO, StacItemDaoError, (StacItem, StacCollection)](
+          (getCollectionItem(collectionId, itemId), StacCollectionDao.getCollection(collectionId)).tupled map {
+            _.tupled
+          },
+          ItemNotFound: StacItemDaoError
+        )
       etagInDb = itemInDB.##
       update <- if (etagInDb.toString == etag) {
         EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }
       } else {
         EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
       }
+      // only the first bbox / interval will be expanded. While technically these are plural, OGC
+      // added a clarification about the intent of the plurality in
+      // https://github.com/opengeospatial/ogcapi-features/pull/520.
+      // it's still not clear how you should expand the non-first bbox for an item that's outside
+      // of all of them, but that's a problem for future implementers who are actually using
+      // the plural bbox thing.
+      expansion = getItemsBulkExtent(NonEmptyList.of(update))
+      _ <- EitherT.liftF[ConnectionIO, StacItemDaoError, Int](
+        StacCollectionDao.updateExtent(collectionId, expansion)
+      )
     } yield update).value
 
   def patchItem(
@@ -210,6 +249,14 @@ object StacItemDao extends Dao[StacItem] {
           case (Left(err), _) =>
             (Either.left[StacItemDaoError, StacItem](PatchInvalidatesItem(err))).pure[ConnectionIO]
         }
+      }
+
+      _ <- update.flatMap({
+        case Left(_)     => Option.empty[NonEmptyList[StacItem]]
+        case Right(item) => Some(NonEmptyList.of(item))
+      }) traverse { itemsNel =>
+        val expansion = getItemsBulkExtent(itemsNel)
+        StacCollectionDao.updateExtent(collectionId, expansion)
       }
     } yield update)
   }
