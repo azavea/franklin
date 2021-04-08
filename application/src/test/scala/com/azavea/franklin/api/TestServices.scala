@@ -1,5 +1,7 @@
 package com.azavea.franklin.api
 
+import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
+
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.functor._
 import com.azavea.franklin.api.commands.ApiConfig
