@@ -9,6 +9,7 @@ import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.refined._
 import io.circe.syntax._
+import com.azavea.stac4s.extensions.CollectionExtension
 
 final case class ValidationExtension(
     attemptedExtensions: NonEmptyList[NonEmptyString],
@@ -41,6 +42,9 @@ object ValidationExtension {
 
   implicit val validationExtensionAssetExtension: ItemAssetExtension[ValidationExtension] =
     ItemAssetExtension.instance
+
+  implicit val validationExtensionCollectionExtension: CollectionExtension[ValidationExtension] =
+    CollectionExtension.instance
 
   implicit val semigroupValidationExtension: Semigroup[ValidationExtension] =
     new Semigroup[ValidationExtension] {

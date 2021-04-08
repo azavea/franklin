@@ -124,6 +124,7 @@ lazy val applicationDependencies = Seq(
   "io.chrisdavenport"            %% "log4cats-slf4j"                 % Versions.Log4CatsVersion,
   "io.circe"                     %% "circe-core"                     % Versions.CirceVersion,
   "io.circe"                     %% "circe-generic"                  % Versions.CirceVersion,
+  "io.circe"                     %% "circe-json-schema"              % Versions.CirceJsonSchemaVersion,
   "io.circe"                     %% "circe-parser"                   % Versions.CirceVersion,
   "io.circe"                     %% "circe-refined"                  % Versions.CirceVersion,
   "io.circe"                     %% "circe-testing"                  % Versions.CirceVersion % Test,
