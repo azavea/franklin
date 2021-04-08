@@ -1,14 +1,13 @@
 package com.azavea.franklin
 
-import com.azavea.franklin.extensions.validation.syntax._
-
-import cats.effect.concurrent.Ref
 import cats.effect.Sync
+import cats.effect.concurrent.Ref
+import com.azavea.franklin.extensions.validation.syntax._
+import com.azavea.stac4s.StacCollection
 import com.azavea.stac4s.StacItem
+import com.azavea.stac4s.extensions.eo.EOItemExtension
 import com.azavea.stac4s.extensions.label.LabelItemExtension
 import eu.timepit.refined.auto._
-import com.azavea.stac4s.extensions.eo.EOItemExtension
-import com.azavea.stac4s.StacCollection
 
 package object api {
 

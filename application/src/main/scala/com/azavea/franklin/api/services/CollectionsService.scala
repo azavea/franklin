@@ -1,8 +1,7 @@
 package com.azavea.franklin.api.services
 
-import com.azavea.franklin.extensions.validation._
-
 import cats.effect._
+import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
@@ -10,21 +9,21 @@ import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.datamodel.{CollectionsResponse, TileInfo}
 import com.azavea.franklin.error.{NotFound => NF}
+import com.azavea.franklin.extensions.validation._
 import com.azavea.stac4s._
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
+import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.syntax._
 import org.http4s.dsl.Http4sDsl
+import sttp.client.{NothingT, SttpBackend}
 import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import cats.effect.concurrent.Ref
-import sttp.client.{NothingT, SttpBackend}
-import io.chrisdavenport.log4cats.Logger
 
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],

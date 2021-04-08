@@ -1,29 +1,30 @@
 package com.azavea.franklin.extensions
 
 import cats.Functor
+import cats.data.NonEmptyList
+import cats.effect.Sync
+import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.extensions.validation.syntax._
+import com.azavea.stac4s.StacCollection
 import com.azavea.stac4s.extensions.eo.EOItemExtension
 import com.azavea.stac4s.extensions.label.{LabelItemExtension, LabelLinkExtension}
 import com.azavea.stac4s.extensions.layer.LayerItemExtension
-import com.azavea.stac4s.{StacItem, StacLink, StacLinkType}
 import com.azavea.stac4s.syntax._
+import com.azavea.stac4s.{StacItem, StacLink, StacLinkType}
 import eu.timepit.refined.auto._
-import monocle.macros.GenLens
-import cats.effect.concurrent.Ref
-import cats.effect.Sync
-import com.azavea.stac4s.StacCollection
+import eu.timepit.refined.types.string.NonEmptyString
+import io.chrisdavenport.log4cats.Logger
+import io.circe.Encoder
+import io.circe.Json
 import io.circe.schema.Schema
 import io.circe.syntax._
+import monocle.macros.GenLens
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client.circe._
 import sttp.model.{Uri => SttpUri}
-import io.circe.Json
-import io.chrisdavenport.log4cats.Logger
-import io.circe.Encoder
-import cats.data.NonEmptyList
-import eu.timepit.refined.types.string.NonEmptyString
+
 import scala.util.Try
 
 package object validation {

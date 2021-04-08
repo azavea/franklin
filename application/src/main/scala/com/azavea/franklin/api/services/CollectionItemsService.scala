@@ -27,10 +27,12 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
+import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.syntax._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
+import sttp.client.{NothingT, SttpBackend}
 import sttp.tapir.DecodeResult
 import sttp.tapir.server.DecodeFailureContext
 import sttp.tapir.server.ServerDefaults
@@ -38,8 +40,6 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import sttp.client.{NothingT, SttpBackend}
-import io.chrisdavenport.log4cats.Logger
 
 class CollectionItemsService[F[_]: Concurrent](
     xa: Transactor[F],
