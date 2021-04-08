@@ -1,16 +1,15 @@
 package com.azavea.franklin.api
 
-import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
-
+import cats.Applicative
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.functor._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService, SearchService}
+import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import doobie.Transactor
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import cats.Applicative
 
 class TestServices[F[_]: Concurrent](xa: Transactor[F])(
     implicit cs: ContextShift[F],

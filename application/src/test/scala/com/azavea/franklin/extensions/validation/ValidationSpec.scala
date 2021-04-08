@@ -1,15 +1,14 @@
 package com.azavea.franklin.extensions.validation
 
-import com.azavea.franklin.api.TestImplicits
-
+import cats.effect.IO
 import cats.syntax.all._
+import com.azavea.franklin.api.TestImplicits
 import com.azavea.stac4s.StacItem
 import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
 import eu.timepit.refined.types.string.NonEmptyString
 import org.specs2.{ScalaCheck, Specification}
-import cats.effect.IO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

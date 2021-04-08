@@ -1,8 +1,8 @@
 package com.azavea.franklin.api.services
 
-import cats.syntax.apply._
 import cats.data.OptionT
 import cats.effect.IO
+import cats.syntax.apply._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec

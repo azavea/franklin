@@ -1,5 +1,6 @@
 package com.azavea.franklin.api
 
+import cats.Applicative
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.functor._
 import com.azavea.franklin.api.commands.ApiConfig
@@ -8,7 +9,6 @@ import doobie.Transactor
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import cats.Applicative
 
 trait TestImplicits[F[_]] {
 
