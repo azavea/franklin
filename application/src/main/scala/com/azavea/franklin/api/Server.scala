@@ -30,7 +30,6 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import io.chrisdavenport.log4cats
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
@@ -113,8 +112,9 @@ $$$$
           xa
         ).routes
         tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-        itemExtensions <- Resource.liftF { itemExtensionsRef[IO] }
-        collectionRoutes = new CollectionsService[IO](xa, apiConfig).routes <+> new CollectionItemsService[
+        itemExtensions       <- Resource.liftF { itemExtensionsRef[IO] }
+        collectionExtensions <- Resource.liftF { collectionExtensionsRef[IO] }
+        collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
           IO
         ](
           xa,

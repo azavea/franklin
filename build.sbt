@@ -121,6 +121,7 @@ lazy val applicationDependencies = Seq(
   "eu.timepit"                   %% "refined"                        % Versions.Refined,
   "io.chrisdavenport"            %% "cats-scalacheck"                % Versions.CatsScalacheckVersion % Test,
   "io.chrisdavenport"            %% "log4cats-core"                  % Versions.Log4CatsVersion,
+  "io.chrisdavenport"            %% "log4cats-noop"                  % Versions.Log4CatsVersion % Test,
   "io.chrisdavenport"            %% "log4cats-slf4j"                 % Versions.Log4CatsVersion,
   "io.circe"                     %% "circe-core"                     % Versions.CirceVersion,
   "io.circe"                     %% "circe-generic"                  % Versions.CirceVersion,

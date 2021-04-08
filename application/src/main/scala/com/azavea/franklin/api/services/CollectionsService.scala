@@ -1,5 +1,7 @@
 package com.azavea.franklin.api.services
 
+import com.azavea.franklin.extensions.validation._
+
 import cats.effect._
 import cats.syntax.all._
 import com.azavea.franklin.api.commands.ApiConfig
@@ -20,14 +22,20 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import cats.effect.concurrent.Ref
+import sttp.client.{NothingT, SttpBackend}
+import io.chrisdavenport.log4cats.Logger
 
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
-    apiConfig: ApiConfig
+    apiConfig: ApiConfig,
+    collectionExtensionsRef: ExtensionRef[F, StacCollection]
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
-    serverOptions: Http4sServerOptions[F]
+    serverOptions: Http4sServerOptions[F],
+    backend: SttpBackend[F, Nothing, NothingT],
+    logger: Logger[F]
 ) extends Http4sDsl[F] {
 
   val apiHost            = apiConfig.apiHost
@@ -37,11 +45,15 @@ class CollectionsService[F[_]: Concurrent](
   def listCollections(): F[Either[Unit, Json]] = {
     for {
       collections <- StacCollectionDao.listCollections().transact(xa)
-      updated = collections map { _.maybeAddTilesLink(enableTiles, apiHost) } map {
-        _.updateLinksWithHost(apiConfig)
+      validators <- collections traverse { collection =>
+        makeCollectionValidator(collection.stacExtensions, collectionExtensionsRef)
       }
     } yield {
-      Either.right(CollectionsResponse(updated).asJson)
+      val updated = collections map { _.maybeAddTilesLink(enableTiles, apiHost) } map {
+        _.updateLinksWithHost(apiConfig)
+      }
+      val validated = validators.zip(updated).map { case (f, v) => f(v) }
+      Either.right(CollectionsResponse(validated).asJson)
     }
 
   }
@@ -52,10 +64,16 @@ class CollectionsService[F[_]: Concurrent](
       collectionOption <- StacCollectionDao
         .getCollection(collectionId)
         .transact(xa)
+      validatorOption <- collectionOption traverse { collection =>
+        makeCollectionValidator(collection.stacExtensions, collectionExtensionsRef)
+      }
     } yield {
       Either.fromOption(
-        collectionOption map { _.maybeAddTilesLink(enableTiles, apiHost) } map {
-          _.updateLinksWithHost(apiConfig).asJson
+        (collectionOption, validatorOption) mapN {
+          case (collection, validator) =>
+            validator(
+              collection.maybeAddTilesLink(enableTiles, apiHost).updateLinksWithHost(apiConfig)
+            ).asJson
         },
         NF(s"Collection $collectionId not found")
       )
@@ -103,8 +121,9 @@ class CollectionsService[F[_]: Concurrent](
         )
     )
     for {
-      inserted <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
-    } yield Right(inserted.asJson)
+      inserted  <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
+      validator <- makeCollectionValidator(inserted.stacExtensions, collectionExtensionsRef)
+    } yield Right(validator(inserted).asJson)
   }
 
   def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = {
