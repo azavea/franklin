@@ -11,6 +11,7 @@ import com.azavea.franklin.api.endpoints.{
   TileEndpoints
 }
 import com.azavea.franklin.api.services._
+import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts

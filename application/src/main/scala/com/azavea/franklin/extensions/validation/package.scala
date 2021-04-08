@@ -25,7 +25,7 @@ import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client.circe._
 import sttp.model.{Uri => SttpUri}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 package object validation {
 
@@ -68,27 +68,32 @@ package object validation {
   ): F[Either[String, Schema]] = {
     val extensionUriParsed = SttpUri.parse(extension)
     extensionUriParsed flatTraverse { extensionUri =>
-      basicRequest.get(extensionUri).response(asJson[Json]).send[F] map { resp =>
-        resp.body
-          .bimap(
-            {
-              case DeserializationError(_, _) =>
-                s"Value at $extensionUri was not valid json and can't be used for extension schema validation"
-              case HttpError(_, code) =>
-                s"Could not read from $extensionUri while attempting to validate extensions. Response code was: $code"
-              case _ =>
-                s"Encountered an unknown error trying to read $extensionUri while validating extensions"
-            },
-            js => {
-              Try(Schema.load(js))
-            }
-          )
-          .flatMap(
-            Either
-              .fromTry(_)
-              .leftMap(_ => s"""| Failed to load a schema from the json at $extensionUri.
-                    | This can commonly be caused by links that can't be resolved during load.
-                    | Not validating the extension at $extensionUri.""".trim.stripMargin)
+      basicRequest.get(extensionUri).response(asJson[Json]).send[F].attempt map {
+        case Right(resp) =>
+          resp.body
+            .bimap(
+              {
+                case DeserializationError(_, _) =>
+                  s"Value at $extensionUri was not valid json and can't be used for extension schema validation"
+                case HttpError(_, code) =>
+                  s"Could not read from $extensionUri while attempting to validate extensions. Response code was: $code"
+                case _ =>
+                  s"Encountered an unknown error trying to read $extensionUri while validating extensions"
+              },
+              js => {
+                Try(Schema.load(js))
+              }
+            )
+            .flatMap(
+              Either
+                .fromTry(_)
+                .leftMap(_ => s"""| Failed to load a schema from the json at $extensionUri.
+                      | This can commonly be caused by links that can't be resolved during load.
+                      | Not validating the extension at $extensionUri.""".trim.stripMargin)
+            )
+        case Left(_) =>
+          Either.left[String, Schema](
+            s"Request for extension uri at $extension failed hard and we couldn't try to load a schema from its response"
           )
       }
     }
