@@ -83,6 +83,7 @@ lazy val applicationDependencies = Seq(
   "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
+  "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
   "com.azavea.geotrellis"        %% "geotrellis-server-core"         % Versions.GeotrellisServerVersion,
   "com.azavea.geotrellis"        %% "maml-jvm"                       % Versions.MamlVersion,
   "com.azavea.stac4s"            %% "core"                           % Versions.Stac4SVersion,
