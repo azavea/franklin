@@ -11,6 +11,7 @@ import com.azavea.stac4s._
 import com.azavea.stac4s.types.TemporalExtent
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
+import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.json.circe._
@@ -87,5 +88,8 @@ package object schemas {
 
   implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
     Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
+
+  implicit val schemaForStacLink: Schema[StacLinkType] =
+    Schema.schemaForString.map(s => s.asJson.as[StacLinkType].toOption)(_.repr)
 
 }

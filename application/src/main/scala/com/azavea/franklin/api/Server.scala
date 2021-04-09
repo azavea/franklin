@@ -3,6 +3,7 @@ package com.azavea.franklin.api
 import cats.effect._
 import cats.syntax.all._
 import com.azavea.franklin.api.commands.{ApiConfig, Commands, DatabaseConfig}
+import com.azavea.franklin.api.endpoints.LandingPageEndpoints
 import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,
   CollectionItemEndpoints,
@@ -89,13 +90,14 @@ $$$$
         apiConfig.enableTransactions,
         apiConfig.enableTiles
       )
+      landingPage = new LandingPageEndpoints[IO]()
       allEndpoints = collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ new SearchEndpoints[
         IO
       ].endpoints ++ new TileEndpoints[
         IO
       ](
         apiConfig.enableTiles
-      ).endpoints
+      ).endpoints ++ landingPage.endpoints
       docs      = allEndpoints.toOpenAPI("Franklin", "0.0.1")
       docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
       searchRoutes = new SearchService[IO](
@@ -111,10 +113,11 @@ $$$$
         xa,
         apiConfig
       ).routes
+      landingPageRoutes = new LandingPageService[IO](apiConfig).routes
       router = CORS(
         Router(
           "/" -> ResponseLogger.httpRoutes(false, false)(
-            collectionRoutes <+> searchRoutes <+> tileRoutes <+> docRoutes
+            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes
           )
         )
       ).orNotFound
