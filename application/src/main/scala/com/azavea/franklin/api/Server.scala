@@ -11,9 +11,13 @@ import com.azavea.franklin.api.endpoints.{
   TileEndpoints
 }
 import com.azavea.franklin.api.services._
+import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+import io.chrisdavenport.log4cats
+import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
@@ -70,68 +74,74 @@ $$$$
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
   ) =
-    for {
-      connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
-      transactionEc <- ExecutionContexts.cachedThreadPool[IO]
-      xa <- HikariTransactor.newHikariTransactor[IO](
-        "org.postgresql.Driver",
-        dbConfig.jdbcUrl,
-        dbConfig.dbUser,
-        dbConfig.dbPass,
-        connectionEc,
-        Blocker.liftExecutionContext(transactionEc)
-      )
-      collectionItemEndpoints = new CollectionItemEndpoints[IO](
-        apiConfig.defaultLimit,
-        apiConfig.enableTransactions,
-        apiConfig.enableTiles
-      )
-      collectionEndpoints = new CollectionEndpoints[IO](
-        apiConfig.enableTransactions,
-        apiConfig.enableTiles
-      )
-      landingPage = new LandingPageEndpoints[IO]()
-      allEndpoints = collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ new SearchEndpoints[
-        IO
-      ].endpoints ++ new TileEndpoints[
-        IO
-      ](
-        apiConfig.enableTiles
-      ).endpoints ++ landingPage.endpoints
-      docs      = allEndpoints.toOpenAPI("Franklin", "0.0.1")
-      docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
-      searchRoutes = new SearchService[IO](
-        apiConfig.apiHost,
-        apiConfig.defaultLimit,
-        apiConfig.enableTiles,
-        xa
-      ).routes
-      tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-      collectionRoutes = new CollectionsService[IO](xa, apiConfig).routes <+> new CollectionItemsService[
-        IO
-      ](
-        xa,
-        apiConfig
-      ).routes
-      landingPageRoutes = new LandingPageService[IO](apiConfig).routes
-      router = CORS(
-        Router(
-          "/" -> ResponseLogger.httpRoutes(false, false)(
-            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes
-          )
+    AsyncHttpClientCatsBackend.resource[IO]() flatMap { implicit backend =>
+      for {
+        connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
+        transactionEc <- ExecutionContexts.cachedThreadPool[IO]
+        xa <- HikariTransactor.newHikariTransactor[IO](
+          "org.postgresql.Driver",
+          dbConfig.jdbcUrl,
+          dbConfig.dbUser,
+          dbConfig.dbPass,
+          connectionEc,
+          Blocker.liftExecutionContext(transactionEc)
         )
-      ).orNotFound
-      serverBuilderBlocker <- Blocker[IO]
-      server <- {
-        BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)
-          .bindHttp(apiConfig.internalPort.value, "0.0.0.0")
-          .withConnectorPoolSize(128)
-          .withBanner(banner)
-          .withHttpApp(router)
-          .resource
+        implicit0(logger: log4cats.Logger[IO]) = Slf4jLogger.getLogger[IO]
+        collectionItemEndpoints = new CollectionItemEndpoints[IO](
+          apiConfig.defaultLimit,
+          apiConfig.enableTransactions,
+          apiConfig.enableTiles
+        )
+        collectionEndpoints = new CollectionEndpoints[IO](
+          apiConfig.enableTransactions,
+          apiConfig.enableTiles
+        )
+        landingPage = new LandingPageEndpoints[IO]()
+        allEndpoints = collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ new SearchEndpoints[
+          IO
+        ].endpoints ++ new TileEndpoints[
+          IO
+        ](
+          apiConfig.enableTiles
+        ).endpoints ++ landingPage.endpoints
+        docs      = allEndpoints.toOpenAPI("Franklin", "0.0.1")
+        docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
+        searchRoutes = new SearchService[IO](
+          apiConfig.apiHost,
+          apiConfig.defaultLimit,
+          apiConfig.enableTiles,
+          xa
+        ).routes
+        tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+        itemExtensions       <- Resource.liftF { itemExtensionsRef[IO] }
+        collectionExtensions <- Resource.liftF { collectionExtensionsRef[IO] }
+        collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
+          IO
+        ](
+          xa,
+          apiConfig,
+          itemExtensions
+        ).routes
+        landingPageRoutes = new LandingPageService[IO](apiConfig).routes
+        router = CORS(
+          Router(
+            "/" -> ResponseLogger.httpRoutes(false, false)(
+              collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes
+            )
+          )
+        ).orNotFound
+        serverBuilderBlocker <- Blocker[IO]
+        server <- {
+          BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)
+            .bindHttp(apiConfig.internalPort.value, "0.0.0.0")
+            .withConnectorPoolSize(128)
+            .withBanner(banner)
+            .withHttpApp(router)
+            .resource
+        }
+      } yield {
+        server
       }
-    } yield {
-      server
     }
 
   override def run(args: List[String]): IO[ExitCode] = {
