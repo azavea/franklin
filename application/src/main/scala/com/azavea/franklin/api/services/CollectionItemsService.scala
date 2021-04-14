@@ -185,13 +185,11 @@ class CollectionItemsService[F[_]: Concurrent](
                 collectionNotFound(collId)
             }
           } else {
-            Applicative[F].pure(
-              Left(
-                ValidationError(
-                  s"Collection ID in item $collId did not match collection ID in route $collectionId"
-                )
+            Left(
+              ValidationError(
+                s"Collection ID in item $collId did not match collection ID in route $collectionId"
               )
-            )
+            ).pure[F].widen
           }
         case None =>
           val withParent =
