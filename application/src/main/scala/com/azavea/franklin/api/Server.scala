@@ -33,10 +33,9 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import io.chrisdavenport.log4cats
 
 object Server extends IOApp.WithContext {
-
-  implicit def unsafeLogger[F[_]: Sync] = Slf4jLogger.getLogger[F]
 
   def executionContextResource: Resource[SyncIO, ExecutionContext] =
     Resource
@@ -87,6 +86,7 @@ $$$$
           connectionEc,
           Blocker.liftExecutionContext(transactionEc)
         )
+        implicit0(logger: log4cats.Logger[IO]) = Slf4jLogger.getLogger[IO]
         collectionItemEndpoints = new CollectionItemEndpoints[IO](
           apiConfig.defaultLimit,
           apiConfig.enableTransactions,
