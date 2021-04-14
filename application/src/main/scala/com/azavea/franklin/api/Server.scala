@@ -15,6 +15,7 @@ import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemE
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+import io.chrisdavenport.log4cats
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s._
@@ -33,7 +34,6 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import io.chrisdavenport.log4cats
 
 object Server extends IOApp.WithContext {
 
