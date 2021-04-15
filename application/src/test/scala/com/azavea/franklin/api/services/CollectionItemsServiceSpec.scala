@@ -2,6 +2,7 @@ package com.azavea.franklin.api.services
 
 import cats.data.OptionT
 import cats.effect.IO
+import cats.syntax.apply._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
@@ -40,23 +41,27 @@ class CollectionItemsServiceSpec
 
   val testServices = new TestServices[IO](transactor)
 
-  val testClient =
-    new TestClient[IO](testServices.collectionsService, testServices.collectionItemsService)
+  val testClient = (testServices.collectionsService, testServices.collectionItemsService) mapN {
+    new TestClient[IO](_, _)
+  }
 
   def listCollectionItemsExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem) =>
-      val listIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-        case (collection, _) =>
-          val encodedCollectionId =
-            URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-          val request = Request[IO](
-            method = Method.GET,
-            Uri.unsafeFromString(s"/collections/$encodedCollectionId/items")
-          )
-          (for {
-            response <- testServices.collectionItemsService.routes.run(request)
-            decoded  <- OptionT.liftF { response.as[CollectionItemsResponse] }
-          } yield decoded).value
+      val listIO = (testClient, testServices.collectionItemsService).tupled flatMap {
+        case (client, collectionItemsService) =>
+          client.getCollectionItemResource(stacItem, stacCollection) use {
+            case (collection, _) =>
+              val encodedCollectionId =
+                URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+              val request = Request[IO](
+                method = Method.GET,
+                Uri.unsafeFromString(s"/collections/$encodedCollectionId/items")
+              )
+              (for {
+                response <- collectionItemsService.routes.run(request)
+                decoded  <- OptionT.liftF { response.as[CollectionItemsResponse] }
+              } yield decoded).value
+          }
       }
 
       val result = listIO.unsafeRunSync.get.features map { _.id }
@@ -71,45 +76,50 @@ class CollectionItemsServiceSpec
   //   have two wholly independent samples for the bboxes)
 
   def createDeleteItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
-    val testIO: IO[Result] = testClient
-      .getCollectionItemResource(stacItem, stacCollection) use {
-      case (collection, item) =>
-        val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-        val request = Request[IO](
-          method = Method.GET,
-          Uri.unsafeFromString(s"/collections/$encodedCollectionId")
-        )
+    val testIO: IO[Result] = (testClient, testServices.collectionsService).tupled flatMap {
+      case (client, collectionsService) =>
+        client.getCollectionItemResource(stacItem, stacCollection) use {
+          case (collection, item) =>
+            val encodedCollectionId =
+              URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+            val request = Request[IO](
+              method = Method.GET,
+              Uri.unsafeFromString(s"/collections/$encodedCollectionId")
+            )
 
-        (for {
-          resp              <- testServices.collectionsService.routes.run(request)
-          decodedCollection <- OptionT.liftF(resp.as[StacCollection])
-        } yield {
-          val collectionBbox = decodedCollection.extent.spatial.bbox.head
-          (collectionBbox.union(item.bbox) must beTypedEqualTo(collectionBbox)): Result
-        }).getOrElse({
-          failure: Result
-        })
-
+            (for {
+              resp              <- collectionsService.routes.run(request)
+              decodedCollection <- OptionT.liftF(resp.as[StacCollection])
+            } yield {
+              val collectionBbox = decodedCollection.extent.spatial.bbox.head
+              (collectionBbox.union(item.bbox) must beTypedEqualTo(collectionBbox)): Result
+            }).getOrElse({
+              failure: Result
+            })
+        }
     }
 
     testIO.unsafeRunSync
   }
 
   def getCollectionItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
-    val fetchIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-      case (collection, item) =>
-        val encodedCollectionId =
-          URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-        val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
-        val request = Request[IO](
-          method = Method.GET,
-          Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId")
-        )
+    val fetchIO = (testClient, testServices.collectionItemsService).tupled flatMap {
+      case (client, collectionItemsService) =>
+        client.getCollectionItemResource(stacItem, stacCollection) use {
+          case (collection, item) =>
+            val encodedCollectionId =
+              URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+            val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
+            val request = Request[IO](
+              method = Method.GET,
+              Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId")
+            )
 
-        (for {
-          response <- testServices.collectionItemsService.routes.run(request)
-          decoded  <- OptionT.liftF { response.as[StacItem] }
-        } yield decoded).value
+            (for {
+              response <- collectionItemsService.routes.run(request)
+              decoded  <- OptionT.liftF { response.as[StacItem] }
+            } yield decoded).value
+        }
     }
 
     val result = fetchIO.unsafeRunSync.get
@@ -125,26 +135,29 @@ class CollectionItemsServiceSpec
 
   def updateItemExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem, update: StacItem) =>
-      val updateIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-        case (collection, item) =>
-          val encodedCollectionId =
-            URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-          val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
-          val etag          = item.##
-          val toUpdate = update.copy(
-            links = item.links,
-            id = item.id
-          )
-          val request = Request[IO](
-            method = Method.PUT,
-            Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
-            headers = Headers.of(Header("If-Match", s"$etag"))
-          ).withEntity(toUpdate)
-          (for {
-            response <- testServices.collectionItemsService.routes.run(request)
-            decoded  <- OptionT.liftF { response.as[StacItem] }
-          } yield decoded).value
+      val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
+        case (client, collectionItemsService) =>
+          client.getCollectionItemResource(stacItem, stacCollection) use {
+            case (collection, item) =>
+              val encodedCollectionId =
+                URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+              val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
+              val etag          = item.##
+              val toUpdate = update.copy(
+                links = item.links,
+                id = item.id
+              )
+              val request = Request[IO](
+                method = Method.PUT,
+                Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
+                headers = Headers.of(Header("If-Match", s"$etag"))
+              ).withEntity(toUpdate)
+              (for {
+                response <- collectionItemsService.routes.run(request)
+                decoded  <- OptionT.liftF { response.as[StacItem] }
+              } yield decoded).value
 
+          }
       }
 
       val updated = updateIO.unsafeRunSync.get
@@ -156,24 +169,27 @@ class CollectionItemsServiceSpec
   }
 
   def patchItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
-    val updateIO = testClient.getCollectionItemResource(stacItem, stacCollection) use {
-      case (collection, item) =>
-        val encodedCollectionId =
-          URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-        val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
-        val etag          = item.##
-        val patch         = Map("properties" -> Map("veryUnlikelyProperty" -> true).asJson)
+    val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
+      case (client, collectionItemsService) =>
+        client.getCollectionItemResource(stacItem, stacCollection) use {
+          case (collection, item) =>
+            val encodedCollectionId =
+              URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+            val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
+            val etag          = item.##
+            val patch         = Map("properties" -> Map("veryUnlikelyProperty" -> true).asJson)
 
-        val request = Request[IO](
-          method = Method.PATCH,
-          Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
-          headers = Headers.of(Header("If-Match", s"$etag"))
-        ).withEntity(patch)
+            val request = Request[IO](
+              method = Method.PATCH,
+              Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
+              headers = Headers.of(Header("If-Match", s"$etag"))
+            ).withEntity(patch)
 
-        (for {
-          response <- testServices.collectionItemsService.routes.run(request)
-          decoded  <- OptionT.liftF { response.as[StacItem] }
-        } yield decoded).value
+            (for {
+              response <- collectionItemsService.routes.run(request)
+              decoded  <- OptionT.liftF { response.as[StacItem] }
+            } yield decoded).value
+        }
     }
 
     val result = updateIO.unsafeRunSync
