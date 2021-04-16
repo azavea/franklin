@@ -1,10 +1,11 @@
 package com.azavea.franklin.extensions.validation
 
 import cats.syntax.semigroup._
-import com.azavea.stac4s.extensions.{ItemExtension, LinkExtension}
+import com.azavea.stac4s.extensions.{IntervalExtension, ItemExtension, LinkExtension}
 import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.{StacItem, StacLink}
 import eu.timepit.refined.types.string.NonEmptyString
+import com.azavea.stac4s.Interval
 
 package object syntax {
 
@@ -30,9 +31,6 @@ package object syntax {
         validationExtension
       })
     }
-  }
-
-  implicit class validateLinkWhen(link: StacLink) {
 
     def validateWhen[T: LinkExtension](
         name: NonEmptyString,
@@ -44,5 +42,19 @@ package object syntax {
         link
       }
     }
+
   }
+
+  implicit class validateInterval(interval: Interval) {
+
+    def validate[T: IntervalExtension](name: NonEmptyString): Interval = {
+      val extensionResult     = interval.getExtensionFields[T]
+      val validationExtension = ValidationExtension.fromResult(extensionResult, name)
+      val existingValidation  = interval.getExtensionFields[ValidationExtension]
+      interval.addExtensionFields(existingValidation map { _ |+| validationExtension } getOrElse {
+        validationExtension
+      })
+    }
+  }
+
 }

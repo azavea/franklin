@@ -290,6 +290,20 @@ class CollectionItemsService[F[_]: Concurrent](
             )
           )
           .pure[F]
+      case Some(Left(StacItemDao.InvalidTimeForPeriod)) =>
+        // can't match the error in the pattern, because we get a warning about the type
+        // not definitely being as narrow as we think it is which refers to
+        // https://github.com/scala/bug/issues/1503
+        // anyway, it's a case object, so we can just grab the same single object and
+        // use its message
+        Either
+          .left[CrudError, (Json, String)](
+            InvalidPatch(
+              StacItemDao.InvalidTimeForPeriod.msg,
+              jsonPatch
+            )
+          )
+          .pure[F]
       case Some(Right(updated)) =>
         makeItemValidator(updated.stacExtensions, itemExtensionsRef) map { validator =>
           Either.right((validator(updated).asJson, updated.##.toString))

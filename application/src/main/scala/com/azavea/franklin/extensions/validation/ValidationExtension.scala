@@ -5,7 +5,12 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.kernel.Semigroup
 import com.azavea.stac4s.extensions.CollectionExtension
 import com.azavea.stac4s.extensions.ItemAssetExtension
-import com.azavea.stac4s.extensions.{ExtensionResult, ItemExtension, LinkExtension}
+import com.azavea.stac4s.extensions.{
+  ExtensionResult,
+  IntervalExtension,
+  ItemExtension,
+  LinkExtension
+}
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.refined._
@@ -45,6 +50,9 @@ object ValidationExtension {
 
   implicit val validationExtensionCollectionExtension: CollectionExtension[ValidationExtension] =
     CollectionExtension.instance
+
+  implicit val validationExtensionIntervalExtension: IntervalExtension[ValidationExtension] =
+    IntervalExtension.instance
 
   implicit val semigroupValidationExtension: Semigroup[ValidationExtension] =
     new Semigroup[ValidationExtension] {

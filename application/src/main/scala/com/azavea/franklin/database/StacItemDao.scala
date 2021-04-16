@@ -11,6 +11,7 @@ import com.azavea.franklin.datamodel.SearchMethod
 import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
+import com.azavea.stac4s.extensions.periodic.PeriodicExtent
 import com.azavea.stac4s.syntax._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
@@ -38,12 +39,37 @@ object StacItemDao extends Dao[StacItem] {
   case object ItemNotFound                                extends StacItemDaoError("Not found")
   case object CollectionNotFound                          extends StacItemDaoError("Collection not found")
 
+  case object InvalidTimeForPeriod
+      extends StacItemDaoError("Item datetime does not align with collection periodic extent")
+
   case class PatchInvalidatesItem(err: DecodingFailure)
       extends StacItemDaoError("Applying patch would create an invalid patch item")
 
   val tableName = "collection_items"
 
   val selectF = fr"SELECT item FROM " ++ tableF
+
+  private def checkItemTimeAgainstCollection(
+      collection: StacCollection,
+      item: StacItem
+  ): Either[InvalidTimeForPeriod.type, StacItem] = {
+    collection.extent.temporal
+      .getExtensionFields[PeriodicExtent]
+      .toEither
+      .fold(
+        _ => Right(item),
+        period => {
+          item.properties.asJson.hcursor
+            .get[Instant]("datetime")
+            .leftMap(_ => InvalidTimeForPeriod)
+            .flatMap { instant =>
+              // check whether period.period, in conjunction with collection interval,
+              // lands cleanly on instant
+              ???
+            }
+        }
+      )
+  }
 
   def getItemCount(): ConnectionIO[Int] = {
     sql"select count(*) from collection_items".query[Int].unique
@@ -150,7 +176,7 @@ object StacItemDao extends Dao[StacItem] {
     Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts)
   }
 
-  def insertStacItem(item: StacItem): ConnectionIO[Either[CollectionNotFound.type, StacItem]] = {
+  def insertStacItem(item: StacItem): ConnectionIO[Either[StacItemDaoError, StacItem]] = {
 
     val projectedGeometry = Projected(item.geometry, 4326)
 
@@ -160,21 +186,26 @@ object StacItemDao extends Dao[StacItem] {
       (${item.id}, $projectedGeometry, $item, ${item.collection})
       """
     for {
-      collection <- item.collection.flatTraverse(collectionId =>
+      collectionE <- (item.collection.flatTraverse(collectionId =>
         StacCollectionDao.getCollection(collectionId)
       )
-      itemInsert <- collection traverse { _ =>
-        insertFragment.update
-          .withUniqueGeneratedKeys[StacItem]("item") <* (item.collection traverse { collectionId =>
-          StacCollectionDao.updateExtent(collectionId, getItemsBulkExtent(NonEmptyList.of(item)))
+      ) map { Either.fromOption(_, CollectionNotFound: StacItemDaoError) }
+      itemInsert <- collectionE flatTraverse { collection =>
+        checkItemTimeAgainstCollection(collection, item).leftWiden[StacItemDaoError] traverse {
+          item =>
+            insertFragment.update
+              .withUniqueGeneratedKeys[StacItem]("item") <* (item.collection traverse {
+              collectionId =>
+                StacCollectionDao.updateExtent(
+                  collectionId,
+                  getItemsBulkExtent(NonEmptyList.of(item))
+                )
 
-        })
+            })
+        }
       }
     } yield {
-      Either.fromOption(
-        itemInsert,
-        CollectionNotFound
-      )
+      itemInsert
     }
 
   }
@@ -211,6 +242,7 @@ object StacItemDao extends Dao[StacItem] {
         )
       etagInDb = itemInDB.##
       update <- if (etagInDb.toString == etag) {
+        // TODO: check to make sure item + collectionInDb time is valid
         EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }
       } else {
         EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
@@ -241,6 +273,7 @@ object StacItemDao extends Dao[StacItem] {
         val decoded  = patched.as[StacItem]
         (decoded, etagInDb.toString == etag) match {
           case (Right(patchedItem), true) =>
+            // TODO: check to make sure item + collectionInDb time is valid
             doUpdate(itemId, patchedItem.copy(properties = patchedItem.properties.filter({
               case (_, v) => !v.isNull
             }))).attempt map { _.leftMap(_ => UpdateFailed: StacItemDaoError) }
