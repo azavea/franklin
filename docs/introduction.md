@@ -56,7 +56,7 @@ docker run -d -p 5432:5432 \
   -e POSTGRES_PASSWORD=franklinsecret \
   -e POSTGRES_USER=benjamin \
   -e POSTGRES_DB=franklin \
-  quay.io/azavea/postgis:2.5-postgres11.4-slim
+  quay.io/azavea/postgis:3-postgres12.2-slim
 ```
 
 This starts a database (`franklin-database`) in the background. If you want to see that it is still running you can use the `docker ps` command. If you want to stop it at some point you can use the command `docker stop franklin-database` and that will stop the container.

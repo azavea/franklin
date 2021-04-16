@@ -33,21 +33,26 @@ class CollectionsServiceSpec
 
   val testServices: TestServices[IO] = new TestServices[IO](transactor)
 
-  val testClient: TestClient[IO] =
-    new TestClient[IO](testServices.collectionsService, testServices.collectionItemsService)
+  val testClient: IO[TestClient[IO]] =
+    (testServices.collectionsService, testServices.collectionItemsService) mapN {
+      new TestClient[IO](_, _)
+    }
 
   def listCollectionsExpectation = prop {
     (stacCollectionA: StacCollection, stacCollectionB: StacCollection) =>
       {
-        val listIO = (
-          testClient.getCollectionResource(stacCollectionA),
-          testClient.getCollectionResource(stacCollectionB)
-        ).tupled use { _ =>
-          val request = Request[IO](method = Method.GET, Uri.unsafeFromString(s"/collections"))
-          (for {
-            resp    <- testServices.collectionsService.routes.run(request)
-            decoded <- OptionT.liftF { resp.as[CollectionsResponse] }
-          } yield decoded).value
+        val listIO = (testClient, testServices.collectionsService).tupled flatMap {
+          case (client, collectionsService) =>
+            (
+              client.getCollectionResource(stacCollectionA),
+              client.getCollectionResource(stacCollectionB)
+            ).tupled use { _ =>
+              val request = Request[IO](method = Method.GET, Uri.unsafeFromString(s"/collections"))
+              (for {
+                resp    <- collectionsService.routes.run(request)
+                decoded <- OptionT.liftF { resp.as[CollectionsResponse] }
+              } yield decoded).value
+            }
         }
 
         val result = listIO.unsafeRunSync.get.collections map { _.id }
@@ -58,14 +63,17 @@ class CollectionsServiceSpec
 
   def getCollectionsExpectation = prop { (stacCollection: StacCollection) =>
     val fetchIO =
-      testClient.getCollectionResource(stacCollection) use { collection =>
-        val encodedId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-        val request =
-          Request[IO](method = Method.GET, Uri.unsafeFromString(s"/collections/$encodedId"))
-        (for {
-          resp    <- testServices.collectionsService.routes.run(request)
-          decoded <- OptionT.liftF { resp.as[StacCollection] }
-        } yield (decoded, collection)).value
+      (testClient, testServices.collectionsService).tupled flatMap {
+        case (client, collectionsService) =>
+          client.getCollectionResource(stacCollection) use { collection =>
+            val encodedId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+            val request =
+              Request[IO](method = Method.GET, Uri.unsafeFromString(s"/collections/$encodedId"))
+            (for {
+              resp    <- collectionsService.routes.run(request)
+              decoded <- OptionT.liftF { resp.as[StacCollection] }
+            } yield (decoded, collection)).value
+          }
       }
 
     val (fetched, inserted) = fetchIO.unsafeRunSync.get
@@ -77,8 +85,7 @@ class CollectionsServiceSpec
   // in getCollectionsExpectation, this test just makes sure that if other tests are failing, it's
   // not because create/delete are broken
   def createDeleteCollectionExpectation = prop { (stacCollection: StacCollection) =>
-    (testClient
-      .getCollectionResource(stacCollection) use { _ => IO.unit }).unsafeRunSync must beTypedEqualTo(
+    (testClient flatMap { _.getCollectionResource(stacCollection) use { _ => IO.unit } }).unsafeRunSync must beTypedEqualTo(
       ()
     )
   }

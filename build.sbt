@@ -48,7 +48,7 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.11" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.13" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
@@ -83,6 +83,7 @@ lazy val applicationDependencies = Seq(
   "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
+  "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
   "com.azavea.geotrellis"        %% "geotrellis-server-core"         % Versions.GeotrellisServerVersion,
   "com.azavea.geotrellis"        %% "maml-jvm"                       % Versions.MamlVersion,
   "com.azavea.stac4s"            %% "core"                           % Versions.Stac4SVersion,
@@ -120,9 +121,11 @@ lazy val applicationDependencies = Seq(
   "eu.timepit"                   %% "refined"                        % Versions.Refined,
   "io.chrisdavenport"            %% "cats-scalacheck"                % Versions.CatsScalacheckVersion % Test,
   "io.chrisdavenport"            %% "log4cats-core"                  % Versions.Log4CatsVersion,
+  "io.chrisdavenport"            %% "log4cats-noop"                  % Versions.Log4CatsVersion % Test,
   "io.chrisdavenport"            %% "log4cats-slf4j"                 % Versions.Log4CatsVersion,
   "io.circe"                     %% "circe-core"                     % Versions.CirceVersion,
   "io.circe"                     %% "circe-generic"                  % Versions.CirceVersion,
+  "io.circe"                     %% "circe-json-schema"              % Versions.CirceJsonSchemaVersion,
   "io.circe"                     %% "circe-parser"                   % Versions.CirceVersion,
   "io.circe"                     %% "circe-refined"                  % Versions.CirceVersion,
   "io.circe"                     %% "circe-testing"                  % Versions.CirceVersion % Test,

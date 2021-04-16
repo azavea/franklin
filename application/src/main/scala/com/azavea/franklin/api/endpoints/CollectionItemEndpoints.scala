@@ -10,7 +10,6 @@ import com.azavea.franklin.error.{
   NotFound,
   ValidationError
 }
-import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s.StacItem
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.{Codec => _, _}
@@ -31,7 +30,7 @@ class CollectionItemEndpoints[F[_]: Concurrent](
   val base = endpoint.in("collections")
 
   val collectionItemsList: Endpoint[
-    (String, Option[PaginationToken], Option[NonNegInt], List[ExtensionName]),
+    (String, Option[PaginationToken], Option[NonNegInt]),
     Unit,
     Json,
     Fs2Streams[F]
@@ -46,10 +45,6 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       .in(
         query[Option[NonNegInt]]("limit")
           .description(s"How many items to return. Defaults to ${defaultLimit}")
-      )
-      .in(
-        query[List[ExtensionName]]("extensions")
-          .description("Return only items with listed supported extensions")
       )
       .out(jsonBody[Json])
       .description("A feature collection of collection items")

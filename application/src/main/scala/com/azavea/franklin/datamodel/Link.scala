@@ -4,6 +4,8 @@ import com.azavea.stac4s.{StacLinkType, StacMediaType}
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.Encoder
 import io.circe.generic.semiauto._
+import sttp.tapir.Schema
+import sttp.tapir.codec.refined._
 
 case class Link(
     href: NonEmptyString,
