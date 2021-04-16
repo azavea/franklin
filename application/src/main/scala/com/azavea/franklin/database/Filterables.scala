@@ -2,7 +2,6 @@ package com.azavea.franklin.database
 
 import cats.syntax.all._
 import com.azavea.franklin.datamodel._
-import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s.types.TemporalExtent
 import doobie.implicits._
 import doobie.postgres.circe.jsonb.implicits._
@@ -136,12 +135,6 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
       out
     }
 
-  implicit val extensionNamesFilter: Filterable[Any, List[ExtensionName]] =
-    Filterable[Any, List[ExtensionName]] { extensions =>
-      List(
-        extensions.toNel map { extensions => fr"item -> 'stac_extensions' @> ${extensions.asJson}" }
-      )
-    }
 }
 
 object Filterables extends Filterables

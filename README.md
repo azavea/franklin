@@ -4,4 +4,4 @@
 
 A [STAC](https://github.com/radiantearth/stac-api-spec) and [OGC API Features](http://docs.opengeospatial.org/is/17-069r3/17-069r3.html) compliant web service focused on ease-of-use for end-users.
 
-For more information and a quickstart, see the [documentation site](https://azavea.github.io/franklin/docs/introduction).
+For more information and a quickstart, see the [documentation site](https://azavea.github.io/franklin/docs/introduction) and ask us questions [on Gitter](https://gitter.im/franklin-stac/community)

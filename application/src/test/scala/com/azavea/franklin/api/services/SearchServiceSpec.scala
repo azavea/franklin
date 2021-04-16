@@ -35,8 +35,9 @@ class SearchServiceSpec
 """
   val testServices = new TestServices[IO](transactor)
 
-  val testClient =
-    new TestClient[IO](testServices.collectionsService, testServices.collectionItemsService)
+  val testClient = (testServices.collectionsService, testServices.collectionItemsService) mapN {
+    new TestClient[IO](_, _)
+  }
 
   private def getExclusionTest(
       name: String
@@ -44,20 +45,23 @@ class SearchServiceSpec
     prop { (stacItem: StacItem, stacCollection: StacCollection) =>
       val exclusiveParams = getFilters(stacCollection)(stacItem)
       val testResult = exclusiveParams.map({ params =>
-        val resource = testClient.getCollectionItemResource(stacItem, stacCollection)
-        val requestIO = resource.use {
-          case _ =>
-            // doing this as a POST is important, since otherwise the `intersection` and
-            // `query` params would be ignored (not that we're testing `query` here)
-            val request =
-              Request[IO](
-                method = Method.POST,
-                uri = Uri.unsafeFromString(s"/search")
-              ).withEntity(params)
-            (for {
-              resp    <- testServices.searchService.routes.run(request)
-              decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
-            } yield decoded).value
+        val resourceIO = testClient map { _.getCollectionItemResource(stacItem, stacCollection) }
+        val requestIO = resourceIO flatMap {
+          resource =>
+            resource.use {
+              case _ =>
+                // doing this as a POST is important, since otherwise the `intersection` and
+                // `query` params would be ignored (not that we're testing `query` here)
+                val request =
+                  Request[IO](
+                    method = Method.POST,
+                    uri = Uri.unsafeFromString(s"/search")
+                  ).withEntity(params)
+                (for {
+                  resp    <- testServices.searchService.routes.run(request)
+                  decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
+                } yield decoded).value
+            }
         }
 
         val result = requestIO.unsafeRunSync.get
@@ -93,18 +97,20 @@ class SearchServiceSpec
   }
 
   def findItemWhenExpected = prop { (stacItem: StacItem, stacCollection: StacCollection) =>
-    val resource = testClient.getCollectionItemResource(stacItem, stacCollection)
-    val requestIO = resource.use {
-      case (collection, item) =>
-        val inclusiveParams =
-          FiltersFor.inclusiveFilters(collection, item)
-        val request =
-          Request[IO](method = Method.POST, uri = Uri.unsafeFromString(s"/search"))
-            .withEntity(inclusiveParams)
-        (for {
-          resp    <- testServices.searchService.routes.run(request)
-          decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
-        } yield decoded).value
+    val resourceIO = testClient map { _.getCollectionItemResource(stacItem, stacCollection) }
+    val requestIO = resourceIO flatMap { resource =>
+      resource.use {
+        case (collection, item) =>
+          val inclusiveParams =
+            FiltersFor.inclusiveFilters(collection, item)
+          val request =
+            Request[IO](method = Method.POST, uri = Uri.unsafeFromString(s"/search"))
+              .withEntity(inclusiveParams)
+          (for {
+            resp    <- testServices.searchService.routes.run(request)
+            decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
+          } yield decoded).value
+      }
     }
 
     val result = requestIO.unsafeRunSync.get
