@@ -121,7 +121,19 @@ object StacItemDao extends Dao[StacItem] {
             .flatMap { instant =>
               // check whether period.period, in conjunction with collection interval,
               // lands cleanly on instant
-              ???
+              val periodDuration = period.period
+              val anchorInstant =
+                (collection.extent.temporal.interval.headOption flatMap {
+                  (interval: TemporalExtent) =>
+                    interval.value.find(_.isDefined)
+                }).flatten
+              anchorInstant.fold(
+                Either.left[InvalidTimeForPeriod.type, StacItem](InvalidTimeForPeriod)
+              )(anchor =>
+                if (periodAligned(anchor, instant, periodDuration)) {
+                  Either.right[InvalidTimeForPeriod.type, StacItem](item)
+                } else { Left(InvalidTimeForPeriod) }
+              )
             }
         }
       )
