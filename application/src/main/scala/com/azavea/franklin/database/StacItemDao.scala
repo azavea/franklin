@@ -33,6 +33,9 @@ import java.time.Instant
 import org.threeten.extra.PeriodDuration
 import com.azavea.stac4s.types.TemporalExtent
 import java.time.Period
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -52,32 +55,54 @@ object StacItemDao extends Dao[StacItem] {
 
   val selectF = fr"SELECT item FROM " ++ tableF
 
+  private def lazyOr(test: Boolean, fallback: => Boolean) =
+    if (!test) {
+      fallback
+    } else {
+      test
+    }
+
   private[franklin] def periodAligned(
       periodAnchor: Instant,
       instant: Instant,
       periodDuration: PeriodDuration
   ): Boolean = {
-    if (periodAnchor.isAfter(instant)) {
-      val incremented = Instant.from(periodDuration.addTo(instant))
-      val comparison  = incremented.compareTo(periodAnchor)
-      if (comparison > 0) {
-        false
-      } else if (comparison == 0) {
-        true
+    val anchorLocal  = LocalDateTime.ofInstant(periodAnchor, ZoneId.of("UTC"))
+    val instantLocal = LocalDateTime.ofInstant(instant, ZoneId.of("UTC"))
+    lazyOr(
+      instant == periodAnchor,
+      if (periodAnchor.isAfter(instant)) {
+        val incremented =
+          LocalDateTime.from(periodDuration.addTo(instantLocal))
+        val comparison = incremented.compareTo(anchorLocal)
+        if (comparison > 0) {
+          false
+        } else if (comparison == 0) {
+          true
+        } else {
+          periodAligned(
+            periodAnchor,
+            incremented.toInstant(ZoneOffset.UTC),
+            periodDuration
+          )
+        }
       } else {
-        periodAligned(periodAnchor, incremented, periodDuration)
+        val incremented =
+          LocalDateTime.from(periodDuration.addTo(anchorLocal))
+        val comparison = incremented.compareTo(instantLocal)
+        if (comparison > 0) {
+          false
+        } else if (comparison == 0) {
+          true
+        } else {
+          periodAligned(
+            incremented.toInstant(ZoneOffset.UTC),
+            instant,
+            periodDuration
+          )
+        }
       }
-    } else {
-      val incremented = Instant.from(periodDuration.addTo(periodAnchor))
-      val comparison  = incremented.compareTo(instant)
-      if (comparison > 0) {
-        false
-      } else if (comparison == 0) {
-        true
-      } else {
-        periodAligned(incremented, instant, periodDuration)
-      }
-    }
+    )
   }
 
   private def checkItemTimeAgainstCollection(
