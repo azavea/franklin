@@ -308,10 +308,14 @@ object StacItemDao extends Dao[StacItem] {
           },
           ItemNotFound: StacItemDaoError
         )
+      validatedTime <- EitherT.fromEither[ConnectionIO](
+        checkItemTimeAgainstCollection(collectionInDb, item).leftWiden[StacItemDaoError]
+      )
       etagInDb = itemInDB.##
       update <- if (etagInDb.toString == etag) {
-        // TODO: check to make sure item + collectionInDb time is valid
-        EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }
+        EitherT { doUpdate(itemId, validatedTime).attempt } leftMap { _ =>
+          UpdateFailed: StacItemDaoError
+        }
       } else {
         EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
       }
@@ -334,22 +338,30 @@ object StacItemDao extends Dao[StacItem] {
       etag: String
   ): ConnectionIO[Option[Either[StacItemDaoError, StacItem]]] = {
     (for {
-      itemInDBOpt <- getCollectionItem(collectionId, itemId)
-      update <- itemInDBOpt traverse { itemInDB =>
-        val etagInDb = itemInDB.##
-        val patched  = itemInDB.asJson.deepMerge(jsonPatch).dropNullValues
-        val decoded  = patched.as[StacItem]
-        (decoded, etagInDb.toString == etag) match {
-          case (Right(patchedItem), true) =>
-            // TODO: check to make sure item + collectionInDb time is valid
-            doUpdate(itemId, patchedItem.copy(properties = patchedItem.properties.filter({
-              case (_, v) => !v.isNull
-            }))).attempt map { _.leftMap(_ => UpdateFailed: StacItemDaoError) }
-          case (_, false) =>
-            (Either.left[StacItemDaoError, StacItem](StaleObject)).pure[ConnectionIO]
-          case (Left(err), _) =>
-            (Either.left[StacItemDaoError, StacItem](PatchInvalidatesItem(err))).pure[ConnectionIO]
-        }
+      itemAndCollectionOpt <- (
+        getCollectionItem(collectionId, itemId),
+        StacCollectionDao.getCollection(collectionId)
+      ).tupled map { _.tupled }
+      update <- itemAndCollectionOpt traverse {
+        case (itemInDb, collectionInDb) =>
+          val etagInDb = itemInDb.##
+          val patched  = itemInDb.asJson.deepMerge(jsonPatch).dropNullValues
+          val decoded  = patched.as[StacItem]
+          (decoded, etagInDb.toString == etag) match {
+            case (Right(patchedItem), true) =>
+              checkItemTimeAgainstCollection(collectionInDb, patchedItem)
+                .leftWiden[StacItemDaoError] flatTraverse { validated =>
+                doUpdate(itemId, validated.copy(properties = patchedItem.properties.filter({
+                  case (_, v) => !v.isNull
+                }))).attempt map { _.leftMap(_ => UpdateFailed: StacItemDaoError) }
+              }
+            case (_, false) =>
+              (Either.left[StacItemDaoError, StacItem](StaleObject)).pure[ConnectionIO]
+            case (Left(err), _) =>
+              (Either
+                .left[StacItemDaoError, StacItem](PatchInvalidatesItem(err)))
+                .pure[ConnectionIO]
+          }
       }
 
       _ <- update.flatMap({
