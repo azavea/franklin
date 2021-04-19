@@ -30,6 +30,9 @@ import io.circe.Json
 import io.circe.syntax._
 
 import java.time.Instant
+import org.threeten.extra.PeriodDuration
+import com.azavea.stac4s.types.TemporalExtent
+import java.time.Period
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -48,6 +51,34 @@ object StacItemDao extends Dao[StacItem] {
   val tableName = "collection_items"
 
   val selectF = fr"SELECT item FROM " ++ tableF
+
+  private[franklin] def periodAligned(
+      periodAnchor: Instant,
+      instant: Instant,
+      periodDuration: PeriodDuration
+  ): Boolean = {
+    if (periodAnchor.isAfter(instant)) {
+      val incremented = Instant.from(periodDuration.addTo(instant))
+      val comparison  = incremented.compareTo(periodAnchor)
+      if (comparison > 0) {
+        false
+      } else if (comparison == 0) {
+        true
+      } else {
+        periodAligned(periodAnchor, incremented, periodDuration)
+      }
+    } else {
+      val incremented = Instant.from(periodDuration.addTo(periodAnchor))
+      val comparison  = incremented.compareTo(instant)
+      if (comparison > 0) {
+        false
+      } else if (comparison == 0) {
+        true
+      } else {
+        periodAligned(incremented, instant, periodDuration)
+      }
+    }
+  }
 
   private def checkItemTimeAgainstCollection(
       collection: StacCollection,
