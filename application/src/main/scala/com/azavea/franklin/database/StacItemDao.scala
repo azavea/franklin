@@ -233,15 +233,29 @@ object StacItemDao extends Dao[StacItem] {
       collection: Option[String]
   )
 
-  def insertManyStacItems(items: List[StacItem]): ConnectionIO[Int] = {
+  def insertManyStacItems(
+      items: List[StacItem],
+      collection: StacCollection
+  ): ConnectionIO[(Set[String], Int)] = {
     val insertFragment = """
       INSERT INTO collection_items (id, geom, item, collection)
       VALUES
       (?, ?, ?, ?)
       """
+    val badIds = items
+      .mapFilter(item =>
+        checkItemTimeAgainstCollection(collection, item).toOption.fold(Option(item.id))(_ =>
+          Option.empty[String]
+        )
+      )
+      .toSet
     val stacItemInserts =
-      items.map(i => StacItemBulkImport(i.id, Projected(i.geometry, 4326), i, i.collection))
-    Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts)
+      items
+        .filter(item => (!badIds.contains(item.id)))
+        .map(i => StacItemBulkImport(i.id, Projected(i.geometry, 4326), i, i.collection))
+    Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts) map { numberInserted =>
+      (badIds, numberInserted)
+    }
   }
 
   def insertStacItem(item: StacItem): ConnectionIO[Either[StacItemDaoError, StacItem]] = {

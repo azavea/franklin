@@ -43,8 +43,8 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
           List.empty,
           itemList.toList
         ).updateLinks
-        val amountInserted = (
-          StacItemDao.insertManyStacItems(collectionWrapper.items)
+        val insertResult = (
+          StacItemDao.insertManyStacItems(collectionWrapper.items, collection)
             <* (collectionWrapper.items.toNel traverse { itemNel =>
               StacCollectionDao.updateExtent(
                 collectionId,
@@ -52,7 +52,14 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
               )
             })
         ).transact(xa)
-        EitherT.right[String](amountInserted)
+        EitherT.right[String](insertResult flatMap {
+          case (ids, n) if ids.isEmpty => n.pure[IO]
+          case (ids, n) =>
+            logger.warn(
+              s"Completed import but with errors. You can try adding these items individually:\n${ids
+                .mkString("\n")}"
+            ) map { _ => n }
+        })
       }
     } yield {
       stacItems
