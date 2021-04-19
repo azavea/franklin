@@ -257,20 +257,22 @@ class CatalogStacImport(val catalogRoot: String) {
                     ) flatMap { newAssets =>
                     val assets   = newAssets map { _._1 }
                     val wrappers = newAssets map { _._2 }
-                    logger.debug(s"Item ${item.id} has ${newAssets.length} additional assets") *>
-                      logger.debug(s"Item links before write: ${item.links map { _.href }}") *>
-                      (StacItemDao
-                        .insertStacItem(
-                          item
-                            .copy(
-                              assets =
-                                item.assets ++ assets.foldK
+                    (wrappers traverse { collectionWrapper =>
+                      insertCollection(collectionWrapper).transact(xa)
+                    }) <*
+                      logger.debug(s"Item ${item.id} has ${newAssets.length} additional assets") *>
+                        logger.debug(s"Item links before write: ${item.links map { _.href }}") *>
+                        ((
+                          StacItemDao
+                            .insertStacItem(
+                              item
+                                .copy(
+                                  assets =
+                                    item.assets ++ assets.foldK
+                                )
                             )
-                        ) *>
-                        (wrappers traverse { collectionWrapper =>
-                          insertCollection(collectionWrapper)
-                        }))
-                        .transact(xa)
+                            .transact(xa)
+                          ))
                   }
                 }
             })
