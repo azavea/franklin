@@ -101,6 +101,6 @@ class PeriodAlignmentSpec extends Specification with ScalaCheck {
 
     expectAlignment(now, now, annualPeriod) &&
     expectAlignment(now, now, monthlyPeriod) &&
-    !expectAlignment(now, now, weeklyPeriod)
+    expectAlignment(now, now, weeklyPeriod)
   }
 }
