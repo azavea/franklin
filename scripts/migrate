@@ -25,7 +25,7 @@ then
             ;;
         *)
             echo -e "\e[32m[franklin] Running migrations\e[0m"
-            sbt 'application/run migrate --db-host=localhost'
+            ./sbt 'application/run migrate --db-host=localhost'
             ;;
     esac
 fi
