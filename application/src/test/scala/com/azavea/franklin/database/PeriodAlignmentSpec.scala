@@ -1,16 +1,15 @@
 package com.azavea.franklin.api.schemas
 
-import com.azavea.franklin.database.StacItemDao
-
 import com.azavea.franklin.Generators
+import com.azavea.franklin.database.StacItemDao
 import com.azavea.franklin.datamodel.PaginationToken
 import org.specs2.{ScalaCheck, Specification}
+import org.threeten.extra.PeriodDuration
 import sttp.tapir.Codec
 import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.DecodeResult
 
 import java.time.Instant
-import org.threeten.extra.PeriodDuration
 import java.time.Period
 
 class PeriodAlignmentSpec extends Specification with ScalaCheck {
