@@ -4,7 +4,7 @@ import cats.Semigroup
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.azavea.franklin.database.SearchFilters
-import com.azavea.stac4s.types.TemporalExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import com.azavea.stac4s.{StacCollection, StacItem, TwoDimBbox}
 import geotrellis.vector.Extent
 import io.circe.optics._

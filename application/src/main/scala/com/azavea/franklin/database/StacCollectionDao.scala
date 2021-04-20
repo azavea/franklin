@@ -5,7 +5,7 @@ import cats.syntax.foldable._
 import cats.syntax.list._
 import com.azavea.franklin.datamodel.{BulkExtent, MapboxVectorTileFootprintRequest}
 import com.azavea.stac4s._
-import com.azavea.stac4s.types.TemporalExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._

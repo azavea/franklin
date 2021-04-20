@@ -1,11 +1,11 @@
 package com.azavea.franklin.extensions.validation
 
 import cats.syntax.semigroup._
+import com.azavea.stac4s.Interval
 import com.azavea.stac4s.extensions.{IntervalExtension, ItemExtension, LinkExtension}
 import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.{StacItem, StacLink}
 import eu.timepit.refined.types.string.NonEmptyString
-import com.azavea.stac4s.Interval
 
 package object syntax {
 

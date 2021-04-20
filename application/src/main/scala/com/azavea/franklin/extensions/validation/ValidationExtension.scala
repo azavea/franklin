@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.kernel.Semigroup
 import com.azavea.stac4s.extensions.CollectionExtension
-import com.azavea.stac4s.extensions.ItemAssetExtension
+import com.azavea.stac4s.extensions.StacAssetExtension
 import com.azavea.stac4s.extensions.{
   ExtensionResult,
   IntervalExtension,
@@ -45,8 +45,8 @@ object ValidationExtension {
   implicit val validationExtensionLinkExtension: LinkExtension[ValidationExtension] =
     LinkExtension.instance
 
-  implicit val validationExtensionAssetExtension: ItemAssetExtension[ValidationExtension] =
-    ItemAssetExtension.instance
+  implicit val validationExtensionAssetExtension: StacAssetExtension[ValidationExtension] =
+    StacAssetExtension.instance
 
   implicit val validationExtensionCollectionExtension: CollectionExtension[ValidationExtension] =
     CollectionExtension.instance

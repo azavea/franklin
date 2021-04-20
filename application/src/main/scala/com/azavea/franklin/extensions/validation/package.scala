@@ -7,6 +7,7 @@ import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.extensions.validation.syntax._
 import com.azavea.stac4s.StacCollection
+import com.azavea.stac4s.StacExtent
 import com.azavea.stac4s.extensions.eo.EOItemExtension
 import com.azavea.stac4s.extensions.label.{LabelItemExtension, LabelLinkExtension}
 import com.azavea.stac4s.extensions.layer.LayerItemExtension
@@ -27,7 +28,6 @@ import sttp.client.circe._
 import sttp.model.{Uri => SttpUri}
 
 import scala.util.{Failure, Success, Try}
-import com.azavea.stac4s.StacExtent
 
 package object validation {
 

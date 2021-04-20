@@ -12,6 +12,7 @@ import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import com.azavea.stac4s.syntax._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
@@ -28,12 +29,11 @@ import geotrellis.vector.Projected
 import io.circe.DecodingFailure
 import io.circe.Json
 import io.circe.syntax._
+import org.threeten.extra.PeriodDuration
 
 import java.time.Instant
-import org.threeten.extra.PeriodDuration
-import com.azavea.stac4s.types.TemporalExtent
-import java.time.Period
 import java.time.LocalDateTime
+import java.time.Period
 import java.time.ZoneId
 import java.time.ZoneOffset
 
