@@ -47,6 +47,9 @@ jobs:
           name: cibuild
           command: ./scripts/cibuild
 
+      - store_test_results:
+          path: application/target/test-reports
+
       - run:
           name: cipublish
           command: |
