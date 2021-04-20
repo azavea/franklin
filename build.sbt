@@ -154,6 +154,7 @@ lazy val applicationDependencies = Seq(
   "org.specs2"                   %% "specs2-core"                    % Versions.Specs2Version % Test,
   "org.specs2"                   %% "specs2-scalacheck"              % Versions.Specs2Version % Test,
   "org.spire-math"               %% "spire"                          % Versions.SpireVersion,
+  "org.threeten"                 % "threeten-extra"                  % Versions.ThreeTenExtra,
   "org.tpolecat"                 %% "doobie-core"                    % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-free"                    % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-hikari"                  % Versions.DoobieVersion,
