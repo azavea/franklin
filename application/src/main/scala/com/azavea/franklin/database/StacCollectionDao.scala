@@ -5,7 +5,9 @@ import cats.syntax.foldable._
 import cats.syntax.list._
 import com.azavea.franklin.datamodel.{BulkExtent, MapboxVectorTileFootprintRequest}
 import com.azavea.stac4s._
+import com.azavea.stac4s.extensions.periodic.PeriodicExtent
 import com.azavea.stac4s.jvmTypes.TemporalExtent
+import com.azavea.stac4s.syntax._
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
@@ -68,12 +70,18 @@ object StacCollectionDao extends Dao[StacCollection] {
             )
       }
 
-      val newCollection: StacCollection = collection.copy(
-        extent = StacExtent(
-          SpatialExtent(newBbox),
-          Interval(newTemporal)
-        )
+      val nonPeriodicInterval = Interval(newTemporal)
+      val periodic            = existingExtent.temporal.getExtensionFields[PeriodicExtent]
+
+      val newExtent = periodic.fold(
+        _ => StacExtent(SpatialExtent(newBbox), nonPeriodicInterval),
+        periodicInfo => {
+          val periodicInterval = nonPeriodicInterval.addExtensionFields(periodicInfo)
+          StacExtent(SpatialExtent(newBbox), periodicInterval)
+        }
       )
+
+      val newCollection: StacCollection = collection.copy(extent = newExtent)
 
       OptionT.liftF {
         fr"update collections set collection = ${newCollection} where id = ${collectionId};".update.run
