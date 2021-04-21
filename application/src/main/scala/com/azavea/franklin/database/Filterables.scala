@@ -2,7 +2,7 @@ package com.azavea.franklin.database
 
 import cats.syntax.all._
 import com.azavea.franklin.datamodel._
-import com.azavea.stac4s.types.TemporalExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import doobie.implicits._
 import doobie.postgres.circe.jsonb.implicits._
 import doobie.refined.implicits._

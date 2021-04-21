@@ -8,7 +8,7 @@ fi
 
 function usage() {
     echo -ne \
-         "Usage: $(basename "${0}")
+        "Usage: $(basename "${0}")
 Run linters and tests.
 "
 }
@@ -37,8 +37,8 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         fi
 
         echo "Executing Scala tests"
-                    echo -e "\e[32m[franklin] Execute Scalafix\e[0m"
-            ./sbt ";scalafix --check;test:scalafix --check;scalafmtCheck;test:scalafmtCheck;scalafmtSbtCheck;scapegoat;undeclaredCompileDependenciesTest;unusedCompileDependenciesTest;test"
+        echo -e "\e[32m[franklin] Execute Scalafix\e[0m"
+        ./sbt ";scalafix --check;test:scalafix --check;scalafmtCheck;test:scalafmtCheck;scalafmtSbtCheck;scapegoat;undeclaredCompileDependenciesTest;unusedCompileDependenciesTest;test"
 
     fi
 fi

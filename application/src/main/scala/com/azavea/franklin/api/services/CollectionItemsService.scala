@@ -181,6 +181,9 @@ class CollectionItemsService[F[_]: Concurrent](
               case Right(inserted) =>
                 val validated = validator(inserted)
                 Right((validated.asJson, validated.##.toString))
+              case Left(StacItemDao.InvalidTimeForPeriod) =>
+                Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
+              // this fall through covers the only other failure mode for item creation
               case Left(_) =>
                 collectionNotFound(collId)
             }
@@ -198,6 +201,9 @@ class CollectionItemsService[F[_]: Concurrent](
             case Right(inserted) =>
               val validated = validator(inserted)
               Right((validated.asJson, validated.##.toString))
+            case Left(StacItemDao.InvalidTimeForPeriod) =>
+              Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
+            // this fall through covers the only other failure mode for item creation
             case Left(_) =>
               collectionNotFound(collectionId)
           }
@@ -221,6 +227,8 @@ class CollectionItemsService[F[_]: Concurrent](
           Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
         case Left(StacItemDao.ItemNotFound) =>
           Left(NF(s"Item $itemId in collection $collectionId not found"))
+        case Left(StacItemDao.InvalidTimeForPeriod) =>
+          Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
         case Left(_) =>
           Left(ValidationError(s"Update of $itemId not possible with value passed"))
         case Right(item) =>
@@ -286,6 +294,20 @@ class CollectionItemsService[F[_]: Concurrent](
           .left[CrudError, (Json, String)](
             InvalidPatch(
               s"Patch would invalidate item $itemId: ${CursorOp.opsToPath(err.history)}",
+              jsonPatch
+            )
+          )
+          .pure[F]
+      case Some(Left(StacItemDao.InvalidTimeForPeriod)) =>
+        // can't match the error in the pattern, because we get a warning about the type
+        // not definitely being as narrow as we think it is which refers to
+        // https://github.com/scala/bug/issues/1503
+        // anyway, it's a case object, so we can just grab the same single object and
+        // use its message
+        Either
+          .left[CrudError, (Json, String)](
+            InvalidPatch(
+              StacItemDao.InvalidTimeForPeriod.msg,
               jsonPatch
             )
           )
