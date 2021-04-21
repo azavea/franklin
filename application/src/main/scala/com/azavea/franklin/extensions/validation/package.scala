@@ -7,9 +7,11 @@ import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.extensions.validation.syntax._
 import com.azavea.stac4s.StacCollection
+import com.azavea.stac4s.StacExtent
 import com.azavea.stac4s.extensions.eo.EOItemExtension
 import com.azavea.stac4s.extensions.label.{LabelItemExtension, LabelLinkExtension}
 import com.azavea.stac4s.extensions.layer.LayerItemExtension
+import com.azavea.stac4s.extensions.periodic.PeriodicExtent
 import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.{StacItem, StacLink, StacLinkType}
 import eu.timepit.refined.auto._
@@ -29,9 +31,18 @@ import scala.util.{Failure, Success, Try}
 
 package object validation {
 
-  val linksLens = GenLens[StacItem](_.links)
+  private val linksLens = GenLens[StacItem](_.links)
+
+  private val extentLens = GenLens[StacCollection](_.extent)
+
+  private val temporalLens = GenLens[StacExtent](_.temporal)
 
   type ExtensionRef[F[_], T] = Ref[F, Map[String, T => T]]
+
+  private val periodicExtentValidator =
+    (extentLens.modify(
+      temporalLens.modify(interval => interval.validate[PeriodicExtent]("periodic-extent"))
+    ))
 
   private val itemLabelValidator = (item: StacItem) => item.validate[LabelItemExtension]("label")
 
@@ -40,9 +51,6 @@ package object validation {
 
   private val labelItemLinkValidator =
     linksLens.modify(Functor[List].lift(linkLabelValidator)) compose itemLabelValidator
-
-  private def getExtensionsRef[F[_]: Sync, T]: F[ExtensionRef[F, T]] =
-    Ref.of(Map.empty)
 
   private def getExtensionsRef[F[_]: Sync, T](
       m: Map[String, T => T]
@@ -58,8 +66,15 @@ package object validation {
     )
   )
 
-  def itemExtensionsRef[F[_]: Sync]       = getExtensionsRef[F, StacItem](knownItemExtensions)
-  def collectionExtensionsRef[F[_]: Sync] = getExtensionsRef[F, StacCollection]
+  private val knownCollectionExtensions: Map[String, StacCollection => StacCollection] = Map(
+    "periodic-extent"                                                                            -> periodicExtentValidator,
+    "https://raw.githubusercontent.com/azavea/stac-periodic-extent/main/json-schema/schema.json" -> periodicExtentValidator
+  )
+
+  def itemExtensionsRef[F[_]: Sync] = getExtensionsRef[F, StacItem](knownItemExtensions)
+
+  def collectionExtensionsRef[F[_]: Sync] =
+    getExtensionsRef[F, StacCollection](knownCollectionExtensions)
 
   private def readAsSchema[F[_]: Sync](
       extension: String

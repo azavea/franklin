@@ -7,7 +7,7 @@ import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToS
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
-import com.azavea.stac4s.types.TemporalExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
 import io.circe.syntax._
