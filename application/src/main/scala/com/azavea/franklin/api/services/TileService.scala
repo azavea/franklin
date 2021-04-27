@@ -31,6 +31,7 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import cats.effect.Temporal
 
 class TileService[F[_]: Concurrent: LiftIO](
     serverHost: NonEmptyString,
@@ -39,7 +40,7 @@ class TileService[F[_]: Concurrent: LiftIO](
 )(
     implicit cs: ContextShift[F],
     csIO: ContextShift[IO],
-    timerF: Timer[F]
+    timerF: Temporal[F]
 ) extends Http4sDsl[F]
     with RenderImplicits {
 

@@ -1,6 +1,5 @@
 package com.azavea.franklin.api.commands
 
-import cats.effect.ContextShift
 import cats.effect.IO
 import doobie.free.connection.{rollback, setAutoCommit, unit}
 import doobie.util.transactor.Strategy
@@ -17,7 +16,7 @@ final case class DatabaseConfig(
   val jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
   val driver  = "org.postgresql.Driver"
 
-  def getTransactor(dryRun: Boolean)(implicit cs: ContextShift[IO]) = {
+  def getTransactor(dryRun: Boolean) = {
     Transactor.strategy.set(
       Transactor.fromDriverManager[IO](
         driver,

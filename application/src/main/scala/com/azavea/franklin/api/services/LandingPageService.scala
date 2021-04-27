@@ -20,10 +20,11 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
+import cats.effect.Temporal
 
 class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     implicit contextShift: ContextShift[F],
-    timer: Timer[F],
+    timer: Temporal[F],
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 

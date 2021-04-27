@@ -1,6 +1,5 @@
 package com.azavea.franklin.tile
 
-import cats.effect.ContextShift
 import cats.effect.IO
 import geotrellis.proj4.WebMercator
 import geotrellis.raster._
@@ -18,7 +17,7 @@ object CogAssetNodeImplicits extends TileUtil {
       def tmsReification(
           self: CogAssetNode,
           buffer: Int
-      )(implicit cs: ContextShift[IO]): (Int, Int, Int) => IO[ProjectedRaster[MultibandTile]] =
+      ): (Int, Int, Int) => IO[ProjectedRaster[MultibandTile]] =
         (z: Int, x: Int, y: Int) => {
           def fetch(xCoord: Int, yCoord: Int): IO[Raster[MultibandTile]] = {
             self.fetchTile(z, xCoord, yCoord, WebMercator).flatMap(a => IO(a))
@@ -36,7 +35,7 @@ object CogAssetNodeImplicits extends TileUtil {
 
       def extentReification(
           self: CogAssetNode
-      )(implicit cs: ContextShift[IO]): (Extent, CellSize) => IO[ProjectedRaster[MultibandTile]] =
+      ): (Extent, CellSize) => IO[ProjectedRaster[MultibandTile]] =
         (extent: Extent, cs: CellSize) => {
           self.getRasterSource map { rs =>
             rs.resample(

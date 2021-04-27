@@ -34,6 +34,7 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import cats.effect.Resource
 
 object Server extends IOApp.WithContext {
 
@@ -113,8 +114,8 @@ $$$$
           xa
         ).routes
         tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-        itemExtensions       <- Resource.liftF { itemExtensionsRef[IO] }
-        collectionExtensions <- Resource.liftF { collectionExtensionsRef[IO] }
+        itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
+        collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
         collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
           IO
         ](
@@ -130,7 +131,7 @@ $$$$
             )
           )
         ).orNotFound
-        serverBuilderBlocker <- Blocker[IO]
+        serverBuilderBlocker <- Resource.unit[IO]
         server <- {
           BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)
             .bindHttp(apiConfig.internalPort.value, "0.0.0.0")
