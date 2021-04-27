@@ -9,8 +9,8 @@ import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 import com.azavea.stac4s.StacLinkType._
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.label.LabelItemExtension
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import com.azavea.stac4s.syntax._
-import com.azavea.stac4s.types.TemporalExtent
 import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -88,7 +88,7 @@ class CatalogStacImport(val catalogRoot: String) {
       fromPath: String
   )(
       implicit backend: SttpBackend[IO, Nothing, NothingT]
-  ): IO[List[(Map[String, StacItemAsset], CollectionWrapper)]] = {
+  ): IO[List[(Map[String, StacAsset], CollectionWrapper)]] = {
     val geojsonAssets = forItem.assets.toList.filter {
       case (_, asset) => asset._type === Some(`application/geo+json`)
     }
@@ -129,7 +129,7 @@ class CatalogStacImport(val catalogRoot: String) {
                       None
                     )
                   val labelCollection = StacCollection(
-                    "1.0.0-beta1",
+                    "1.0.0-rc2",
                     Nil,
                     s"${forItem.id}-labels-${idx + 1}",
                     Some(s"${forItem.id} Labels"),
@@ -152,7 +152,8 @@ class CatalogStacImport(val catalogRoot: String) {
                     ),
                     ().asJsonObject,
                     forItem.properties,
-                    List(parentCollectionLink, derivedFromItemLink)
+                    List(parentCollectionLink, derivedFromItemLink),
+                    Some(Map.empty)
                   )
                   val featureItems =
                     featureCollection.getAllFeatures[Feature[Geometry, JsonObject]] map { feature =>
@@ -165,7 +166,7 @@ class CatalogStacImport(val catalogRoot: String) {
                     }
 
                   val newAsset = Map(
-                    s"Label collection ${idx + 1}" -> StacItemAsset(
+                    s"Label collection ${idx + 1}" -> StacAsset(
                       s"/collections/${URLEncoder
                         .encode(labelCollection.id, StandardCharsets.UTF_8.toString)}",
                       None,
@@ -257,20 +258,22 @@ class CatalogStacImport(val catalogRoot: String) {
                     ) flatMap { newAssets =>
                     val assets   = newAssets map { _._1 }
                     val wrappers = newAssets map { _._2 }
-                    logger.debug(s"Item ${item.id} has ${newAssets.length} additional assets") *>
-                      logger.debug(s"Item links before write: ${item.links map { _.href }}") *>
-                      (StacItemDao
-                        .insertStacItem(
-                          item
-                            .copy(
-                              assets =
-                                item.assets ++ assets.foldK
+                    (wrappers traverse { collectionWrapper =>
+                      insertCollection(collectionWrapper).transact(xa)
+                    }) <*
+                      logger.debug(s"Item ${item.id} has ${newAssets.length} additional assets") *>
+                        logger.debug(s"Item links before write: ${item.links map { _.href }}") *>
+                        ((
+                          StacItemDao
+                            .insertStacItem(
+                              item
+                                .copy(
+                                  assets =
+                                    item.assets ++ assets.foldK
+                                )
                             )
-                        ) *>
-                        (wrappers traverse { collectionWrapper =>
-                          insertCollection(collectionWrapper)
-                        }))
-                        .transact(xa)
+                            .transact(xa)
+                          ))
                   }
                 }
             })

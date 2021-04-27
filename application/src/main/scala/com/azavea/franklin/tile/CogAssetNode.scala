@@ -3,7 +3,7 @@ package com.azavea.franklin.tile
 import cats.data.{NonEmptyList => NEL}
 import cats.effect.IO
 import com.azavea.franklin.cache._
-import com.azavea.stac4s.StacItemAsset
+import com.azavea.stac4s.StacAsset
 import geotrellis.layer._
 import geotrellis.proj4._
 import geotrellis.raster._
@@ -13,7 +13,7 @@ import geotrellis.raster.resample._
 import scalacache.modes.sync._
 import scalacache.{Sync => _, _}
 
-case class CogAssetNode(asset: StacItemAsset, bands: Seq[Int]) extends TileUtil {
+case class CogAssetNode(asset: StacAsset, bands: Seq[Int]) extends TileUtil {
   private val histoKey = s"histogram - $bands - ${asset.href}"
   private val tiffKey  = s"tiff - ${asset.href}"
 
