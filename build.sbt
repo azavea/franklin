@@ -1,11 +1,11 @@
-cancelable in Global := true
+Global / cancelable := true
 
 lazy val commonSettings = Seq(
   organization := "com.azavea",
   name := "franklin",
   version := "0.0.1-SNAPSHOT",
   scalaVersion := "2.12.10",
-  scapegoatVersion in ThisBuild := Versions.ScapegoatVersion,
+  ThisBuild / scapegoatVersion := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
   scalacOptions ~= filterConsoleScalacOptions,
   externalResolvers := Seq(
@@ -48,12 +48,12 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.13" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.15" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
-scalafixDependencies in ThisBuild +=
+ThisBuild / scalafixDependencies +=
   "com.nequissimus" %% "sort-imports" % "0.5.5"
 
 lazy val root = (project in file("."))
@@ -65,10 +65,10 @@ lazy val root = (project in file("."))
 ///////////////////////
 lazy val applicationSettings = commonSettings ++ Seq(
   name := "application",
-  fork in run := true,
-  test in assembly := {},
-  assemblyJarName in assembly := "franklin-api-assembly.jar",
-  assemblyMergeStrategy in assembly := {
+  run / fork := true,
+  assembly / test := {},
+  assembly / assemblyJarName := "franklin-api-assembly.jar",
+  assembly / assemblyMergeStrategy := {
     case "reference.conf"                       => MergeStrategy.concat
     case "application.conf"                     => MergeStrategy.concat
     case n if n.startsWith("META-INF/services") => MergeStrategy.concat
@@ -154,6 +154,7 @@ lazy val applicationDependencies = Seq(
   "org.specs2"                   %% "specs2-core"                    % Versions.Specs2Version % Test,
   "org.specs2"                   %% "specs2-scalacheck"              % Versions.Specs2Version % Test,
   "org.spire-math"               %% "spire"                          % Versions.SpireVersion,
+  "org.threeten"                 % "threeten-extra"                  % Versions.ThreeTenExtra,
   "org.tpolecat"                 %% "doobie-core"                    % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-free"                    % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-hikari"                  % Versions.DoobieVersion,
