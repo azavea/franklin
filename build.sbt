@@ -1,11 +1,11 @@
-cancelable in Global := true
+Global / cancelable := true
 
 lazy val commonSettings = Seq(
   organization := "com.azavea",
   name := "franklin",
   version := "0.0.1-SNAPSHOT",
   scalaVersion := "2.12.10",
-  scapegoatVersion in ThisBuild := Versions.ScapegoatVersion,
+  ThisBuild / scapegoatVersion := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
   scalacOptions ~= filterConsoleScalacOptions,
   externalResolvers := Seq(
@@ -48,12 +48,12 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.10" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.15" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
-scalafixDependencies in ThisBuild +=
+ThisBuild / scalafixDependencies +=
   "com.nequissimus" %% "sort-imports" % "0.5.5"
 
 lazy val root = (project in file("."))
@@ -65,10 +65,10 @@ lazy val root = (project in file("."))
 ///////////////////////
 lazy val applicationSettings = commonSettings ++ Seq(
   name := "application",
-  fork in run := true,
-  test in assembly := {},
-  assemblyJarName in assembly := "franklin-api-assembly.jar",
-  assemblyMergeStrategy in assembly := {
+  run / fork := true,
+  assembly / test := {},
+  assembly / assemblyJarName := "franklin-api-assembly.jar",
+  assembly / assemblyMergeStrategy := {
     case "reference.conf"                       => MergeStrategy.concat
     case "application.conf"                     => MergeStrategy.concat
     case n if n.startsWith("META-INF/services") => MergeStrategy.concat
@@ -83,6 +83,7 @@ lazy val applicationDependencies = Seq(
   "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
+  "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
   "com.azavea.geotrellis"        %% "geotrellis-server-core"         % Versions.GeotrellisServerVersion,
   "com.azavea.geotrellis"        %% "maml-jvm"                       % Versions.MamlVersion,
   "com.azavea.stac4s"            %% "core"                           % Versions.Stac4SVersion,
@@ -120,9 +121,11 @@ lazy val applicationDependencies = Seq(
   "eu.timepit"                   %% "refined"                        % Versions.Refined,
   "io.chrisdavenport"            %% "cats-scalacheck"                % Versions.CatsScalacheckVersion % Test,
   "io.chrisdavenport"            %% "log4cats-core"                  % Versions.Log4CatsVersion,
+  "io.chrisdavenport"            %% "log4cats-noop"                  % Versions.Log4CatsVersion % Test,
   "io.chrisdavenport"            %% "log4cats-slf4j"                 % Versions.Log4CatsVersion,
   "io.circe"                     %% "circe-core"                     % Versions.CirceVersion,
   "io.circe"                     %% "circe-generic"                  % Versions.CirceVersion,
+  "io.circe"                     %% "circe-json-schema"              % Versions.CirceJsonSchemaVersion,
   "io.circe"                     %% "circe-parser"                   % Versions.CirceVersion,
   "io.circe"                     %% "circe-refined"                  % Versions.CirceVersion,
   "io.circe"                     %% "circe-testing"                  % Versions.CirceVersion % Test,
@@ -151,6 +154,7 @@ lazy val applicationDependencies = Seq(
   "org.specs2"                   %% "specs2-core"                    % Versions.Specs2Version % Test,
   "org.specs2"                   %% "specs2-scalacheck"              % Versions.Specs2Version % Test,
   "org.spire-math"               %% "spire"                          % Versions.SpireVersion,
+  "org.threeten"                 % "threeten-extra"                  % Versions.ThreeTenExtra,
   "org.tpolecat"                 %% "doobie-core"                    % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-free"                    % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-hikari"                  % Versions.DoobieVersion,

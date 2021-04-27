@@ -2,13 +2,13 @@ package com.azavea.franklin.database
 
 import cats.syntax.all._
 import com.azavea.franklin.datamodel._
-import com.azavea.franklin.extensions.validation.ExtensionName
-import com.azavea.stac4s.types.TemporalExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import doobie.implicits._
 import doobie.postgres.circe.jsonb.implicits._
 import doobie.refined.implicits._
 import doobie.{Query => _, _}
 import geotrellis.vector.Projected
+import io.circe.Json
 import io.circe.syntax._
 
 trait FilterHelpers {
@@ -18,13 +18,11 @@ trait FilterHelpers {
     def toFilterFragment: Option[Fragment] = {
       temporalExtent.value match {
         case Some(start) :: Some(end) :: _ =>
-          Some(
-            fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ >= $start AND (item #>> '{properties, datetime}') :: TIMESTAMPTZ <= $end"
-          )
+          Some(fr"(datetime >= $start AND datetime <= $end)")
         case Some(start) :: _ =>
-          Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ >= $start")
+          Some(fr"datetime >= $start")
         case _ :: Some(end) :: _ =>
-          Some(fr"(item #>> '{properties, datetime}') :: TIMESTAMPTZ <= $end")
+          Some(fr"datetime <= $end")
         case _ => None
       }
     }
@@ -32,13 +30,18 @@ trait FilterHelpers {
 
   implicit class QueryWithFilter(query: Query) {
 
+    private val printJson = (js: Json) => js.noSpaces.replace("\"", "")
+
+    private def eqCheck(field: String, value: Json): Fragment =
+      Fragment.const(s"""item -> 'properties' @> '{"$field": "${printJson(value)}"}' :: jsonb""")
+
     def toFilterFragment(field: String) = {
       val fieldFragment = Fragment.const(s"item -> 'properties' -> '$field'")
       query match {
         case Equals(value) =>
-          fieldFragment ++ fr"= $value"
+          eqCheck(field, value)
         case NotEqualTo(value) =>
-          fieldFragment ++ fr"<> $value"
+          fr"NOT" ++ eqCheck(field, value)
         case GreaterThan(floor) =>
           fieldFragment ++ fr"> $floor"
         case GreaterThanEqual(floor) =>
@@ -53,7 +56,10 @@ trait FilterHelpers {
           Fragment.const(s"right(item ->> '$field', ${postfix.value.length})") ++ fr"= $postfix"
         case Contains(substring) =>
           Fragment.const(s"strpos(item ->> '$field', '$substring') > 0")
-        case In(values)       => Fragments.in(fieldFragment, values)
+        case In(values) =>
+          values.tail.foldLeft(eqCheck(field, values.head))({
+            case (acc, v) => acc ++ fr"OR" ++ eqCheck(field, v)
+          })
         case Superset(values) => fieldFragment ++ fr"@> ${values.asJson}"
       }
     }
@@ -119,20 +125,16 @@ trait Filterables extends GeotrellisWktMeta with FilterHelpers {
             )
         }).toList map { Some(_) }
 
-      List(collectionsFilter, idFilter, geometryFilter, bboxFilter, temporalExtentFilter) ++ queryExtFilter ++ Filterable
-        .summon[
-          Any,
-          Option[PaginationToken]
-        ]
-        .toFilters(searchFilters.next)
+      val out =
+        List(collectionsFilter, idFilter, geometryFilter, bboxFilter, temporalExtentFilter) ++ queryExtFilter ++ Filterable
+          .summon[
+            Any,
+            Option[PaginationToken]
+          ]
+          .toFilters(searchFilters.next)
+      out
     }
 
-  implicit val extensionNamesFilter: Filterable[Any, List[ExtensionName]] =
-    Filterable[Any, List[ExtensionName]] { extensions =>
-      List(
-        extensions.toNel map { extensions => fr"item -> 'stac_extensions' @> ${extensions.asJson}" }
-      )
-    }
 }
 
 object Filterables extends Filterables

@@ -1,10 +1,15 @@
 package com.azavea.franklin
 
+import cats.data.NonEmptyList
 import cats.syntax.all._
-import com.azavea.stac4s.types.TemporalExtent
+import com.azavea.franklin.datamodel.BulkExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
+import com.azavea.stac4s.{Bbox, StacItem, ThreeDimBbox, TwoDimBbox}
 import doobie.implicits.javasql._
 import doobie.util.meta.Meta
 import doobie.util.{Read, Write}
+import geotrellis.vector.Extent
+import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
 
 import java.sql.Timestamp
@@ -57,10 +62,44 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
     }
   }
 
+  def getItemsBulkExtent(items: NonEmptyList[StacItem]): BulkExtent =
+    items.foldLeft(BulkExtent(None, None, items.head.bbox))({
+      case (BulkExtent(start, end, bbox), item) => {
+        val itemDt  = item.properties.asJson.hcursor.downField("datetime").as[Instant].toOption
+        val newBbox = bbox.union(item.bbox)
+        val newEndpoints = itemDt flatMap { newDt =>
+          (start map { dt =>
+            if (dt.isBefore(newDt)) { dt }
+            else newDt
+          } orElse Some(newDt), end map { dt =>
+            if (dt.isAfter(newDt)) dt else newDt
+          } orElse Some(newDt)).tupled
+        }
+
+        newEndpoints match {
+          case Some((newStart, newEnd)) =>
+            BulkExtent(Some(newStart), Some(newEnd), newBbox.toTwoDim)
+          case None => BulkExtent(start, end, newBbox.toTwoDim)
+        }
+
+      }
+    })
+
   implicit val encoderTemporalExtent: Encoder[TemporalExtent] =
     Encoder.encodeString.contramap[TemporalExtent] { extent => temporalExtentToString(extent) }
 
   implicit val decoderTemporalExtent: Decoder[TemporalExtent] = Decoder.decodeString.emap { str =>
     temporalExtentFromString(str)
+  }
+
+  implicit class bboxToTwoDim(bbox: Bbox) {
+
+    def toTwoDim: TwoDimBbox = bbox match {
+      case ThreeDimBbox(xmin, ymin, _, xmax, ymax, _) =>
+        TwoDimBbox(xmin, ymin, xmax, ymax)
+
+      case twoD: TwoDimBbox => twoD
+    }
+
   }
 }

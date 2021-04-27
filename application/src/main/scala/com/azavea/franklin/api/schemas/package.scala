@@ -6,11 +6,11 @@ import cats.syntax.traverse._
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
-import com.azavea.franklin.extensions.validation.ExtensionName
 import com.azavea.stac4s._
-import com.azavea.stac4s.types.TemporalExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
+import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.json.circe._
@@ -19,9 +19,6 @@ import sttp.tapir.{Codec, DecodeResult, Schema}
 import scala.util.Try
 
 package object schemas {
-
-  implicit val extensionNameCodec: PlainCodec[ExtensionName] =
-    Codec.string.mapDecode(s => DecodeResult.Value(ExtensionName.fromString(s)))(_.toString)
 
   implicit val schemaForTemporalExtent: Schema[TemporalExtent] = Schema(
     schemaForCirceJson.schemaType
@@ -87,5 +84,8 @@ package object schemas {
 
   implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
     Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
+
+  implicit val schemaForStacLink: Schema[StacLinkType] =
+    Schema.schemaForString.map(s => s.asJson.as[StacLinkType].toOption)(_.repr)
 
 }

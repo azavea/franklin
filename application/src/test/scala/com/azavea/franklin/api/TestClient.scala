@@ -78,6 +78,6 @@ class TestClient[F[_]: Sync](
   def getCollectionItemResource(
       item: StacItem,
       collection: StacCollection
-  ): Resource[F, (StacItem, StacCollection)] =
-    (getItemResource(collection, item), getCollectionResource(collection)).tupled
+  ): Resource[F, (StacCollection, StacItem)] =
+    (getCollectionResource(collection), getItemResource(collection, item)).tupled
 }

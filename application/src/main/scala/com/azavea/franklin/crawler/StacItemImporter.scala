@@ -4,8 +4,7 @@ import cats.data.EitherT
 import cats.data.NonEmptyList
 import cats.effect.{ContextShift, IO}
 import cats.syntax.all._
-import com.azavea.franklin.database.StacCollectionDao
-import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.database.{getItemsBulkExtent, StacCollectionDao, StacItemDao}
 import com.azavea.stac4s._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -21,7 +20,7 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
 
   private def getCollection(xa: Transactor[IO]): EitherT[IO, String, StacCollection] =
     EitherT {
-      StacCollectionDao.getCollectionUnique(collectionId).transact(xa).map { collectionOption =>
+      StacCollectionDao.getCollection(collectionId).transact(xa).map { collectionOption =>
         Either
           .fromOption(collectionOption, s"Could not read collection: $collectionId from database")
       }
@@ -44,8 +43,23 @@ class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[Stri
           List.empty,
           itemList.toList
         ).updateLinks
-        val amountInserted = StacItemDao.insertManyStacItems(collectionWrapper.items).transact(xa)
-        EitherT.right[String](amountInserted)
+        val insertResult = (
+          StacItemDao.insertManyStacItems(collectionWrapper.items, collection)
+            <* (collectionWrapper.items.toNel traverse { itemNel =>
+              StacCollectionDao.updateExtent(
+                collectionId,
+                getItemsBulkExtent(itemNel)
+              )
+            })
+        ).transact(xa)
+        EitherT.right[String](insertResult flatMap {
+          case (ids, n) if ids.isEmpty => n.pure[IO]
+          case (ids, n) =>
+            logger.warn(
+              s"Completed import but with errors. You can try adding these items individually:\n${ids
+                .mkString("\n")}"
+            ) map { _ => n }
+        })
       }
     } yield {
       stacItems

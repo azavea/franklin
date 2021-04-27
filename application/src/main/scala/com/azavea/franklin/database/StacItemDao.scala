@@ -1,10 +1,18 @@
 package com.azavea.franklin.database
 
-import cats.data.{EitherT, OptionT}
+import cats.data.EitherT
+import cats.data.NonEmptyList
+import cats.data.OptionT
 import cats.syntax.all._
-import com.azavea.franklin.datamodel.{Context, PaginationToken, SearchMethod, StacSearchCollection}
+import com.azavea.franklin.datamodel.BulkExtent
+import com.azavea.franklin.datamodel.Context
+import com.azavea.franklin.datamodel.PaginationToken
+import com.azavea.franklin.datamodel.SearchMethod
+import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
+import com.azavea.stac4s.extensions.periodic.PeriodicExtent
+import com.azavea.stac4s.jvmTypes.TemporalExtent
 import com.azavea.stac4s.syntax._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
@@ -16,11 +24,18 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.vector.{Geometry, Projected}
+import geotrellis.vector.Geometry
+import geotrellis.vector.Projected
+import io.circe.DecodingFailure
+import io.circe.Json
 import io.circe.syntax._
-import io.circe.{DecodingFailure, Json}
+import org.threeten.extra.PeriodDuration
 
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.Period
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 object StacItemDao extends Dao[StacItem] {
 
@@ -28,6 +43,10 @@ object StacItemDao extends Dao[StacItem] {
   case object UpdateFailed                                extends StacItemDaoError("Failed to update STAC item")
   case object StaleObject                                 extends StacItemDaoError("Server-side object updated")
   case object ItemNotFound                                extends StacItemDaoError("Not found")
+  case object CollectionNotFound                          extends StacItemDaoError("Collection not found")
+
+  case object InvalidTimeForPeriod
+      extends StacItemDaoError("Item datetime does not align with collection periodic extent")
 
   case class PatchInvalidatesItem(err: DecodingFailure)
       extends StacItemDaoError("Applying patch would create an invalid patch item")
@@ -35,6 +54,90 @@ object StacItemDao extends Dao[StacItem] {
   val tableName = "collection_items"
 
   val selectF = fr"SELECT item FROM " ++ tableF
+
+  private def lazyOr(test: Boolean, fallback: => Boolean) =
+    if (!test) {
+      fallback
+    } else {
+      test
+    }
+
+  private[franklin] def periodAligned(
+      periodAnchor: Instant,
+      instant: Instant,
+      periodDuration: PeriodDuration
+  ): Boolean = {
+    val anchorLocal  = LocalDateTime.ofInstant(periodAnchor, ZoneId.of("UTC"))
+    val instantLocal = LocalDateTime.ofInstant(instant, ZoneId.of("UTC"))
+    lazyOr(
+      instant == periodAnchor,
+      if (periodAnchor.isAfter(instant)) {
+        val incremented =
+          LocalDateTime.from(periodDuration.addTo(instantLocal))
+        val comparison = incremented.compareTo(anchorLocal)
+        if (comparison > 0) {
+          false
+        } else if (comparison == 0) {
+          true
+        } else {
+          periodAligned(
+            periodAnchor,
+            incremented.toInstant(ZoneOffset.UTC),
+            periodDuration
+          )
+        }
+      } else {
+        val incremented =
+          LocalDateTime.from(periodDuration.addTo(anchorLocal))
+        val comparison = incremented.compareTo(instantLocal)
+        if (comparison > 0) {
+          false
+        } else if (comparison == 0) {
+          true
+        } else {
+          periodAligned(
+            incremented.toInstant(ZoneOffset.UTC),
+            instant,
+            periodDuration
+          )
+        }
+      }
+    )
+  }
+
+  private def checkItemTimeAgainstCollection(
+      collection: StacCollection,
+      item: StacItem
+  ): Either[InvalidTimeForPeriod.type, StacItem] = {
+    collection.extent.temporal
+      .getExtensionFields[PeriodicExtent]
+      .toEither
+      .fold(
+        _ => Right(item),
+        period => {
+          item.properties.asJson.hcursor
+            .get[Instant]("datetime")
+            .leftMap(_ => InvalidTimeForPeriod)
+            .flatMap { instant =>
+              // check whether period.period, in conjunction with collection interval,
+              // lands cleanly on instant
+              val periodDuration = period.period
+              val anchorInstant =
+                (collection.extent.temporal.interval.headOption flatMap {
+                  (interval: TemporalExtent) =>
+                    interval.value.find(_.isDefined)
+                }).flatten
+              anchorInstant.fold(
+                Either.left[InvalidTimeForPeriod.type, StacItem](InvalidTimeForPeriod)
+              )(anchor =>
+                if (periodAligned(anchor, instant, periodDuration)) {
+                  Either.right[InvalidTimeForPeriod.type, StacItem](item)
+                } else { Left(InvalidTimeForPeriod) }
+              )
+            }
+        }
+      )
+  }
 
   def getItemCount(): ConnectionIO[Int] = {
     sql"select count(*) from collection_items".query[Int].unique
@@ -63,23 +166,22 @@ object StacItemDao extends Dao[StacItem] {
       case (serialId, createdAt) => PaginationToken(createdAt, serialId)
     }).value
 
-  def getSearchResult(
-      searchFilters: SearchFilters,
+  def getSearchLinks(
+      items: List[StacItem],
       limit: NonNegInt,
+      searchFilters: SearchFilters,
       apiHost: NonEmptyString,
       searchMethod: SearchMethod
-  ): ConnectionIO[StacSearchCollection] = {
+  ): ConnectionIO[List[StacLink]] =
     for {
-      items <- query.filter(searchFilters).list(limit.value)
       nextToken <- items.lastOption traverse { item =>
         getPaginationToken(item.id)
       } map { _.flatten }
       nextExists <- nextToken traverse { token =>
         query.filter(searchFilters.copy(next = Some(token), limit = Some(1))).exists
       }
-      matched <- query.filter(searchFilters.copy(next = None)).count
     } yield {
-      val links = (nextExists, nextToken, searchMethod, searchFilters.asQueryParameters) match {
+      (nextExists, nextToken, searchMethod, searchFilters.asQueryParameters) match {
         case (Some(true), Some(token), SearchMethod.Get, "") =>
           List(
             StacLink(
@@ -117,10 +219,11 @@ object StacItemDao extends Dao[StacItem] {
           )
         case _ => Nil
       }
-      val metadata = Context(items.length, matched)
-      StacSearchCollection(metadata, items, links)
     }
-  }
+
+  def getSearchContext(
+      searchFilters: SearchFilters
+  ): ConnectionIO[Int] = query.filter(searchFilters.copy(next = None)).count
 
   // This is only used to make the bulk insert happy and make the number of parameters line up
   private case class StacItemBulkImport(
@@ -130,18 +233,33 @@ object StacItemDao extends Dao[StacItem] {
       collection: Option[String]
   )
 
-  def insertManyStacItems(items: List[StacItem]): ConnectionIO[Int] = {
+  def insertManyStacItems(
+      items: List[StacItem],
+      collection: StacCollection
+  ): ConnectionIO[(Set[String], Int)] = {
     val insertFragment = """
       INSERT INTO collection_items (id, geom, item, collection)
       VALUES
       (?, ?, ?, ?)
       """
+    val badIds = items
+      .mapFilter(item =>
+        checkItemTimeAgainstCollection(collection, item).toOption.fold(Option(item.id))(_ =>
+          Option.empty[String]
+        )
+      )
+      .toSet
     val stacItemInserts =
-      items.map(i => StacItemBulkImport(i.id, Projected(i.geometry, 4326), i, i.collection))
-    Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts)
+      items
+        .filter(item => (!badIds.contains(item.id)))
+        .map(i => StacItemBulkImport(i.id, Projected(i.geometry, 4326), i, i.collection))
+    Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts) map { numberInserted =>
+      (badIds, numberInserted)
+    }
   }
 
-  def insertStacItem(item: StacItem): ConnectionIO[StacItem] = {
+  def insertStacItem(item: StacItem): ConnectionIO[Either[StacItemDaoError, StacItem]] = {
+
     val projectedGeometry = Projected(item.geometry, 4326)
 
     val insertFragment = fr"""
@@ -149,8 +267,29 @@ object StacItemDao extends Dao[StacItem] {
       VALUES
       (${item.id}, $projectedGeometry, $item, ${item.collection})
       """
-    insertFragment.update
-      .withUniqueGeneratedKeys[StacItem]("item")
+    for {
+      collectionE <- (item.collection.flatTraverse(collectionId =>
+        StacCollectionDao.getCollection(collectionId)
+      )
+      ) map { Either.fromOption(_, CollectionNotFound: StacItemDaoError) }
+      itemInsert <- collectionE flatTraverse { collection =>
+        checkItemTimeAgainstCollection(collection, item).leftWiden[StacItemDaoError] traverse {
+          item =>
+            insertFragment.update
+              .withUniqueGeneratedKeys[StacItem]("item") <* (item.collection traverse {
+              collectionId =>
+                StacCollectionDao.updateExtent(
+                  collectionId,
+                  getItemsBulkExtent(NonEmptyList.of(item))
+                )
+
+            })
+        }
+      }
+    } yield {
+      itemInsert
+    }
+
   }
 
   def getCollectionItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] =
@@ -176,16 +315,34 @@ object StacItemDao extends Dao[StacItem] {
       etag: String
   ): ConnectionIO[Either[StacItemDaoError, StacItem]] =
     (for {
-      itemInDB <- EitherT.fromOptionF[ConnectionIO, StacItemDaoError, StacItem](
-        getCollectionItem(collectionId, itemId),
-        ItemNotFound: StacItemDaoError
+      (itemInDB, collectionInDb) <- EitherT
+        .fromOptionF[ConnectionIO, StacItemDaoError, (StacItem, StacCollection)](
+          (getCollectionItem(collectionId, itemId), StacCollectionDao.getCollection(collectionId)).tupled map {
+            _.tupled
+          },
+          ItemNotFound: StacItemDaoError
+        )
+      validatedTime <- EitherT.fromEither[ConnectionIO](
+        checkItemTimeAgainstCollection(collectionInDb, item).leftWiden[StacItemDaoError]
       )
       etagInDb = itemInDB.##
       update <- if (etagInDb.toString == etag) {
-        EitherT { doUpdate(itemId, item).attempt } leftMap { _ => UpdateFailed: StacItemDaoError }
+        EitherT { doUpdate(itemId, validatedTime).attempt } leftMap { _ =>
+          UpdateFailed: StacItemDaoError
+        }
       } else {
         EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
       }
+      // only the first bbox / interval will be expanded. While technically these are plural, OGC
+      // added a clarification about the intent of the plurality in
+      // https://github.com/opengeospatial/ogcapi-features/pull/520.
+      // it's still not clear how you should expand the non-first bbox for an item that's outside
+      // of all of them, but that's a problem for future implementers who are actually using
+      // the plural bbox thing.
+      expansion = getItemsBulkExtent(NonEmptyList.of(update))
+      _ <- EitherT.liftF[ConnectionIO, StacItemDaoError, Int](
+        StacCollectionDao.updateExtent(collectionId, expansion)
+      )
     } yield update).value
 
   def patchItem(
@@ -195,21 +352,38 @@ object StacItemDao extends Dao[StacItem] {
       etag: String
   ): ConnectionIO[Option[Either[StacItemDaoError, StacItem]]] = {
     (for {
-      itemInDBOpt <- getCollectionItem(collectionId, itemId)
-      update <- itemInDBOpt traverse { itemInDB =>
-        val etagInDb = itemInDB.##
-        val patched  = itemInDB.asJson.deepMerge(jsonPatch).dropNullValues
-        val decoded  = patched.as[StacItem]
-        (decoded, etagInDb.toString == etag) match {
-          case (Right(patchedItem), true) =>
-            doUpdate(itemId, patchedItem.copy(properties = patchedItem.properties.filter({
-              case (_, v) => !v.isNull
-            }))).attempt map { _.leftMap(_ => UpdateFailed: StacItemDaoError) }
-          case (_, false) =>
-            (Either.left[StacItemDaoError, StacItem](StaleObject)).pure[ConnectionIO]
-          case (Left(err), _) =>
-            (Either.left[StacItemDaoError, StacItem](PatchInvalidatesItem(err))).pure[ConnectionIO]
-        }
+      itemAndCollectionOpt <- (
+        getCollectionItem(collectionId, itemId),
+        StacCollectionDao.getCollection(collectionId)
+      ).tupled map { _.tupled }
+      update <- itemAndCollectionOpt traverse {
+        case (itemInDb, collectionInDb) =>
+          val etagInDb = itemInDb.##
+          val patched  = itemInDb.asJson.deepMerge(jsonPatch).dropNullValues
+          val decoded  = patched.as[StacItem]
+          (decoded, etagInDb.toString == etag) match {
+            case (Right(patchedItem), true) =>
+              checkItemTimeAgainstCollection(collectionInDb, patchedItem)
+                .leftWiden[StacItemDaoError] flatTraverse { validated =>
+                doUpdate(itemId, validated.copy(properties = patchedItem.properties.filter({
+                  case (_, v) => !v.isNull
+                }))).attempt map { _.leftMap(_ => UpdateFailed: StacItemDaoError) }
+              }
+            case (_, false) =>
+              (Either.left[StacItemDaoError, StacItem](StaleObject)).pure[ConnectionIO]
+            case (Left(err), _) =>
+              (Either
+                .left[StacItemDaoError, StacItem](PatchInvalidatesItem(err)))
+                .pure[ConnectionIO]
+          }
+      }
+
+      _ <- update.flatMap({
+        case Left(_)     => Option.empty[NonEmptyList[StacItem]]
+        case Right(item) => Some(NonEmptyList.of(item))
+      }) traverse { itemsNel =>
+        val expansion = getItemsBulkExtent(itemsNel)
+        StacCollectionDao.updateExtent(collectionId, expansion)
       }
     } yield update)
   }

@@ -5,7 +5,7 @@ import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.SearchEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.{SearchFilters, StacItemDao}
-import com.azavea.franklin.datamodel.SearchMethod
+import com.azavea.franklin.datamodel.{Context, SearchMethod, StacSearchCollection}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.numeric.NonNegInt
@@ -30,16 +30,23 @@ class SearchService[F[_]: Concurrent](
   val searchEndpoints = new SearchEndpoints[F]
 
   def search(searchFilters: SearchFilters, searchMethod: SearchMethod): F[Either[Unit, Json]] = {
+    val limit = searchFilters.limit getOrElse defaultLimit
     for {
-      searchResult <- StacItemDao
-        .getSearchResult(
-          searchFilters,
-          searchFilters.limit getOrElse defaultLimit,
-          apiHost,
-          searchMethod
-        )
-        .transact(xa)
+      itemsFib <- Concurrent[F].start {
+        (StacItemDao.query
+          .filter(searchFilters)
+          .list(limit.value) flatMap { items =>
+          StacItemDao.getSearchLinks(items, limit, searchFilters, apiHost, searchMethod) map {
+            (items, _)
+          }
+        }).transact(xa)
+      }
+      countFib <- Concurrent[F].start {
+        StacItemDao.getSearchContext(searchFilters).transact(xa)
+      }
+      ((items, links), count) <- (itemsFib, countFib).tupled.join
     } yield {
+      val searchResult = StacSearchCollection(Context(items.length, count), items, links)
       val updatedFeatures = searchResult.features.map { item =>
         (item.collection, enableTiles) match {
           case (Some(collectionId), true) => item.addTilesLink(apiHost.value, collectionId, item.id)
