@@ -1,10 +1,10 @@
 package com.azavea.franklin.datamodel
 
+import com.azavea.stac4s.StacLink
 import com.azavea.stac4s.StacLinkType
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.Encoder
 import io.circe.generic.semiauto._
-import com.azavea.stac4s.StacLink
 
 case class LandingPage(
     stacVersion: String,
