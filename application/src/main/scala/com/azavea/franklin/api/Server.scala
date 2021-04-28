@@ -113,8 +113,8 @@ $$$$
           xa
         ).routes
         tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-        itemExtensions       <- Resource.liftF { itemExtensionsRef[IO] }
-        collectionExtensions <- Resource.liftF { collectionExtensionsRef[IO] }
+        itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
+        collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
         collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
           IO
         ](
