@@ -107,7 +107,7 @@ $$$$
         docs      = allEndpoints.toOpenAPI("Franklin", "0.0.1")
         docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes = new SearchService[IO](
-          apiConfig.apiHost,
+          apiConfig,
           apiConfig.defaultLimit,
           apiConfig.enableTiles,
           xa
