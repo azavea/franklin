@@ -136,7 +136,7 @@ class TileService[F[_]: Concurrent: LiftIO](
     } yield {
       Either.fromOption(
         collectionO map { collection =>
-          TileJson.fromStacCollection(collection, serverHost).asJson
+          TileJson.fromStacCollection(collection, serverHost).asJson.deepDropNullValues
         },
         NF(s"Could not produce tile json for collection: $decoded")
       )

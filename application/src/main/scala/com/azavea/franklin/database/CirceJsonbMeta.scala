@@ -13,7 +13,7 @@ object CirceJsonbMeta {
 
   def apply[Type: TypeTag: Encoder: Decoder] = {
     val get = Get[Json].temap(_.as[Type].leftMap { _.message })
-    val put = Put[Json].tcontramap[Type](_.asJson)
+    val put = Put[Json].tcontramap[Type](_.asJson.deepDropNullValues)
     new Meta[Type](get, put)
   }
 }
