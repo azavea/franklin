@@ -54,7 +54,7 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     ),
     Link(
       apiConfig.apiHost + "/search",
-      StacLinkType.Data,
+      StacLinkType.VendorLinkType("search"),
       Some(`application/geo+json`),
       Some("STAC Search API")
     )
