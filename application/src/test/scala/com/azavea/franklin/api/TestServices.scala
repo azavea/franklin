@@ -6,6 +6,7 @@ import cats.syntax.functor._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService, SearchService}
 import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
+import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
 import doobie.Transactor
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import io.chrisdavenport.log4cats.noop.NoOpLogger
@@ -15,6 +16,13 @@ class TestServices[F[_]: Concurrent](xa: Transactor[F])(
     implicit cs: ContextShift[F],
     timer: Timer[F]
 ) extends TestImplicits[F] {
+
+  val rootLink = StacLink(
+    "http://bogus.com",
+    StacLinkType.StacRoot,
+    Some(`application/json`),
+    None
+  )
 
   val apiConfig: ApiConfig =
     ApiConfig(
@@ -30,7 +38,7 @@ class TestServices[F[_]: Concurrent](xa: Transactor[F])(
     )
 
   val searchService: SearchService[F] =
-    new SearchService[F](apiConfig.apiHost, NonNegInt(30), apiConfig.enableTiles, xa)
+    new SearchService[F](apiConfig, NonNegInt(30), apiConfig.enableTiles, xa, rootLink)
 
   val collectionsService: F[CollectionsService[F]] = collectionExtensionsRef[F] map { ref =>
     new CollectionsService[F](
@@ -44,7 +52,8 @@ class TestServices[F[_]: Concurrent](xa: Transactor[F])(
     new CollectionItemsService[F](
       xa,
       apiConfig,
-      ref
+      ref,
+      rootLink
     )
   }
 
