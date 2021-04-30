@@ -2,10 +2,12 @@ package com.azavea.franklin.api.services
 
 import cats.effect._
 import cats.syntax.all._
+import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.SearchEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.{SearchFilters, StacItemDao}
 import com.azavea.franklin.datamodel.{Context, SearchMethod, StacSearchCollection}
+import com.azavea.stac4s.StacLink
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
@@ -16,13 +18,13 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
-import com.azavea.franklin.api.commands.ApiConfig
 
 class SearchService[F[_]: Concurrent](
     apiConfig: ApiConfig,
     defaultLimit: NonNegInt,
     enableTiles: Boolean,
-    xa: Transactor[F]
+    xa: Transactor[F],
+    rootLink: StacLink
 )(
     implicit contextShift: ContextShift[F],
     timerF: Timer[F],
@@ -50,13 +52,15 @@ class SearchService[F[_]: Concurrent](
     } yield {
       val withApiHost  = items map { _.updateLinksWithHost(apiConfig) }
       val searchResult = StacSearchCollection(Context(items.length, count), withApiHost, links)
-      val updatedFeatures = searchResult.features.map { item =>
-        (item.collection, enableTiles) match {
-          case (Some(collectionId), true) =>
-            item.addTilesLink(apiConfig.apiHost, collectionId, item.id)
-          case _ => item
+      val updatedFeatures = searchResult.features
+        .map { item =>
+          ((item.collection, enableTiles) match {
+            case (Some(collectionId), true) =>
+              item.addTilesLink(apiConfig.apiHost, collectionId, item.id)
+            case _ => item
+          }).addRootLink(rootLink)
         }
-      }
+
       Either.right(searchResult.copy(features = updatedFeatures).asJson)
     }
   }
