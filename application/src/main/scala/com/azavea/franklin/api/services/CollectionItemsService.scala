@@ -44,7 +44,8 @@ import java.nio.charset.StandardCharsets
 class CollectionItemsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
-    itemExtensionsRef: ExtensionRef[F, StacItem]
+    itemExtensionsRef: ExtensionRef[F, StacItem],
+    rootLink: StacLink
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
@@ -82,7 +83,7 @@ class CollectionItemsService[F[_]: Concurrent](
         case _ => items
       }
       val withValidatedLinks =
-        updatedItems.zip(validators) map { case (item, f) => f(item) }
+        updatedItems.zip(validators) map { case (item, f) => f(item.addRootLink(rootLink)) }
       val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
         val lim = limit getOrElse defaultLimit
         StacLink(
@@ -97,7 +98,7 @@ class CollectionItemsService[F[_]: Concurrent](
         withValidatedLinks.map(_.updateLinksWithHost(apiConfig)),
         nextLink.toList
       )
-      Either.right(response.asJson)
+      Either.right(response.asJson.deepDropNullValues)
     }
 
   }
@@ -121,7 +122,11 @@ class CollectionItemsService[F[_]: Concurrent](
             val updatedItem = (if (enableTiles) { item.addTilesLink(apiHost, collectionId, itemId) }
                                else { item })
             (
-              validator(updatedItem).updateLinksWithHost(apiConfig).asJson,
+              validator(updatedItem)
+                .addRootLink(rootLink)
+                .updateLinksWithHost(apiConfig)
+                .asJson
+                .deepDropNullValues,
               item.##.toString
             )
         },
@@ -145,7 +150,7 @@ class CollectionItemsService[F[_]: Concurrent](
           Either.fromOption(
             TileInfo
               .fromStacItem(apiHost, collectionId, item)
-              .map(info => (info.asJson, info.##.toString)),
+              .map(info => (info.asJson.deepDropNullValues, info.##.toString)),
             NF(
               s"Unable to construct tile info object for item $itemId in collection $collectionId. Is there at least one COG asset?"
             )
@@ -180,7 +185,7 @@ class CollectionItemsService[F[_]: Concurrent](
             StacItemDao.insertStacItem(withParent).transact(xa) map {
               case Right(inserted) =>
                 val validated = validator(inserted)
-                Right((validated.asJson, validated.##.toString))
+                Right((validated.asJson.deepDropNullValues, validated.##.toString))
               case Left(StacItemDao.InvalidTimeForPeriod) =>
                 Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
               // this fall through covers the only other failure mode for item creation
@@ -196,11 +201,13 @@ class CollectionItemsService[F[_]: Concurrent](
           }
         case None =>
           val withParent =
-            item.copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
+            item
+              .copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
+              .addRootLink(rootLink)
           StacItemDao.insertStacItem(withParent).transact(xa) map {
             case Right(inserted) =>
               val validated = validator(inserted)
-              Right((validated.asJson, validated.##.toString))
+              Right((validated.asJson.deepDropNullValues, validated.##.toString))
             case Left(StacItemDao.InvalidTimeForPeriod) =>
               Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
             // this fall through covers the only other failure mode for item creation
@@ -232,7 +239,7 @@ class CollectionItemsService[F[_]: Concurrent](
         case Left(_) =>
           Left(ValidationError(s"Update of $itemId not possible with value passed"))
         case Right(item) =>
-          Right((validator(item).asJson, item.##.toString))
+          Right((validator(item).addRootLink(rootLink).asJson.deepDropNullValues, item.##.toString))
       }
     }
   }
@@ -314,7 +321,12 @@ class CollectionItemsService[F[_]: Concurrent](
           .pure[F]
       case Some(Right(updated)) =>
         makeItemValidator(updated.stacExtensions, itemExtensionsRef) map { validator =>
-          Either.right((validator(updated).asJson, updated.##.toString))
+          Either.right(
+            (
+              validator(updated).addRootLink(rootLink).asJson.deepDropNullValues,
+              updated.##.toString
+            )
+          )
         }
 
     }

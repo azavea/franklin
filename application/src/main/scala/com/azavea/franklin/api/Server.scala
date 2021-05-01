@@ -12,9 +12,11 @@ import com.azavea.franklin.api.endpoints.{
 }
 import com.azavea.franklin.api.services._
 import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
+import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+import eu.timepit.refined.auto._
 import io.chrisdavenport.log4cats
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -73,7 +75,13 @@ $$$$
   private def createServer(
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
-  ) =
+  ) = {
+    val rootLink = StacLink(
+      apiConfig.apiHost,
+      StacLinkType.StacRoot,
+      Some(`application/json`),
+      Some("Welcome to Franklin")
+    )
     AsyncHttpClientCatsBackend.resource[IO]() flatMap { implicit backend =>
       for {
         connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
@@ -107,20 +115,22 @@ $$$$
         docs      = allEndpoints.toOpenAPI("Franklin", "0.0.1")
         docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes = new SearchService[IO](
-          apiConfig.apiHost,
+          apiConfig,
           apiConfig.defaultLimit,
           apiConfig.enableTiles,
-          xa
+          xa,
+          rootLink
         ).routes
         tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
-        itemExtensions       <- Resource.liftF { itemExtensionsRef[IO] }
-        collectionExtensions <- Resource.liftF { collectionExtensionsRef[IO] }
+        itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
+        collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
         collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
           IO
         ](
           xa,
           apiConfig,
-          itemExtensions
+          itemExtensions,
+          rootLink
         ).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
@@ -143,6 +153,7 @@ $$$$
         server
       }
     }
+  }
 
   override def run(args: List[String]): IO[ExitCode] = {
     import Commands._

@@ -52,7 +52,7 @@ class CollectionsService[F[_]: Concurrent](
         _.updateLinksWithHost(apiConfig)
       }
       val validated = validators.zip(updated).map { case (f, v) => f(v) }
-      Either.right(CollectionsResponse(validated).asJson)
+      Either.right(CollectionsResponse(validated).asJson.deepDropNullValues)
     }
 
   }
@@ -72,7 +72,7 @@ class CollectionsService[F[_]: Concurrent](
           case (collection, validator) =>
             validator(
               collection.maybeAddTilesLink(enableTiles, apiHost).updateLinksWithHost(apiConfig)
-            ).asJson
+            ).asJson.deepDropNullValues
         },
         NF(s"Collection $collectionId not found")
       )
@@ -89,7 +89,7 @@ class CollectionsService[F[_]: Concurrent](
       Either.fromOption(
         collectionOption.map(collection =>
           (
-            TileInfo.fromStacCollection(apiHost, collection).asJson,
+            TileInfo.fromStacCollection(apiHost, collection).asJson.deepDropNullValues,
             collection.##.toString
           )
         ),
@@ -122,7 +122,7 @@ class CollectionsService[F[_]: Concurrent](
     for {
       inserted  <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
       validator <- makeCollectionValidator(inserted.stacExtensions, collectionExtensionsRef)
-    } yield Right(validator(inserted).asJson)
+    } yield Right(validator(inserted).asJson.deepDropNullValues)
   }
 
   def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = {
