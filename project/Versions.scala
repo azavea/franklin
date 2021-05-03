@@ -29,7 +29,7 @@ object Versions {
   val Refined                 = "0.9.24"
   val ScalaLoggingVersion     = "3.9.3"
   val ScalacacheVersion       = "0.28.0"
-  val ScalacheckVersion       = "1.15.3"
+  val ScalacheckVersion       = "1.15.4"
   val ScalaReflectVersion     = "2.12.10"
   val ScapegoatVersion        = "1.3.11"
   val ShapelessVersion        = "2.3.4"
