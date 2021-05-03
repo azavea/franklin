@@ -29,10 +29,6 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
 
         pushd "${DIR}"
 
-        echo "Building frontend"
-        npm install
-        npm run build
-
         echo "Building JAR for API subproject"
         ./sbt "application/assembly"
 

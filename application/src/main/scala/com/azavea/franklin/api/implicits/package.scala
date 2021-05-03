@@ -53,6 +53,10 @@ package object implicits {
       (item.copy(links = updatedLinks))
     }
 
+    def addRootLink(link: StacLink): StacItem =
+      item.copy(
+        links = item.links.filter(_.rel != StacLinkType.StacRoot) :+ link
+      )
   }
 
   implicit class UpdatedStacLink(link: StacLink) {
