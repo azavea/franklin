@@ -60,11 +60,19 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     )
   )
 
-  private val conformances: List[NonEmptyString] = List(
+  private val conformances: List[NonEmptyString] = List[NonEmptyString](
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/core",
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
-    "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/geojson"
-  )
+    "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/geojson",
+    "https://api.stacspec.org/v1.0.0-beta.1/core",
+    "https://api.stacspec.org/v1.0.0-beta.1/item-search",
+    "https://api.stacspec.org/v1.0.0-beta.1/item-search#context",
+    "https://api.stacspec.org/v1.0.0-beta.1/item-search#query"
+  ) `combine` (if (apiConfig.enableTransactions)
+                 List[NonEmptyString](
+                   "https://api.stacspec.org/v1.0.0-beta.1/ogcapi-features/extensions/transaction"
+                 )
+               else List.empty[NonEmptyString])
 
   def conformancePage: F[Either[Unit, FranklinConformance]] = {
     val conformance = FranklinConformance(conformances)
