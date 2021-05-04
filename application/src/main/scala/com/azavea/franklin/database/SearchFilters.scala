@@ -10,7 +10,7 @@ import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
 import io.circe.generic.semiauto._
 import io.circe.refined._
-import io.circe.{Decoder, HCursor}
+import io.circe.{Decoder, Encoder, HCursor}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -75,5 +75,26 @@ object SearchFilters {
         )
       }
   }
-  implicit val searchFilterEncoder = deriveEncoder[SearchFilters]
+
+  implicit val searchFilterEncoder: Encoder[SearchFilters] = Encoder.forProduct8(
+    "bbox",
+    "datetime",
+    "intersects",
+    "collections",
+    "ids",
+    "limit",
+    "query",
+    "next"
+  )(filters =>
+    (
+      filters.bbox,
+      filters.datetime,
+      filters.intersects,
+      filters.collections,
+      filters.items,
+      filters.limit,
+      filters.query,
+      filters.next
+    )
+  )
 }
