@@ -9,10 +9,11 @@ object StacSearchCollection {
   implicit val stacSearchEncoder = new Encoder[StacSearchCollection] {
 
     final def apply(a: StacSearchCollection): Json = Json.obj(
-      "type"     -> Json.fromString("FeatureCollection"),
-      "context"  -> a.context.asJson,
-      "features" -> a.features.asJson,
-      "links"    -> a.links.asJson
+      "type"         -> Json.fromString("FeatureCollection"),
+      "context"      -> a.context.asJson,
+      "features"     -> a.features.asJson,
+      "links"        -> a.links.asJson,
+      "stac_version" -> "1.0.0-rc2".asJson
     )
   }
 
