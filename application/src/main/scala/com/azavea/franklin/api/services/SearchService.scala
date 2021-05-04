@@ -61,7 +61,7 @@ class SearchService[F[_]: Concurrent](
           }).addRootLink(rootLink)
         }
 
-      Either.right(searchResult.copy(features = updatedFeatures).asJson.deepDropNullValues)
+      Either.right(searchResult.copy(features = updatedFeatures).asJson)
     }
   }
 

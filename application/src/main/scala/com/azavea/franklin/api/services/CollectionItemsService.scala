@@ -98,7 +98,7 @@ class CollectionItemsService[F[_]: Concurrent](
         withValidatedLinks.map(_.updateLinksWithHost(apiConfig)),
         nextLink.toList
       )
-      Either.right(response.asJson.deepDropNullValues)
+      Either.right(response.asJson)
     }
 
   }
@@ -125,8 +125,7 @@ class CollectionItemsService[F[_]: Concurrent](
               validator(updatedItem)
                 .addRootLink(rootLink)
                 .updateLinksWithHost(apiConfig)
-                .asJson
-                .deepDropNullValues,
+                .asJson,
               item.##.toString
             )
         },
@@ -150,7 +149,7 @@ class CollectionItemsService[F[_]: Concurrent](
           Either.fromOption(
             TileInfo
               .fromStacItem(apiHost, collectionId, item)
-              .map(info => (info.asJson.deepDropNullValues, info.##.toString)),
+              .map(info => (info.asJson, info.##.toString)),
             NF(
               s"Unable to construct tile info object for item $itemId in collection $collectionId. Is there at least one COG asset?"
             )
@@ -185,7 +184,7 @@ class CollectionItemsService[F[_]: Concurrent](
             StacItemDao.insertStacItem(withParent).transact(xa) map {
               case Right(inserted) =>
                 val validated = validator(inserted)
-                Right((validated.asJson.deepDropNullValues, validated.##.toString))
+                Right((validated.asJson, validated.##.toString))
               case Left(StacItemDao.InvalidTimeForPeriod) =>
                 Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
               // this fall through covers the only other failure mode for item creation
@@ -207,7 +206,7 @@ class CollectionItemsService[F[_]: Concurrent](
           StacItemDao.insertStacItem(withParent).transact(xa) map {
             case Right(inserted) =>
               val validated = validator(inserted)
-              Right((validated.asJson.deepDropNullValues, validated.##.toString))
+              Right((validated.asJson, validated.##.toString))
             case Left(StacItemDao.InvalidTimeForPeriod) =>
               Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
             // this fall through covers the only other failure mode for item creation
@@ -239,7 +238,7 @@ class CollectionItemsService[F[_]: Concurrent](
         case Left(_) =>
           Left(ValidationError(s"Update of $itemId not possible with value passed"))
         case Right(item) =>
-          Right((validator(item).addRootLink(rootLink).asJson.deepDropNullValues, item.##.toString))
+          Right((validator(item).addRootLink(rootLink).asJson, item.##.toString))
       }
     }
   }
@@ -323,7 +322,7 @@ class CollectionItemsService[F[_]: Concurrent](
         makeItemValidator(updated.stacExtensions, itemExtensionsRef) map { validator =>
           Either.right(
             (
-              validator(updated).addRootLink(rootLink).asJson.deepDropNullValues,
+              validator(updated).addRootLink(rootLink).asJson,
               updated.##.toString
             )
           )
