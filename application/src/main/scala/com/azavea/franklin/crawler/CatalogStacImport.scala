@@ -14,6 +14,7 @@ import com.azavea.stac4s.syntax._
 import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import eu.timepit.refined.auto._
 import geotrellis.vector.io.json.Implicits._
 import geotrellis.vector.io.json._
 import geotrellis.vector.{Feature, Geometry}
@@ -129,6 +130,7 @@ class CatalogStacImport(val catalogRoot: String) {
                       None
                     )
                   val labelCollection = StacCollection(
+                    "Collection",
                     "1.0.0-rc2",
                     Nil,
                     s"${forItem.id}-labels-${idx + 1}",
