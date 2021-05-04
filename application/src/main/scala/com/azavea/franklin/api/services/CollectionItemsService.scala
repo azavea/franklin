@@ -44,7 +44,8 @@ import java.nio.charset.StandardCharsets
 class CollectionItemsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
-    itemExtensionsRef: ExtensionRef[F, StacItem]
+    itemExtensionsRef: ExtensionRef[F, StacItem],
+    rootLink: StacLink
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
@@ -82,7 +83,7 @@ class CollectionItemsService[F[_]: Concurrent](
         case _ => items
       }
       val withValidatedLinks =
-        updatedItems.zip(validators) map { case (item, f) => f(item) }
+        updatedItems.zip(validators) map { case (item, f) => f(item.addRootLink(rootLink)) }
       val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
         val lim = limit getOrElse defaultLimit
         StacLink(
@@ -121,7 +122,10 @@ class CollectionItemsService[F[_]: Concurrent](
             val updatedItem = (if (enableTiles) { item.addTilesLink(apiHost, collectionId, itemId) }
                                else { item })
             (
-              validator(updatedItem).updateLinksWithHost(apiConfig).asJson,
+              validator(updatedItem)
+                .addRootLink(rootLink)
+                .updateLinksWithHost(apiConfig)
+                .asJson,
               item.##.toString
             )
         },
@@ -196,7 +200,9 @@ class CollectionItemsService[F[_]: Concurrent](
           }
         case None =>
           val withParent =
-            item.copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
+            item
+              .copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
+              .addRootLink(rootLink)
           StacItemDao.insertStacItem(withParent).transact(xa) map {
             case Right(inserted) =>
               val validated = validator(inserted)
@@ -232,7 +238,7 @@ class CollectionItemsService[F[_]: Concurrent](
         case Left(_) =>
           Left(ValidationError(s"Update of $itemId not possible with value passed"))
         case Right(item) =>
-          Right((validator(item).asJson, item.##.toString))
+          Right((validator(item).addRootLink(rootLink).asJson, item.##.toString))
       }
     }
   }
@@ -314,7 +320,12 @@ class CollectionItemsService[F[_]: Concurrent](
           .pure[F]
       case Some(Right(updated)) =>
         makeItemValidator(updated.stacExtensions, itemExtensionsRef) map { validator =>
-          Either.right((validator(updated).asJson, updated.##.toString))
+          Either.right(
+            (
+              validator(updated).addRootLink(rootLink).asJson,
+              updated.##.toString
+            )
+          )
         }
 
     }
