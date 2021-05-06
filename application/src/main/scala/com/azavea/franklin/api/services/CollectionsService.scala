@@ -52,9 +52,11 @@ class CollectionsService[F[_]: Concurrent](
         _.updateLinksWithHost(apiConfig)
       }
       val validated = validators.zip(updated).map { case (f, v) => f(v) }
-      Either.right(CollectionsResponse(validated).asJson.dropNullValues)
+      val links = collections flatMap { collection =>
+        collection.links.filter(_.rel == StacLinkType.Self) map { _.copy(rel = StacLinkType.Child) }
+      }
+      Either.right(CollectionsResponse(validated, links).asJson.dropNullValues)
     }
-
   }
 
   def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
