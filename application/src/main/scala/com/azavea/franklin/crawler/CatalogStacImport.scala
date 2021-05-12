@@ -153,7 +153,7 @@ class CatalogStacImport(val catalogRoot: String) {
                       )
                     ),
                     ().asJsonObject,
-                    forItem.properties,
+                    forItem.properties.asJson.asObject.getOrElse(JsonObject.empty),
                     List(parentCollectionLink, derivedFromItemLink),
                     Some(Map.empty)
                   )
