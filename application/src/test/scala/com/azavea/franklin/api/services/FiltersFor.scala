@@ -1,6 +1,6 @@
 package com.azavea.franklin.api.services
 
-import cats.Semigroup
+import cats.{Monoid, Semigroup}
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.azavea.franklin.database.SearchFilters
@@ -13,7 +13,7 @@ import java.time.Instant
 
 object FiltersFor {
 
-  implicit val searchFilterSemigroup: Semigroup[SearchFilters] = new Semigroup[SearchFilters] {
+  implicit val searchFilterMonoid: Monoid[SearchFilters] = new Monoid[SearchFilters] {
 
     def combine(x: SearchFilters, y: SearchFilters): SearchFilters = SearchFilters(
       x.bbox orElse y.bbox,
@@ -24,6 +24,17 @@ object FiltersFor {
       x.limit orElse y.limit,
       x.query |+| y.query,
       x.next orElse y.next
+    )
+
+    def empty: SearchFilters = SearchFilters(
+      None,
+      None,
+      None,
+      List.empty,
+      List.empty,
+      None,
+      Map.empty,
+      None
     )
   }
 
@@ -179,17 +190,14 @@ object FiltersFor {
   )
 
   def inclusiveFilters(collection: StacCollection, item: StacItem): SearchFilters = {
-    val filters: NonEmptyList[Option[SearchFilters]] = NonEmptyList
+    val filters: NonEmptyList[SearchFilters] = NonEmptyList
       .of(
-        bboxFilterFor(item).some,
-        timeFilterFor(item).some,
-        geomFilterFor(item).some,
-        collectionFilterFor(collection).some,
-        itemFilterFor(item).some
+        bboxFilterFor(item),
+        timeFilterFor(item),
+        geomFilterFor(item),
+        collectionFilterFor(collection),
+        itemFilterFor(item)
       )
-    val concatenated = filters.combineAll
-    // guaranteed to succeed, since most of the filters are being converted into options
-    // just to cooperate with timeFilterFor
-    concatenated.get
+    filters.combineAll
   }
 }
