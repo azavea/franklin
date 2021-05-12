@@ -170,10 +170,15 @@ class CollectionItemsServiceSpec
 
       val sourceAssetsWithoutNulls = update.assets.asJson
 
+      val updateProperties = update.properties
+
+      val updatedProperties = updated.properties
+
       (updated.stacExtensions should beTypedEqualTo(update.stacExtensions)) and
         (resultAssetsWithoutNulls should beTypedEqualTo(sourceAssetsWithoutNulls)) and
         (updated.geometry should beTypedEqualTo(update.geometry)) and
-        (updated.bbox should beTypedEqualTo(update.bbox))
+        (updated.bbox should beTypedEqualTo(update.bbox)) and
+        (updatedProperties should beTypedEqualTo(updateProperties))
   }
 
   def patchItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>

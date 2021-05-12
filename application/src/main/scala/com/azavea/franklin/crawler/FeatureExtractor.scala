@@ -6,6 +6,7 @@ import com.azavea.stac4s._
 import geotrellis.vector.methods.Implicits._
 import geotrellis.vector.{Feature, Geometry}
 import io.circe.JsonObject
+import io.circe.syntax._
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -44,7 +45,7 @@ object FeatureExtractor {
 
     StacItem(
       s"${UUID.randomUUID}",
-      "0.9.0",
+      "1.0.0-rc.2",
       Nil,
       "Feature",
       feature.geom,
@@ -52,7 +53,10 @@ object FeatureExtractor {
       links = List(collectionLink, sourceItemLink),
       assets = Map.empty,
       collection = Some(inCollection.id),
-      properties = feature.data
+      properties = ItemProperties(
+        forItem.properties.datetime,
+        extensionFields = feature.data
+      )
     )
   }
 

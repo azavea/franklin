@@ -4,11 +4,8 @@ import cats.data.EitherT
 import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.syntax.all._
-import com.azavea.franklin.datamodel.BulkExtent
-import com.azavea.franklin.datamodel.Context
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.datamodel.SearchMethod
-import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
@@ -17,7 +14,6 @@ import com.azavea.stac4s.syntax._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
-import doobie.implicits.javatime._
 import doobie.refined.implicits._
 import doobie.util.update.Update
 import eu.timepit.refined.auto._
@@ -33,7 +29,6 @@ import org.threeten.extra.PeriodDuration
 
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.Period
 import java.time.ZoneId
 import java.time.ZoneOffset
 
@@ -139,6 +134,14 @@ object StacItemDao extends Dao[StacItem] {
       )
   }
 
+  private def getTimeData(item: StacItem): (Option[Instant], Option[Instant], Option[Instant]) = {
+    val timeRangeO = StacItem.timeRangePrism.getOption(item)
+    val startO     = timeRangeO map { _.start }
+    val endO       = timeRangeO map { _.end }
+    val datetimeO  = StacItem.datetimePrism.getOption(item) map { _.when }
+    (startO, endO, datetimeO)
+  }
+
   def getItemCount(): ConnectionIO[Int] = {
     sql"select count(*) from collection_items".query[Int].unique
   }
@@ -230,17 +233,21 @@ object StacItemDao extends Dao[StacItem] {
       id: String,
       geom: Projected[Geometry],
       item: StacItem,
-      collection: Option[String]
+      collection: Option[String],
+      startDatetime: Option[Instant],
+      endDatetime: Option[Instant],
+      datetime: Option[Instant]
   )
 
   def insertManyStacItems(
       items: List[StacItem],
       collection: StacCollection
   ): ConnectionIO[(Set[String], Int)] = {
-    val insertFragment = """
-      INSERT INTO collection_items (id, geom, item, collection)
+    val insertFragment =
+      """
+      INSERT INTO collection_items (id, geom, item, collection, start_datetime, end_datetime, datetime)
       VALUES
-      (?, ?, ?, ?)
+      (?, ?, ?, ?, ?, ?, ?)
       """
     val badIds = items
       .mapFilter(item =>
@@ -252,7 +259,18 @@ object StacItemDao extends Dao[StacItem] {
     val stacItemInserts =
       items
         .filter(item => (!badIds.contains(item.id)))
-        .map(i => StacItemBulkImport(i.id, Projected(i.geometry, 4326), i, i.collection))
+        .map(i => {
+          val (startO, endO, datetimeO) = getTimeData(i)
+          StacItemBulkImport(
+            i.id,
+            Projected(i.geometry, 4326),
+            i,
+            i.collection,
+            startO,
+            endO,
+            datetimeO
+          )
+        })
     Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts) map { numberInserted =>
       (badIds, numberInserted)
     }
@@ -262,10 +280,12 @@ object StacItemDao extends Dao[StacItem] {
 
     val projectedGeometry = Projected(item.geometry, 4326)
 
+    val (startO, endO, datetimeO) = getTimeData(item)
+
     val insertFragment = fr"""
-      INSERT INTO collection_items (id, geom, item, collection)
+      INSERT INTO collection_items (id, geom, item, collection, start_datetime, end_datetime, datetime)
       VALUES
-      (${item.id}, $projectedGeometry, $item, ${item.collection})
+      (${item.id}, $projectedGeometry, $item, ${item.collection}, ${startO}, ${endO}, ${datetimeO})
       """
     for {
       collectionE <- (item.collection.flatTraverse(collectionId =>
@@ -299,10 +319,14 @@ object StacItemDao extends Dao[StacItem] {
       .selectOption
 
   private def doUpdate(itemId: String, item: StacItem): ConnectionIO[StacItem] = {
-    val fragment = fr"""
+    val (startO, endO, datetimeO) = getTimeData(item)
+    val fragment                  = fr"""
       UPDATE collection_items
       SET
-        item = $item
+        item = $item,
+        start_datetime = $startO,
+        end_datetime = $endO,
+        datetime = $datetimeO
       WHERE id = $itemId
     """
     fragment.update.withUniqueGeneratedKeys[StacItem]("item")
@@ -365,9 +389,9 @@ object StacItemDao extends Dao[StacItem] {
             case (Right(patchedItem), true) =>
               checkItemTimeAgainstCollection(collectionInDb, patchedItem)
                 .leftWiden[StacItemDaoError] flatTraverse { validated =>
-                doUpdate(itemId, validated.copy(properties = patchedItem.properties.filter({
-                  case (_, v) => !v.isNull
-                }))).attempt map { _.leftMap(_ => UpdateFailed: StacItemDaoError) }
+                doUpdate(itemId, validated).attempt map {
+                  _.leftMap(_ => UpdateFailed: StacItemDaoError)
+                }
               }
             case (_, false) =>
               (Either.left[StacItemDaoError, StacItem](StaleObject)).pure[ConnectionIO]
