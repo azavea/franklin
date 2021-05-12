@@ -1,8 +1,8 @@
 package com.azavea.franklin.api.services
 
-import cats.{Monoid, Semigroup}
 import cats.data.NonEmptyList
 import cats.syntax.all._
+import cats.{Monoid, Semigroup}
 import com.azavea.franklin.database.SearchFilters
 import com.azavea.stac4s.jvmTypes.TemporalExtent
 import com.azavea.stac4s.{ItemDatetime, StacCollection, StacItem, TwoDimBbox}
