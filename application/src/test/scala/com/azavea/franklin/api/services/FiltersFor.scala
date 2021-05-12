@@ -5,16 +5,13 @@ import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.azavea.franklin.database.SearchFilters
 import com.azavea.stac4s.jvmTypes.TemporalExtent
-import com.azavea.stac4s.{StacCollection, StacItem, TwoDimBbox}
+import com.azavea.stac4s.{ItemDatetime, StacCollection, StacItem, TwoDimBbox}
 import geotrellis.vector.Extent
-import io.circe.optics._
 import io.circe.syntax._
 
 import java.time.Instant
 
 object FiltersFor {
-
-  val datetimePrism = JsonPath.root.datetime.as[Instant]
 
   implicit val searchFilterSemigroup: Semigroup[SearchFilters] = new Semigroup[SearchFilters] {
 
@@ -51,21 +48,24 @@ object FiltersFor {
     )
   }
 
-  def timeFilterFor(item: StacItem): Option[SearchFilters] =
-    datetimePrism.getOption(item.properties.asJson) map { instant =>
-      TemporalExtent(instant.minusSeconds(60), Some(instant.plusSeconds(60)))
-    } map { temporalExtent =>
-      SearchFilters(
-        None,
-        Some(temporalExtent),
-        None,
-        Nil,
-        Nil,
-        None,
-        Map.empty,
-        None
-      )
+  def timeFilterFor(item: StacItem): SearchFilters = {
+    val temporalExtent = item.properties.datetime match {
+      case ItemDatetime.PointInTime(instant) =>
+        TemporalExtent(instant.minusSeconds(60), Some(instant.plusSeconds(60)))
+      case ItemDatetime.TimeRange(start, end) =>
+        TemporalExtent(start.minusSeconds(60), Some(end.plusSeconds(60)))
     }
+    SearchFilters(
+      None,
+      Some(temporalExtent),
+      None,
+      Nil,
+      Nil,
+      None,
+      Map.empty,
+      None
+    )
+  }
 
   def geomFilterFor(item: StacItem): SearchFilters = SearchFilters(
     None,
@@ -118,21 +118,24 @@ object FiltersFor {
     )
   }
 
-  def timeFilterExcluding(item: StacItem): Option[SearchFilters] =
-    datetimePrism.getOption(item.properties.asJson) map { instant =>
-      TemporalExtent(instant.minusSeconds(60), Some(instant.minusSeconds(30)))
-    } map { temporalExtent =>
-      SearchFilters(
-        None,
-        Some(temporalExtent),
-        None,
-        Nil,
-        Nil,
-        None,
-        Map.empty,
-        None
-      )
+  def timeFilterExcluding(item: StacItem): SearchFilters = {
+    val temporalExtent = item.properties.datetime match {
+      case ItemDatetime.PointInTime(instant) =>
+        TemporalExtent(instant.minusSeconds(60), Some(instant.minusSeconds(30)))
+      case ItemDatetime.TimeRange(start, _) =>
+        TemporalExtent(start.minusSeconds(60), Some(start.minusSeconds(30)))
     }
+    SearchFilters(
+      None,
+      Some(temporalExtent),
+      None,
+      Nil,
+      Nil,
+      None,
+      Map.empty,
+      None
+    )
+  }
 
   def geomFilterExcluding(item: StacItem): SearchFilters = {
     val itemGeomBbox = item.geometry.getEnvelopeInternal()
@@ -179,7 +182,7 @@ object FiltersFor {
     val filters: NonEmptyList[Option[SearchFilters]] = NonEmptyList
       .of(
         bboxFilterFor(item).some,
-        timeFilterFor(item),
+        timeFilterFor(item).some,
         geomFilterFor(item).some,
         collectionFilterFor(collection).some,
         itemFilterFor(item).some
