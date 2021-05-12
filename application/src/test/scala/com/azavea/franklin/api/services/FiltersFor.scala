@@ -64,7 +64,17 @@ object FiltersFor {
       case ItemDatetime.PointInTime(instant) =>
         TemporalExtent(instant.minusSeconds(60), Some(instant.plusSeconds(60)))
       case ItemDatetime.TimeRange(start, end) =>
-        TemporalExtent(start.minusSeconds(60), Some(end.plusSeconds(60)))
+        val milli = start.toEpochMilli % 3
+        if (milli == 0) {
+          // test start and end with full overlap
+          TemporalExtent(start.minusSeconds(60), Some(end.plusSeconds(60)))
+        } else if (milli == 1) {
+          // test start before the range start with open end
+          TemporalExtent(start.minusSeconds(60), None)
+        } else {
+          // test end after the range end with open start
+          TemporalExtent(None, end.plusSeconds(60))
+        }
     }
     SearchFilters(
       None,
@@ -133,8 +143,18 @@ object FiltersFor {
     val temporalExtent = item.properties.datetime match {
       case ItemDatetime.PointInTime(instant) =>
         TemporalExtent(instant.minusSeconds(60), Some(instant.minusSeconds(30)))
-      case ItemDatetime.TimeRange(start, _) =>
-        TemporalExtent(start.minusSeconds(60), Some(start.minusSeconds(30)))
+      case ItemDatetime.TimeRange(start, end) =>
+        val milli = start.toEpochMilli % 3
+        if (milli == 0) {
+          // test no intersection with range
+          TemporalExtent(start.minusSeconds(60), Some(start.minusSeconds(30)))
+        } else if (milli == 1) {
+          // test start after the range end with open end
+          TemporalExtent(end.plusSeconds(60), None)
+        } else {
+          // test end before the range start with open start
+          TemporalExtent(None, start.minusSeconds(60))
+        }
     }
     SearchFilters(
       None,
