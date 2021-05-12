@@ -134,6 +134,14 @@ object StacItemDao extends Dao[StacItem] {
       )
   }
 
+  private def getTimeData(item: StacItem): (Option[Instant], Option[Instant], Option[Instant]) = {
+    val timeRangeO = StacItem.timeRangePrism.getOption(item)
+    val startO     = timeRangeO map { _.start }
+    val endO       = timeRangeO map { _.end }
+    val datetimeO  = StacItem.datetimePrism.getOption(item) map { _.when }
+    (startO, endO, datetimeO)
+  }
+
   def getItemCount(): ConnectionIO[Int] = {
     sql"select count(*) from collection_items".query[Int].unique
   }
@@ -252,11 +260,16 @@ object StacItemDao extends Dao[StacItem] {
       items
         .filter(item => (!badIds.contains(item.id)))
         .map(i => {
-          val timeRangeO = StacItem.timeRangePrism.getOption(i)
-          val datetimeO  = StacItem.datetimePrism.getOption(i)
-          StacItemBulkImport(i.id, Projected(i.geometry, 4326), i, i.collection, timeRangeO map {
-            _.start
-          }, timeRangeO map { _.end }, datetimeO map { _.when })
+          val (startO, endO, datetimeO) = getTimeData(i)
+          StacItemBulkImport(
+            i.id,
+            Projected(i.geometry, 4326),
+            i,
+            i.collection,
+            startO,
+            endO,
+            datetimeO
+          )
         })
     Update[StacItemBulkImport](insertFragment).updateMany(stacItemInserts) map { numberInserted =>
       (badIds, numberInserted)
@@ -267,10 +280,7 @@ object StacItemDao extends Dao[StacItem] {
 
     val projectedGeometry = Projected(item.geometry, 4326)
 
-    val timeRangeO = StacItem.timeRangePrism.getOption(item)
-    val startO     = timeRangeO map { _.start }
-    val endO       = timeRangeO map { _.end }
-    val datetimeO  = StacItem.datetimePrism.getOption(item) map { _.when }
+    val (startO, endO, datetimeO) = getTimeData(item)
 
     val insertFragment = fr"""
       INSERT INTO collection_items (id, geom, item, collection, start_datetime, end_datetime, datetime)
@@ -309,10 +319,14 @@ object StacItemDao extends Dao[StacItem] {
       .selectOption
 
   private def doUpdate(itemId: String, item: StacItem): ConnectionIO[StacItem] = {
-    val fragment = fr"""
+    val (startO, endO, datetimeO) = getTimeData(item)
+    val fragment                  = fr"""
       UPDATE collection_items
       SET
-        item = $item
+        item = $item,
+        start_datetime = $startO,
+        end_datetime = $endO,
+        datetime = $datetimeO
       WHERE id = $itemId
     """
     fragment.update.withUniqueGeneratedKeys[StacItem]("item")
