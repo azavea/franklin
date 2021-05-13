@@ -7,9 +7,9 @@ import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
 import com.azavea.franklin.datamodel.CollectionsResponse
-import com.azavea.stac4s.StacCollection
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
+import com.azavea.stac4s.{StacCollection, StacLinkType}
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.{Method, Request, Uri}
 import org.specs2.{ScalaCheck, Specification}
@@ -55,9 +55,16 @@ class CollectionsServiceSpec
             }
         }
 
-        val result = listIO.unsafeRunSync.get.collections map { _.id }
+        val result     = listIO.unsafeRunSync.get
+        val ids        = result.collections map { _.id }
+        val childHrefs = result.links.filter(_.rel == StacLinkType.Child).map(_.href).toSet
+        val selfHrefs = (result.collections flatMap {
+          _.links.filter(_.rel == StacLinkType.Self).map(_.href)
+        }).toSet
 
-        (result must contain(stacCollectionA.id)) and (result must contain(stacCollectionB.id))
+        (ids must contain(stacCollectionA.id)) and (ids must contain(stacCollectionB.id)) and (selfHrefs & childHrefs must beEqualTo(
+          selfHrefs
+        ))
       }
   }
 

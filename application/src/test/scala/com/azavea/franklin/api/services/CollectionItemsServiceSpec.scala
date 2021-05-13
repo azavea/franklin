@@ -124,9 +124,9 @@ class CollectionItemsServiceSpec
 
     val result = fetchIO.unsafeRunSync.get
 
-    val resultAssetsWithoutNulls = result.assets.asJson.deepDropNullValues
+    val resultAssetsWithoutNulls = result.assets.asJson
 
-    val sourceAssetsWithoutNulls = stacItem.assets.asJson.deepDropNullValues
+    val sourceAssetsWithoutNulls = stacItem.assets.asJson
 
     // can't test properties or links without removing the validation extension fields
     // stac4s#115
@@ -166,14 +166,19 @@ class CollectionItemsServiceSpec
 
       val updated = updateIO.unsafeRunSync.get
 
-      val resultAssetsWithoutNulls = updated.assets.asJson.deepDropNullValues
+      val resultAssetsWithoutNulls = updated.assets.asJson
 
-      val sourceAssetsWithoutNulls = update.assets.asJson.deepDropNullValues
+      val sourceAssetsWithoutNulls = update.assets.asJson
+
+      val updateProperties = update.properties
+
+      val updatedProperties = updated.properties
 
       (updated.stacExtensions should beTypedEqualTo(update.stacExtensions)) and
         (resultAssetsWithoutNulls should beTypedEqualTo(sourceAssetsWithoutNulls)) and
         (updated.geometry should beTypedEqualTo(update.geometry)) and
-        (updated.bbox should beTypedEqualTo(update.bbox))
+        (updated.bbox should beTypedEqualTo(update.bbox)) and
+        (updatedProperties should beTypedEqualTo(updateProperties))
   }
 
   def patchItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
