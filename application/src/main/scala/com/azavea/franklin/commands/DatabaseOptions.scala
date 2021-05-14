@@ -45,7 +45,7 @@ trait DatabaseOptions {
   private val databaseUser = Opts.option[String]("db-user", help = databaseUserHelp) orElse Opts
     .env[String]("DB_USER", help = databaseUserHelp) withDefault (databaseOptionDefault)
 
-  def databaseConfig(implicit contextShift: ContextShift[IO]): Opts[DatabaseConfig] =
+  def databaseConfig: Opts[DatabaseConfig] =
     ((
       databaseUser,
       databasePassword,
