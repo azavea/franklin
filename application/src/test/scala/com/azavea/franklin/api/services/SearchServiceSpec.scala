@@ -41,36 +41,33 @@ class SearchServiceSpec
 
   private def getExclusionTest(
       name: String
-  )(getFilters: StacCollection => StacItem => Option[SearchFilters]) =
+  )(getFilters: StacCollection => StacItem => SearchFilters) =
     prop { (stacItem: StacItem, stacCollection: StacCollection) =>
-      val exclusiveParams = getFilters(stacCollection)(stacItem)
-      val testResult = exclusiveParams.map({ params =>
+      val params = getFilters(stacCollection)(stacItem)
+      val testResult = {
         val resourceIO = testClient map { _.getCollectionItemResource(stacItem, stacCollection) }
-        val requestIO = resourceIO flatMap {
-          resource =>
-            resource.use {
-              case _ =>
-                // doing this as a POST is important, since otherwise the `intersection` and
-                // `query` params would be ignored (not that we're testing `query` here)
-                val request =
-                  Request[IO](
-                    method = Method.POST,
-                    uri = Uri.unsafeFromString(s"/search")
-                  ).withEntity(params)
-                (for {
-                  resp    <- testServices.searchService.routes.run(request)
-                  decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
-                } yield decoded).value
-            }
+        val requestIO = resourceIO flatMap { resource =>
+          resource.use {
+            case _ =>
+              // doing this as a POST is important, since otherwise the `intersection` and
+              // `query` params would be ignored (not that we're testing `query` here)
+              val request =
+                Request[IO](
+                  method = Method.POST,
+                  uri = Uri.unsafeFromString(s"/search")
+                ).withEntity(params)
+              (for {
+                resp    <- testServices.searchService.routes.run(request)
+                decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
+              } yield decoded).value
+          }
         }
 
         val result = requestIO.unsafeRunSync.get
         result.features.map(_.id).contains(stacItem.id)
-      })
+      }
 
-      (testResult must beSome(false)) or (testResult must beNone and skipped(
-        s"$name did not produce filters"
-      ))
+      testResult aka s"the item was included in the results for $name" must beFalse
     }
 
   def postSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
@@ -121,16 +118,16 @@ class SearchServiceSpec
     getExclusionTest("temporal extent")(_ => item => FiltersFor.timeFilterExcluding(item))
 
   def dontFindBboxFilters =
-    getExclusionTest("bbox")(_ => item => FiltersFor.bboxFilterExcluding(item).some)
+    getExclusionTest("bbox")(_ => item => FiltersFor.bboxFilterExcluding(item))
 
   def dontFindGeomFilters =
-    getExclusionTest("geom intersection")(_ => item => FiltersFor.geomFilterExcluding(item).some)
+    getExclusionTest("geom intersection")(_ => item => FiltersFor.geomFilterExcluding(item))
 
   def dontFindCollectionFilters =
     getExclusionTest("collection ids")(collection =>
-      _ => FiltersFor.collectionFilterExcluding(collection).some
+      _ => FiltersFor.collectionFilterExcluding(collection)
     )
 
   def dontFindItemFilters =
-    getExclusionTest("item ids")(_ => item => FiltersFor.itemFilterExcluding(item).some)
+    getExclusionTest("item ids")(_ => item => FiltersFor.itemFilterExcluding(item))
 }

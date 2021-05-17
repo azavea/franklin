@@ -54,19 +54,28 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     ),
     Link(
       apiConfig.apiHost + "/search",
-      StacLinkType.Data,
+      StacLinkType.VendorLinkType("search"),
       Some(`application/geo+json`),
       Some("STAC Search API")
     )
   )
 
+  private val conformances: List[NonEmptyString] = List[NonEmptyString](
+    "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/core",
+    "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
+    "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/geojson",
+    "https://api.stacspec.org/v1.0.0-beta.1/core",
+    "https://api.stacspec.org/v1.0.0-beta.1/item-search",
+    "https://api.stacspec.org/v1.0.0-beta.1/item-search#context",
+    "https://api.stacspec.org/v1.0.0-beta.1/item-search#query"
+  ) `combine` (if (apiConfig.enableTransactions)
+                 List[NonEmptyString](
+                   "https://api.stacspec.org/v1.0.0-beta.1/ogcapi-features/extensions/transaction"
+                 )
+               else List.empty[NonEmptyString])
+
   def conformancePage: F[Either[Unit, FranklinConformance]] = {
-    val uriList: List[NonEmptyString] = List(
-      "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/core",
-      "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
-      "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/geojson"
-    )
-    val conformance = FranklinConformance(uriList)
+    val conformance = FranklinConformance(conformances)
 
     Applicative[F].pure(Either.right[Unit, FranklinConformance](conformance))
   }
@@ -75,7 +84,15 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     val title: NonEmptyString = "Welcome to Franklin"
     val description: NonEmptyString =
       "An OGC API - Features, Tiles, and STAC Server"
-    val landingPage = LandingPage(title, description, links)
+    val landingPage = LandingPage(
+      "1.0.0-rc.2",
+      Nil,
+      Some(title),
+      "Franklin STAC API",
+      description,
+      links,
+      conformances
+    )
 
     Applicative[F].pure(Either.right[Unit, LandingPage](landingPage))
 
