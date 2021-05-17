@@ -1,5 +1,6 @@
 package com.azavea.franklin.database
 
+import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.azavea.franklin.datamodel._
 import com.azavea.stac4s.jvmTypes.TemporalExtent
@@ -12,6 +13,7 @@ import io.circe.Json
 import io.circe.syntax._
 
 trait FilterHelpers {
+  private val printJson = (js: Json) => js.noSpaces.replace("\"", "")
 
   implicit class TemporalExtentWithFilter(temporalExtent: TemporalExtent) {
 
@@ -31,8 +33,6 @@ trait FilterHelpers {
   }
 
   implicit class QueryWithFilter(query: Query) {
-
-    private val printJson = (js: Json) => js.noSpaces.replace("\"", "")
 
     private def eqCheck(field: String, value: Json): Fragment =
       Fragment.const(s"""item -> 'properties' @> '{"$field": "${printJson(value)}"}' :: jsonb""")
@@ -65,6 +65,52 @@ trait FilterHelpers {
         case Superset(values) => fieldFragment ++ fr"@> ${values.asJson}"
       }
     }
+  }
+
+  implicit class CQLFilterWithFilter(query: CQLFilter) {
+
+    private def strItemPath(fieldName: String): Fragment = {
+      val chunks = NonEmptyList(
+        "item",
+        "'properties'" +: fieldName.split("\\.").map(s => s"'$s'").toList
+      )
+      Fragment.const(chunks.intercalate("->"))
+    }
+
+    private def itemPath(cmp: Comparison.BinaryJsonPathComparison): Fragment =
+      strItemPath(cmp.propertyName)
+
+    private def eqCheck(field: String, operand: Comparison): Fragment =
+      operand match {
+        case Comparison.BinaryLiteralComparison(value) =>
+          Fragment.const(
+            s"""item -> 'properties' @> '{"$field": "${printJson(value)}"}' :: jsonb"""
+          )
+        case cmp @ Comparison.BinaryJsonPathComparison(_) =>
+          fr"item -> 'properties' -> " ++ Fragment.const(s"'$field'") ++ fr"= ${itemPath(cmp)}"
+      }
+
+    private def cmpCheck(field: String, operator: Fragment, operand: Comparison): Fragment =
+      operand match {
+        case Comparison.BinaryLiteralComparison(value) =>
+          strItemPath(field) ++ operator ++ fr"$value"
+        case Comparison.BinaryJsonPathComparison(propertyName) =>
+          strItemPath(field) ++ operator ++ strItemPath(propertyName)
+      }
+
+    def toFilterFragment(field: String) =
+      query match {
+        case CQLFilter.Equals(cmp) =>
+          eqCheck(field, cmp)
+        case CQLFilter.LessThan(ceil) =>
+          cmpCheck(field, fr"<", ceil)
+        case CQLFilter.GreaterThan(floor) =>
+          cmpCheck(field, fr">", floor)
+        case CQLFilter.LessThanEqual(ceil) =>
+          cmpCheck(field, fr"<=", ceil)
+        case CQLFilter.GreaterThanEqual(floor) =>
+          cmpCheck(field, fr">=", floor)
+      }
   }
 }
 
