@@ -98,7 +98,7 @@ trait FilterHelpers {
           strItemPath(field) ++ operator ++ strItemPath(propertyName)
       }
 
-    def toFilterFragment(field: String) =
+    def toFilterFragment(field: String): Fragment =
       query match {
         case CQLFilter.Equals(cmp) =>
           eqCheck(field, cmp)
@@ -110,6 +110,12 @@ trait FilterHelpers {
           cmpCheck(field, fr"<=", ceil)
         case CQLFilter.GreaterThanEqual(floor) =>
           cmpCheck(field, fr">=", floor)
+        case CQLFilter.And(x, y, rest) =>
+          Fragments.and((List(x, y) ++ rest).map(_.toFilterFragment(field)): _*)
+        case CQLFilter.Or(x, y, rest) =>
+          Fragments.or((List(x, y) ++ rest).map(_.toFilterFragment(field)): _*)
+        case CQLFilter.Not(x) =>
+          fr"NOT " ++ x.toFilterFragment(field)
       }
   }
 }

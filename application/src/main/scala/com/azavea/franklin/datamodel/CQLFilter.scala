@@ -43,6 +43,7 @@ object Comparison {
 }
 
 sealed abstract class CQLFilter
+sealed abstract class CQLBooleanExpression extends CQLFilter
 
 object CQLFilter {
   // binary operators
@@ -51,6 +52,14 @@ object CQLFilter {
   final case class LessThanEqual(ceiling: Comparison)  extends CQLFilter
   final case class GreaterThan(floor: Comparison)      extends CQLFilter
   final case class GreaterThanEqual(floor: Comparison) extends CQLFilter
+
+  // logical operators
+  final case class And(x: CQLFilter, y: CQLFilter, rest: List[CQLFilter])
+      extends CQLBooleanExpression
+
+  final case class Or(x: CQLFilter, y: CQLFilter, rest: List[CQLFilter])
+      extends CQLBooleanExpression
+  final case class Not(x: CQLBooleanExpression) extends CQLBooleanExpression
 
   def fromCmp(json: Json, f: Comparison => CQLFilter) =
     json.as[Comparison].bimap(_.getMessage, f(_))
@@ -70,6 +79,12 @@ object CQLFilter {
     }
   }
 
+  implicit val encCQLBooleanExpression: Encoder[CQLBooleanExpression] = {
+    case And(x, y, rest) => Map("and" -> (List(x, y) ++ rest)).asJson
+    case Or(x, y, rest)  => Map("or"  -> (List(x, y) ++ rest)).asJson
+    case Not(x)          => Map("not" -> x).asJson
+  }
+
   implicit val encCQLFilteR: Encoder[List[CQLFilter]] = { cqlFilters =>
     Map(
       (cqlFilters map {
@@ -78,6 +93,9 @@ object CQLFilter {
         case LessThanEqual(v)    => "lte" -> v.asJson
         case GreaterThan(v)      => "gt"  -> v.asJson
         case GreaterThanEqual(v) => "gte" -> v.asJson
+        case And(x, y, rest)     => "and" -> (List(x, y) ++ rest).asJson
+        case Or(x, y, rest)      => "or"  -> (List(x, y) ++ rest).asJson
+        case Not(x)              => "not" -> x.asJson
       }): _*
     ).asJson
   }

@@ -73,13 +73,26 @@ trait Generators extends NumericInstances with CirceInstances {
     }
   )
 
-  private def cqlFilterGen: Gen[CQLFilter] = Gen.oneOf(
-    comparisonGen map { CQLFilter.Equals },
-    comparisonGen map { CQLFilter.LessThan },
-    comparisonGen map { CQLFilter.LessThanEqual },
-    comparisonGen map { CQLFilter.GreaterThan },
-    comparisonGen map { CQLFilter.GreaterThanEqual }
-  )
+  private def cqlFilterGen: Gen[CQLFilter] = {
+    val xyRestGen = (
+      cqlFilterGen,
+      cqlFilterGen,
+      Gen.listOfN(3, cqlFilterGen)
+    ).tupled
+    val booleanGen = Gen.oneOf[CQLBooleanExpression](
+      xyRestGen map { case (x, y, rest) => CQLFilter.And(x, y, rest) },
+      xyRestGen map { case (x, y, rest) => CQLFilter.Or(x, y, rest) }
+    )
+    Gen.oneOf(
+      comparisonGen map { CQLFilter.Equals },
+      comparisonGen map { CQLFilter.LessThan },
+      comparisonGen map { CQLFilter.LessThanEqual },
+      comparisonGen map { CQLFilter.GreaterThan },
+      comparisonGen map { CQLFilter.GreaterThanEqual },
+      booleanGen,
+      booleanGen map { CQLFilter.Not(_) }
+    )
+  }
 
   // private def queryGen: Gen[Query] = Gen.oneOf(
   //   nonEmptyAlphaRefinedStringGen map { s => Equals(s.asJson) },
