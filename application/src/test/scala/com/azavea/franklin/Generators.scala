@@ -73,26 +73,56 @@ trait Generators extends NumericInstances with CirceInstances {
     }
   )
 
-  private def cqlFilterGen: Gen[CQLFilter] = {
-    val xyRestGen = (
-      cqlFilterGen,
-      cqlFilterGen,
-      Gen.listOfN(3, cqlFilterGen)
-    ).tupled
-    val booleanGen = Gen.oneOf[CQLBooleanExpression](
+  private case class QueryCounts(
+      eq: Int = 0,
+      lt: Int = 0,
+      gt: Int = 0,
+      lte: Int = 0,
+      gte: Int = 0
+  ) {
+    def max = List(eq, lt, gt, lte, gte).max
+  }
+
+  private def xyRestGen: Gen[(CQLFilter, CQLFilter, List[CQLFilter])] =
+    (comparisonFilterGen, comparisonFilterGen, Gen.listOfN(1, comparisonFilterGen)).tupled.filter({
+      case (x, y, rest) => {
+        (List(x, y) ++ rest)
+          .foldLeft(QueryCounts())({
+            case (counts, CQLFilter.GreaterThan(_))      => counts.copy(gt = counts.gt + 1)
+            case (counts, CQLFilter.GreaterThanEqual(_)) => counts.copy(gte = counts.gte + 1)
+            case (counts, CQLFilter.LessThan(_))         => counts.copy(lt = counts.lt + 1)
+            case (counts, CQLFilter.LessThanEqual(_))    => counts.copy(lte = counts.lte + 1)
+            case (counts, CQLFilter.Equals(_))           => counts.copy(eq = counts.eq + 1)
+            case (counts, _)                             => counts
+          })
+          .max <= 1
+      }
+    })
+
+  private def logicalGen: Gen[CQLBooleanExpression] =
+    Gen.oneOf(
       xyRestGen map { case (x, y, rest) => CQLFilter.And(x, y, rest) },
       xyRestGen map { case (x, y, rest) => CQLFilter.Or(x, y, rest) }
     )
+
+  private def notGen: Gen[CQLBooleanExpression] =
+    logicalGen map { CQLFilter.Not(_) }
+
+  private def comparisonFilterGen: Gen[CQLFilter] = {
     Gen.oneOf(
       comparisonGen map { CQLFilter.Equals },
       comparisonGen map { CQLFilter.LessThan },
       comparisonGen map { CQLFilter.LessThanEqual },
       comparisonGen map { CQLFilter.GreaterThan },
-      comparisonGen map { CQLFilter.GreaterThanEqual },
-      booleanGen,
-      booleanGen map { CQLFilter.Not(_) }
+      comparisonGen map { CQLFilter.GreaterThanEqual }
     )
   }
+
+  private def cqlFilterGen = Gen.oneOf(
+    comparisonFilterGen,
+    logicalGen,
+    notGen
+  )
 
   // private def queryGen: Gen[Query] = Gen.oneOf(
   //   nonEmptyAlphaRefinedStringGen map { s => Equals(s.asJson) },

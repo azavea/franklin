@@ -1,11 +1,12 @@
 package com.azavea.franklin.datamodel
 
+import cats.Semigroup
 import cats.syntax.either._
 import cats.syntax.functor._
 import cats.syntax.traverse._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder, Json, JsonObject}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json, JsonObject}
 
 sealed abstract class Comparison
 // BinComparisons are values that can be on the right-hand-side of a
@@ -59,44 +60,65 @@ object CQLFilter {
 
   final case class Or(x: CQLFilter, y: CQLFilter, rest: List[CQLFilter])
       extends CQLBooleanExpression
-  final case class Not(x: CQLBooleanExpression) extends CQLBooleanExpression
+  final case class Not(x: CQLFilter) extends CQLBooleanExpression
 
   def fromCmp(json: Json, f: Comparison => CQLFilter) =
     json.as[Comparison].bimap(_.getMessage, f(_))
 
-  implicit val decCQLFilter: Decoder[List[CQLFilter]] = Decoder[JsonObject].emap { jsonObj =>
-    jsonObj.toMap.toList traverse {
-      case (op @ "eq", json) => fromCmp(json, Equals(_))
-      case (op @ "lt", json) =>
-        fromCmp(json, LessThan(_))
-      case (op @ "lte", json) =>
-        fromCmp(json, LessThanEqual(_))
-      case (op @ "gt", json) =>
-        fromCmp(json, GreaterThan(_))
-      case (op @ "gte", json) =>
-        fromCmp(json, GreaterThanEqual(_))
-      case (k, _) => Left(s"$k is not a valid CQL operator")
-    }
+  def atLeastTwoDecoder(
+      f: (CQLFilter, CQLFilter, List[CQLFilter]) => CQLBooleanExpression,
+      js: Json
+  ) =
+    js.as[List[CQLFilter]]
+      .fold(
+        err => Either.left[String, CQLFilter](err.getMessage), {
+          case x :: y :: rest => Either.right(f(x, y, rest))
+          case _ =>
+            Either.left(
+              "and operator requires at least two array entries"
+            )
+        }
+      )
+
+  implicit val decCQLFilter: Decoder[CQLFilter] = Decoder[JsonObject].emap { jsonObj =>
+    val asMap = jsonObj.toMap
+
+    (asMap.get("eq") map { js =>
+      fromCmp(js, Equals(_))
+    } orElse (asMap.get("lt") map { js => fromCmp(js, LessThan(_)) }) orElse (asMap.get("lte") map {
+      js =>
+        fromCmp(js, LessThanEqual(_))
+    }) orElse (asMap.get("gt") map { js => fromCmp(js, GreaterThan(_)) }) orElse (asMap.get("gte") map {
+      js =>
+        fromCmp(js, GreaterThanEqual(_))
+    }) orElse (asMap.get("and") map { js => atLeastTwoDecoder(And.apply, js) }) orElse (
+      asMap.get("or") map { js => atLeastTwoDecoder(Or.apply, js) }
+    ) orElse (asMap.get("not") map { js => js.as[CQLFilter].leftMap(_.getMessage) map { Not(_) } }))
+      .fold(
+        Either.left[String, CQLFilter](
+          "No keys were found in the object that could be converted to CQL filters"
+        )
+      )(
+        identity _
+      )
+
   }
 
-  implicit val encCQLBooleanExpression: Encoder[CQLBooleanExpression] = {
-    case And(x, y, rest) => Map("and" -> (List(x, y) ++ rest)).asJson
-    case Or(x, y, rest)  => Map("or"  -> (List(x, y) ++ rest)).asJson
-    case Not(x)          => Map("not" -> x).asJson
-  }
-
-  implicit val encCQLFilteR: Encoder[List[CQLFilter]] = { cqlFilters =>
+  implicit val encCQLFilter: Encoder[CQLFilter] = { cqlFilter =>
     Map(
-      (cqlFilters map {
+      (cqlFilter match {
         case Equals(v)           => "eq"  -> v.asJson
         case LessThan(v)         => "lt"  -> v.asJson
         case LessThanEqual(v)    => "lte" -> v.asJson
         case GreaterThan(v)      => "gt"  -> v.asJson
         case GreaterThanEqual(v) => "gte" -> v.asJson
-        case And(x, y, rest)     => "and" -> (List(x, y) ++ rest).asJson
-        case Or(x, y, rest)      => "or"  -> (List(x, y) ++ rest).asJson
-        case Not(x)              => "not" -> x.asJson
-      }): _*
+        case And(x, y, rest) =>
+          "and" -> (List(x, y) ++ rest).asJson
+        case Or(x, y, rest) =>
+          "or" -> (List(x, y) ++ rest).asJson
+        case Not(x) => "not" -> x.asJson
+      })
     ).asJson
   }
+
 }
