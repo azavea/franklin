@@ -6,6 +6,7 @@ import cats.syntax.all._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.{SearchFilters, TestDatabaseSpec}
+import com.azavea.franklin.datamodel.CQLFilter
 import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
@@ -15,8 +16,6 @@ import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.{Method, Request, Uri}
 import org.specs2.{ScalaCheck, Specification}
-
-import com.azavea.franklin.datamodel.CQLFilter
 
 class SearchServiceSpec
     extends Specification

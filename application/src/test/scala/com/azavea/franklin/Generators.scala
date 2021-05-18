@@ -13,9 +13,9 @@ import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.{Geometry, Point, Polygon}
-import io.circe.{Json, JsonNumber}
 import io.circe.syntax._
 import io.circe.testing.{ArbitraryInstances => CirceInstances}
+import io.circe.{Json, JsonNumber}
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck._
 import org.scalacheck.cats.implicits._
@@ -49,11 +49,9 @@ trait Generators extends NumericInstances with CirceInstances {
   private def nonEmptyAlphaStringGen: Gen[String] =
     Gen.listOfN(15, Gen.alphaChar) map { _.mkString("") }
 
-  private def nonEmptyAlphaRefinedStringGen: Gen[NonEmptyString] =
-    nonEmptyAlphaStringGen map NonEmptyString.unsafeFrom
+  
 
-  private def nonEmptyVectorGen[T](g: Gen[T]): Gen[NonEmptyVector[T]] =
-    Gen.listOfN(3, g) map { values => NonEmptyVector.fromVectorUnsafe(values.toVector) }
+  
 
   private def jsonLitGen: Gen[Json] =
     Gen.oneOf(
