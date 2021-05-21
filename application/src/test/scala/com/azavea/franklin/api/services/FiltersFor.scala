@@ -189,4 +189,13 @@ object FiltersFor {
     // just to cooperate with timeFilterFor
     concatenated.get
   }
+
+  def inclusiveFilters(collection: StacCollection): SearchFilters = {
+    val filters: NonEmptyList[Option[SearchFilters]] =
+      NonEmptyList.of(collectionFilterFor(collection).some)
+    val concatenated = filters.combineAll
+    // guaranteed to succeed, since most of the filters are being converted into options
+    // just to cooperate with timeFilterFor
+    concatenated.get
+  }
 }
