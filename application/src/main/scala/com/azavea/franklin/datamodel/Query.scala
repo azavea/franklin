@@ -8,17 +8,17 @@ import io.circe.syntax._
 
 sealed abstract class Query
 
-case class Equals(value: Json)                    extends Query
-case class NotEqualTo(value: Json)                extends Query
-case class GreaterThan(floor: Json)               extends Query
-case class GreaterThanEqual(floor: Json)          extends Query
-case class LessThan(ceiling: Json)                extends Query
-case class LessThanEqual(ceiling: Json)           extends Query
-case class StartsWith(prefix: NonEmptyString)     extends Query
-case class EndsWith(postfix: NonEmptyString)      extends Query
-case class Contains(substring: NonEmptyString)    extends Query
-case class In(values: NonEmptyVector[Json])       extends Query
-case class Superset(values: NonEmptyVector[Json]) extends Query
+final case class Equals(value: Json)                    extends Query
+final case class NotEqualTo(value: Json)                extends Query
+final case class GreaterThan(floor: Json)               extends Query
+final case class GreaterThanEqual(floor: Json)          extends Query
+final case class LessThan(ceiling: Json)                extends Query
+final case class LessThanEqual(ceiling: Json)           extends Query
+final case class StartsWith(prefix: NonEmptyString)     extends Query
+final case class EndsWith(postfix: NonEmptyString)      extends Query
+final case class Contains(substring: NonEmptyString)    extends Query
+final case class In(values: NonEmptyVector[Json])       extends Query
+final case class Superset(values: NonEmptyVector[Json]) extends Query
 
 object Query {
 

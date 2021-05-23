@@ -2,7 +2,7 @@ package com.azavea.franklin.database
 
 import cats.syntax.all._
 import com.azavea.franklin.api.schemas.bboxToString
-import com.azavea.franklin.datamodel.{PaginationToken, Query}
+import com.azavea.franklin.datamodel.{CQLFilter, PaginationToken, Query}
 import com.azavea.stac4s.Bbox
 import com.azavea.stac4s.jvmTypes.TemporalExtent
 import eu.timepit.refined.types.numeric.NonNegInt
@@ -22,7 +22,7 @@ final case class SearchFilters(
     collections: List[String],
     items: List[String],
     limit: Option[NonNegInt],
-    query: Map[String, List[Query]],
+    query: Map[String, List[CQLFilter]],
     next: Option[PaginationToken]
 ) {
 
@@ -60,7 +60,7 @@ object SearchFilters {
         collectionsOption <- c.downField("collections").as[Option[List[String]]]
         itemsOption       <- c.downField("ids").as[Option[List[String]]]
         limit             <- c.downField("limit").as[Option[NonNegInt]]
-        query             <- c.get[Option[Map[String, List[Query]]]]("query")
+        query             <- c.get[Option[Map[String, List[CQLFilter]]]]("filters")
         paginationToken   <- c.get[Option[PaginationToken]]("next")
       } yield {
         SearchFilters(
@@ -83,7 +83,7 @@ object SearchFilters {
     "collections",
     "ids",
     "limit",
-    "query",
+    "filters",
     "next"
   )(filters =>
     (

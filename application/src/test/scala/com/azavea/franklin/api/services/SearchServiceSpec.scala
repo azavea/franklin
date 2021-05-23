@@ -6,10 +6,12 @@ import cats.syntax.all._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.{SearchFilters, TestDatabaseSpec}
+import com.azavea.franklin.datamodel.CQLFilter
 import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
 import com.azavea.stac4s.{StacCollection, StacItem}
+import io.circe.syntax._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.{Method, Request, Uri}
@@ -24,6 +26,7 @@ class SearchServiceSpec
   This specification verifies that the Search Service sensibly finds and excludes items
 
   The search service should:
+    - cql filters JSON round trip                  $cqlFiltersRoundTrip
     - search with POST search filters               $postSearchFiltersExpectation
     - search with GET search filters                $getSearchFiltersExpectation
     - find an item with filters designed to find it $findItemWhenExpected
@@ -69,6 +72,12 @@ class SearchServiceSpec
 
       testResult aka s"the item was included in the results for $name" must beFalse
     }
+
+  def cqlFiltersRoundTrip = prop { (searchFilters): CQLFilter =>
+    (searchFilters.asJson.as[CQLFilter] ==== Right(searchFilters)).setMessage(
+      s"Encoded: ${searchFilters.asJson.noSpaces}"
+    )
+  }
 
   def postSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
     val request = Request[IO](method = Method.POST, uri = Uri.fromString("/search").right.get)
