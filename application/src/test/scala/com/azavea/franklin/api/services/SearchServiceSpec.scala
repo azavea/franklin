@@ -6,10 +6,12 @@ import cats.syntax.all._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.{SearchFilters, TestDatabaseSpec}
-import com.azavea.franklin.datamodel.StacSearchCollection
+import com.azavea.franklin.datamodel.{PaginationToken, StacSearchCollection}
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
-import com.azavea.stac4s.{StacCollection, StacItem}
+import com.azavea.stac4s.{StacCollection, StacItem, StacLinkType}
+import eu.timepit.refined.types.numeric.NonNegInt
+import io.circe.syntax._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.{Method, Request, Uri}
@@ -24,14 +26,15 @@ class SearchServiceSpec
   This specification verifies that the Search Service sensibly finds and excludes items
 
   The search service should:
-    - search with POST search filters               $postSearchFiltersExpectation
-    - search with GET search filters                $getSearchFiltersExpectation
-    - find an item with filters designed to find it $findItemWhenExpected
-    - not find items when excluded by time          $dontFindTimeFilters
-    - not find items when excluded by bbox          $dontFindBboxFilters
-    - not find items when excluded by intersection  $dontFindGeomFilters
-    - not find items when excluded by collection    $dontFindCollectionFilters
-    - not find items when excluded by item          $dontFindItemFilters
+    - search with POST search filters                       $postSearchFiltersExpectation
+    - search with GET search filters                        $getSearchFiltersExpectation
+    - find an item with filters designed to find it         $findItemWhenExpected
+    - find two items with filters designed to find it       $find2ItemsWhenExpected
+    - not find items when excluded by time                  $dontFindTimeFilters
+    - not find items when excluded by bbox                  $dontFindBboxFilters
+    - not find items when excluded by intersection          $dontFindGeomFilters
+    - not find items when excluded by collection            $dontFindCollectionFilters
+    - not find items when excluded by item                  $dontFindItemFilters
 """
   val testServices = new TestServices[IO](transactor)
 
@@ -112,6 +115,50 @@ class SearchServiceSpec
 
     val result = requestIO.unsafeRunSync.get
     result.features.head.id should beEqualTo(stacItem.id)
+  }
+
+  def find2ItemsWhenExpected = prop {
+    (stacItem1: StacItem, stacItem2: StacItem, stacCollection: StacCollection) =>
+      val resourceIO = testClient map {
+        _.getCollectionItemsResource(stacItem1 :: stacItem2 :: Nil, stacCollection)
+      }
+      val requestIO = resourceIO flatMap { resource =>
+        def getSearchCollection(searchFilters: SearchFilters): IO[Option[StacSearchCollection]] = {
+          val request =
+            Request[IO](method = Method.POST, uri = Uri.unsafeFromString(s"/search"))
+              .withEntity(searchFilters.asJson)
+          (for {
+            resp    <- testServices.searchService.routes.run(request)
+            decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
+          } yield decoded).value
+        }
+
+        resource.use {
+          case (collection, _) =>
+            val inclusiveParams =
+              FiltersFor.inclusiveFilters(collection).copy(limit = NonNegInt.from(1).toOption)
+            val result1 = getSearchCollection(inclusiveParams)
+
+            val result2 = result1
+              .flatMap {
+                _.flatTraverse { r =>
+                  /** This line intentionally decodes next token [[String]] into [[PaginationToken]] */
+                  val next = r.links.collectFirst {
+                    case l if l.rel == StacLinkType.Next =>
+                      l.href.split("next=").last.asJson.as[PaginationToken].toOption
+                  }.flatten
+                  getSearchCollection(inclusiveParams.copy(next = next))
+                }
+              }
+
+            (result1, result2).tupled
+        }
+      }
+
+      val (Some(result1), Some(result2)) = requestIO.unsafeRunSync()
+
+      result1.features.head.id should beEqualTo(stacItem1.id)
+      result2.features.head.id should beEqualTo(stacItem2.id)
   }
 
   def dontFindTimeFilters =
