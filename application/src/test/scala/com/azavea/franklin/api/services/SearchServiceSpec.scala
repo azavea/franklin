@@ -139,12 +139,12 @@ class SearchServiceSpec
         resource.use {
           case (collection, _) =>
             val inclusiveParams =
-              FiltersFor.inclusiveFilters(collection).copy(limit = NonNegInt.unsafeFrom(1).some)
+              FiltersFor.inclusiveFilters(collection).copy(limit = NonNegInt.from(1).toOption)
             val result1 = getSearchCollection(inclusiveParams)
 
             val result2 = result1
               .flatMap {
-                _.traverse { r =>
+                _.flatTraverse { r =>
                   /** This line intentionally decodes next token [[String]] into [[PaginationToken]] */
                   val next = r.links.collectFirst {
                     case l if l.rel == StacLinkType.Next =>
@@ -153,7 +153,6 @@ class SearchServiceSpec
                   getSearchCollection(inclusiveParams.copy(next = next))
                 }
               }
-              .map(_.flatten)
 
             (result1, result2).tupled
         }
