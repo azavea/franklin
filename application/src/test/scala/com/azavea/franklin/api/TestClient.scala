@@ -80,4 +80,10 @@ class TestClient[F[_]: Sync](
       collection: StacCollection
   ): Resource[F, (StacCollection, StacItem)] =
     (getCollectionResource(collection), getItemResource(collection, item)).tupled
+
+  def getCollectionItemsResource(
+      items: List[StacItem],
+      collection: StacCollection
+  ): Resource[F, (StacCollection, List[StacItem])] =
+    (getCollectionResource(collection), items.traverse(getItemResource(collection, _))).tupled
 }
