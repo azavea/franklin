@@ -6,7 +6,7 @@ object Versions {
   val CatsScalacheckVersion   = "0.3.0"
   val CatsVersion             = "2.6.1"
   val CirceFs2Version         = "0.14.1"
-  val CirceJsonSchemaVersion  = "0.1.0"
+  val CirceJsonSchemaVersion  = "0.2.0"
   val CirceVersion            = "0.14.1"
   val DeclineVersion          = "2.0.0"
   val DoobieVersion           = "0.13.4"
