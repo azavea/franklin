@@ -36,7 +36,7 @@ object Versions {
   val Slf4jVersion            = "1.7.30"
   val Specs2Version           = "4.12.0"
   val SpireVersion            = "0.13.0"
-  val Stac4SVersion           = "0.4.0"
+  val Stac4SVersion           = "0.5.0"
   val SttpClientVersion       = "2.2.9"
   val SttpShared              = "1.1.1"
   val SttpModelVersion        = "1.4.7"

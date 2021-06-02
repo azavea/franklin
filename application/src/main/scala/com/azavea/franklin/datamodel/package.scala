@@ -55,14 +55,14 @@ package object datamodel {
   implicit class CollectionStacExtent(stacExtent: StacExtent) {
 
     def startTime = {
-      stacExtent.temporal.interval.flatMap(_.value.headOption).flatten match {
+      stacExtent.temporal.interval.flatMap(_.start) match {
         case l if l.isEmpty => None
         case l              => Some(l.min)
       }
     }
 
     def endTime = {
-      stacExtent.temporal.interval.flatMap(_.value.lift(1)).flatten match {
+      stacExtent.temporal.interval.flatMap(_.end) match {
         case l if l.isEmpty => None
         case l              => Some(l.max)
       }
