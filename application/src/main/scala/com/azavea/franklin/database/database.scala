@@ -36,6 +36,7 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
 
   def temporalExtentFromString(str: String): Either[String, TemporalExtent] = {
     str.split("/").toList match {
+      case ".." :: ".." :: _ => Right(TemporalExtent(None, None))
       case ".." :: endString :: _ =>
         val parsedEnd: Either[Throwable, Instant] = stringToInstant(endString)
         parsedEnd match {
