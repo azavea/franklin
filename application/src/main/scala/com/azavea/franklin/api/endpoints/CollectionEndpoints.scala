@@ -1,6 +1,7 @@
 package com.azavea.franklin.api.endpoints
 
 import cats.effect.Concurrent
+import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
 import io.circe._

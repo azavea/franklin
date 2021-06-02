@@ -9,7 +9,6 @@ import com.azavea.franklin.datamodel.SearchMethod
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
-import com.azavea.stac4s.jvmTypes.TemporalExtent
 import com.azavea.stac4s.syntax._
 import doobie.Fragment
 import doobie.free.connection.ConnectionIO
@@ -120,7 +119,7 @@ object StacItemDao extends Dao[StacItem] {
               val anchorInstant =
                 (collection.extent.temporal.interval.headOption flatMap {
                   (interval: TemporalExtent) =>
-                    interval.value.find(_.isDefined)
+                    List(interval.start, interval.end).find(_.isDefined)
                 }).flatten
               anchorInstant.fold(
                 Either.left[InvalidTimeForPeriod.type, StacItem](InvalidTimeForPeriod)

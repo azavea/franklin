@@ -2,7 +2,7 @@ package com.azavea.franklin.database
 
 import cats.syntax.all._
 import com.azavea.franklin.datamodel._
-import com.azavea.stac4s.jvmTypes.TemporalExtent
+import com.azavea.stac4s.TemporalExtent
 import doobie.implicits._
 import doobie.postgres.circe.jsonb.implicits._
 import doobie.refined.implicits._
@@ -16,14 +16,14 @@ trait FilterHelpers {
   implicit class TemporalExtentWithFilter(temporalExtent: TemporalExtent) {
 
     def toFilterFragment: Option[Fragment] = {
-      temporalExtent.value match {
-        case Some(start) :: Some(end) :: _ =>
+      temporalExtent match {
+        case TemporalExtent(Some(start), Some(end)) =>
           Some(
             fr"(datetime >= $start AND datetime <= $end) OR (start_datetime >= $start AND end_datetime <= $end)"
           )
-        case Some(start) :: _ =>
+        case TemporalExtent(Some(start), _) =>
           Some(fr"(datetime >= $start OR start_datetime >= $start)")
-        case _ :: Some(end) :: _ =>
+        case TemporalExtent(_, Some(end)) =>
           Some(fr"(datetime <= $end OR end_datetime <= $end)")
         case _ => None
       }
