@@ -6,7 +6,6 @@ import cats.syntax.list._
 import com.azavea.franklin.datamodel.{BulkExtent, MapboxVectorTileFootprintRequest}
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
-import com.azavea.stac4s.jvmTypes.TemporalExtent
 import com.azavea.stac4s.syntax._
 import doobie._
 import doobie.free.connection.ConnectionIO
@@ -38,8 +37,8 @@ object StacCollectionDao extends Dao[StacCollection] {
         case Nil => List(bulkExtent.bbox)
       }
 
-      val newTemporal = existingExtent.temporal.interval.map(_.value) match {
-        case (s :: e :: Nil) :: _ =>
+      val newTemporal = existingExtent.temporal.interval match {
+        case TemporalExtent(s, e) :: _ =>
           val newStart: Option[Instant] = bulkExtent.start map { start =>
             s map { priorStart =>
               if (start.isBefore(priorStart)) { start }
@@ -54,20 +53,9 @@ object StacCollectionDao extends Dao[StacCollection] {
             }
           } getOrElse e
 
-          val newTemporalExtent: List[TemporalExtent] = TemporalExtent
-            .from(List(newStart, newEnd))
-            .fold({ _ =>
-              List.empty[TemporalExtent]
-            }, List(_)) ++ existingExtent.temporal.interval.tail
-
-          newTemporalExtent
+          List(TemporalExtent(newStart, newEnd)) ++ existingExtent.temporal.interval.tail
         case _ =>
-          TemporalExtent
-            .from(List(bulkExtent.start, bulkExtent.end))
-            .fold(
-              _ => Nil,
-              List(_)
-            )
+          List(TemporalExtent(bulkExtent.start, bulkExtent.end))
       }
 
       val nonPeriodicInterval = Interval(newTemporal)

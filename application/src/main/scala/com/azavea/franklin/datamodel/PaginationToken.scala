@@ -1,7 +1,9 @@
 package com.azavea.franklin.datamodel
 
+import cats.syntax.either._
 import com.azavea.stac4s.meta._
 import eu.timepit.refined.types.numeric.PosInt
+import io.circe.Error
 import io.circe.generic.semiauto._
 import io.circe.parser._
 import io.circe.refined._
@@ -31,23 +33,30 @@ object PaginationToken {
     }
   }
 
-  implicit val dec: Decoder[PaginationToken] = deriveDecoder
-  implicit val enc: Encoder[PaginationToken] = deriveEncoder
+  val defaultDecoder: Decoder[PaginationToken] = deriveDecoder
+  val defaultEncoder: Encoder[PaginationToken] = deriveEncoder
 
-  val b64Encoder = Base64.getEncoder()
-  val b64Decoder = Base64.getDecoder()
+  val b64Encoder: Base64.Encoder = Base64.getEncoder
+  val b64Decoder: Base64.Decoder = Base64.getDecoder
 
   def encPaginationToken(token: PaginationToken): String = b64Encoder.encodeToString(
-    token.asJson.noSpaces.getBytes
+    token.asJson(defaultEncoder).noSpaces.getBytes
   )
 
-  def decPaginationToken(encoded: String): DecodeResult[PaginationToken] = {
-    val jsonString: String = new String(b64Decoder.decode(encoded))
-    val circeResult = for {
+  def decPaginationTokenEither(encoded: String): Either[Error, PaginationToken] = {
+    val jsonString = new String(b64Decoder.decode(encoded))
+    for {
       js      <- parse(jsonString)
-      decoded <- js.as[PaginationToken]
+      decoded <- js.as[PaginationToken](defaultDecoder)
     } yield decoded
-    circeResult.toDecodeResult
   }
+
+  def decPaginationToken(encoded: String): DecodeResult[PaginationToken] =
+    decPaginationTokenEither(encoded).toDecodeResult
+
+  implicit val paginationTokenDecoder: Decoder[PaginationToken] =
+    Decoder.decodeString.emap(str => decPaginationTokenEither(str).leftMap(_.getMessage))
+
+  implicit val paginationTokenEncoder: Encoder[PaginationToken] = { encPaginationToken(_).asJson }
 
 }
