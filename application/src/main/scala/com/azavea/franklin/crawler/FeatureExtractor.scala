@@ -45,7 +45,7 @@ object FeatureExtractor {
 
     StacItem(
       s"${UUID.randomUUID}",
-      "1.0.0-rc.2",
+      "1.0.0",
       Nil,
       "Feature",
       feature.geom,

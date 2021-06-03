@@ -85,7 +85,7 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     val description: NonEmptyString =
       "An OGC API - Features, Tiles, and STAC Server"
     val landingPage = LandingPage(
-      "1.0.0-rc.2",
+      "1.0.0",
       Nil,
       Some(title),
       "Franklin STAC API",
