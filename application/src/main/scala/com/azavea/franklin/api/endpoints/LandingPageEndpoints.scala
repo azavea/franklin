@@ -21,9 +21,9 @@ case class AcceptHeader(v: Option[String]) {
   }
 }
 
-class LandingPageEndpoints[F[_]: Sync] {
+class LandingPageEndpoints[F[_]: Sync](pathPrefix: Option[String]) {
 
-  val base = endpoint.in("")
+  val base = endpoint.in(baseFor(pathPrefix, ""))
 
   val landingPageEndpoint: Endpoint[Unit, Unit, LandingPage, Fs2Streams[F]] =
     base.get

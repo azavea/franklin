@@ -17,9 +17,9 @@ import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean) {
+class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[String]) {
 
-  val basePath = "tiles" / "collections"
+  val basePath = baseFor(pathPrefix, "tiles" / "collections")
   val zxyPath  = path[Int] / path[Int] / path[Int]
 
   val itemRasterTilePath: EndpointInput[(String, String, Int, Int, Int)] =

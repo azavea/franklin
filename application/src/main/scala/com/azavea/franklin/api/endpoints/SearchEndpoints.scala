@@ -13,9 +13,9 @@ import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-class SearchEndpoints[F[_]: Concurrent] {
+class SearchEndpoints[F[_]: Concurrent](pathPrefix: Option[String]) {
 
-  val base = endpoint.in("search")
+  val base = endpoint.in(baseFor(pathPrefix, "search"))
 
   implicit val searchFiltersValidator: Validator[SearchFilters] = Validator.pass[SearchFilters]
 

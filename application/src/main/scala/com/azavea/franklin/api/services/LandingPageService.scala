@@ -98,7 +98,7 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
 
   }
 
-  val endpoints = new LandingPageEndpoints[F]()
+  val endpoints = new LandingPageEndpoints[F](apiConfig.path)
 
   val routesList = List(
     Http4sServerInterpreter.toRoutes(endpoints.conformanceEndpoint)(_ => conformancePage),
