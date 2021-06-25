@@ -144,7 +144,8 @@ class CollectionsService[F[_]: Concurrent](
     }
   }
 
-  val collectionEndpoints = new CollectionEndpoints[F](enableTransactions, enableTiles)
+  val collectionEndpoints =
+    new CollectionEndpoints[F](enableTransactions, enableTiles, apiConfig.path)
 
   val routesList = List(
     Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionsList)(_ => listCollections()),

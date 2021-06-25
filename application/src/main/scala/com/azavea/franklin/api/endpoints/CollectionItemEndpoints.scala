@@ -24,10 +24,13 @@ import sttp.tapir.json.circe._
 class CollectionItemEndpoints[F[_]: Concurrent](
     defaultLimit: NonNegInt,
     enableTransactions: Boolean,
-    enableTiles: Boolean
+    enableTiles: Boolean,
+    pathPrefix: Option[String]
 ) {
 
-  val base = endpoint.in("collections")
+  val basePath = baseFor(pathPrefix, "collections")
+
+  val base = endpoint.in(basePath)
 
   val collectionItemsList: Endpoint[
     (String, Option[PaginationToken], Option[NonNegInt]),
