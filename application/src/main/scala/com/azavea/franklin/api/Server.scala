@@ -27,7 +27,7 @@ import org.http4s.server.blaze._
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server => HTTP4sServer}
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import sttp.tapir.docs.openapi._
+import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
@@ -98,21 +98,24 @@ $$$$
         collectionItemEndpoints = new CollectionItemEndpoints[IO](
           apiConfig.defaultLimit,
           apiConfig.enableTransactions,
-          apiConfig.enableTiles
+          apiConfig.enableTiles,
+          apiConfig.path
         )
         collectionEndpoints = new CollectionEndpoints[IO](
           apiConfig.enableTransactions,
-          apiConfig.enableTiles
+          apiConfig.enableTiles,
+          apiConfig.path
         )
-        landingPage = new LandingPageEndpoints[IO]()
+        landingPage = new LandingPageEndpoints[IO](apiConfig.path)
         allEndpoints = collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ new SearchEndpoints[
           IO
-        ].endpoints ++ new TileEndpoints[
+        ](apiConfig.path).endpoints ++ new TileEndpoints[
           IO
         ](
-          apiConfig.enableTiles
+          apiConfig.enableTiles,
+          apiConfig.path
         ).endpoints ++ landingPage.endpoints
-        docs      = allEndpoints.toOpenAPI("Franklin", "0.0.1")
+        docs      = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
         docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes = new SearchService[IO](
           apiConfig,
@@ -121,7 +124,12 @@ $$$$
           xa,
           rootLink
         ).routes
-        tileRoutes = new TileService[IO](apiConfig.apiHost, apiConfig.enableTiles, xa).routes
+        tileRoutes = new TileService[IO](
+          apiConfig.apiHost,
+          apiConfig.enableTiles,
+          apiConfig.path,
+          xa
+        ).routes
         itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
         collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
         collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
@@ -134,10 +142,8 @@ $$$$
         ).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
-          Router(
-            "/" -> ResponseLogger.httpRoutes(false, false)(
-              collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes
-            )
+          ResponseLogger.httpRoutes(false, false)(
+            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes
           )
         ).orNotFound
         serverBuilderBlocker <- Blocker[IO]
