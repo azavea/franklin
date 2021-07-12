@@ -4,8 +4,10 @@ import cats.data.EitherT
 import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.syntax.all._
+import com.azavea.franklin.datamodel.ItemAsset
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.datamodel.SearchMethod
+import com.azavea.franklin.error.MosaicDefinitionError
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
@@ -410,5 +412,14 @@ object StacItemDao extends Dao[StacItem] {
       }
     } yield update)
   }
+
+  def checkItemsInCollection(
+      items: NonEmptyList[ItemAsset],
+      collectionId: String
+  ): ConnectionIO[Either[MosaicDefinitionError, Unit]] = ???
+
+  def checkAssets(
+      items: NonEmptyList[ItemAsset]
+  ): ConnectionIO[Either[MosaicDefinitionError, Unit]] = ???
 
 }

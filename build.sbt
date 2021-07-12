@@ -169,7 +169,8 @@ lazy val applicationDependencies = Seq(
   "org.typelevel"                %% "cats-core"                      % Versions.CatsVersion,
   "org.typelevel"                %% "cats-effect"                    % Versions.CatsEffectVersion,
   "org.typelevel"                %% "cats-free"                      % Versions.CatsVersion,
-  "org.typelevel"                %% "cats-kernel"                    % Versions.CatsVersion
+  "org.typelevel"                %% "cats-kernel"                    % Versions.CatsVersion,
+  "org.typelevel"                %% "discipline-scalatest"           % Versions.DisciplineScalatest % Test
 )
 
 lazy val application = (project in file("application"))

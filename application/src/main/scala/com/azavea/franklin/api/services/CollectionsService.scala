@@ -1,12 +1,16 @@
 package com.azavea.franklin.api.services
 
+import cats.data.EitherT
 import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.api.implicits._
+import com.azavea.franklin.database.MosaicDefinitionDao
 import com.azavea.franklin.database.StacCollectionDao
+import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.franklin.datamodel.{CollectionsResponse, TileInfo}
 import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.extensions.validation._
@@ -19,6 +23,7 @@ import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.syntax._
 import org.http4s.dsl.Http4sDsl
+import software.amazon.awssdk.core.internal.retry.SdkDefaultRetrySetting.Standard
 import sttp.client.{NothingT, SttpBackend}
 import sttp.tapir.server.http4s._
 
@@ -144,6 +149,23 @@ class CollectionsService[F[_]: Concurrent](
     }
   }
 
+  def createMosaic(
+      rawCollectionId: String,
+      mosaicDefinition: MosaicDefinition
+  ): F[Either[NF, MosaicDefinition]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
+    (for {
+      itemsInCollection <- StacItemDao.checkItemsInCollection(mosaicDefinition.items, collectionId)
+      itemAssetValidity <- itemsInCollection traverse { _ =>
+        StacItemDao.checkAssets(mosaicDefinition.items)
+      }
+      inserted <- itemAssetValidity traverse { _ =>
+        MosaicDefinitionDao.insert(mosaicDefinition, collectionId)
+      }
+    } yield inserted.leftMap({ err => NF(err.msg) })).transact(xa)
+  }
+
   val collectionEndpoints =
     new CollectionEndpoints[F](enableTransactions, enableTiles, apiConfig.path)
 
@@ -155,7 +177,9 @@ class CollectionsService[F[_]: Concurrent](
   ) ++
     (if (enableTiles) {
        List(
-         Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionTiles)(getCollectionTiles)
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionTiles)(getCollectionTiles),
+         Http4sServerInterpreter
+           .toRoutes(collectionEndpoints.createMosaic)(Function.tupled(createMosaic))
        )
      } else Nil) ++
     (if (enableTransactions) {

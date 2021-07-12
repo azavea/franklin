@@ -1,6 +1,7 @@
 package com.azavea.franklin.database
 
 import cats.syntax.all._
+import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.stac4s.{StacCollection, StacItem}
 import doobie._
 import doobie.postgres.circe.jsonb.implicits._
@@ -19,6 +20,7 @@ object CirceJsonbMeta {
 }
 
 trait CirceJsonbMeta {
-  implicit val stacItemMeta: Meta[StacItem]             = CirceJsonbMeta[StacItem]
-  implicit val stacCollectionMeta: Meta[StacCollection] = CirceJsonbMeta[StacCollection]
+  implicit val stacItemMeta: Meta[StacItem]                 = CirceJsonbMeta[StacItem]
+  implicit val stacCollectionMeta: Meta[StacCollection]     = CirceJsonbMeta[StacCollection]
+  implicit val mosaicDefinitionMeta: Meta[MosaicDefinition] = CirceJsonbMeta[MosaicDefinition]
 }

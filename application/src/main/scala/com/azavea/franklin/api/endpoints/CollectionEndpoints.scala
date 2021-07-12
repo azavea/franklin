@@ -2,6 +2,7 @@ package com.azavea.franklin.api.endpoints
 
 import cats.effect.Concurrent
 import com.azavea.franklin.api.schemas._
+import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
 import io.circe._
@@ -61,7 +62,19 @@ class CollectionEndpoints[F[_]: Concurrent](
       .description("A collection's tile endpoints")
       .name("collectionTiles")
 
+  val createMosaic
+      : Endpoint[(String, MosaicDefinition), NotFound, MosaicDefinition, Fs2Streams[F]] =
+    base.post
+      .in(path[String] / "mosaic")
+      .in(jsonBody[MosaicDefinition])
+      .out(jsonBody[MosaicDefinition])
+      .errorOut(
+        oneOf(statusMapping(NF, jsonBody[NotFound].description("not found")))
+      )
+      .description("Create a mosaic from items in this collection")
+      .name("collectionMosaic")
+
   val endpoints = List(collectionsList, collectionUnique) ++ {
-    if (enableTiles) List(collectionTiles) else Nil
+    if (enableTiles) List(collectionTiles, createMosaic) else Nil
   } ++ { if (enableTransactions) List(createCollection, deleteCollection) else Nil }
 }
