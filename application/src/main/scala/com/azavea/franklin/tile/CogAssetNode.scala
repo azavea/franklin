@@ -40,6 +40,7 @@ case class CogAssetNode(asset: StacAsset, bands: Seq[Int]) extends TileUtil {
     } yield GeoTiffRasterSource(asset.href, baseTiff = Some(geotiff))
   }
 
+  @SuppressWarnings(Array("UnsafeTraversableMethods"))
   def getHistograms[F[_]: Sync]: F[List[Histogram[Int]]] = {
     val histogramFromSource = getRasterSource.map { rs =>
       val overviews = rs.tiff.overviews
