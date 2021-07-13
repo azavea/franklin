@@ -4,7 +4,7 @@ lazy val commonSettings = Seq(
   organization := "com.azavea",
   name := "franklin",
   version := "0.0.1-SNAPSHOT",
-  scalaVersion := "2.12.10",
+  scalaVersion := "2.12.14",
   ThisBuild / scapegoatVersion := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
   scalacOptions ~= filterConsoleScalacOptions,
@@ -25,7 +25,10 @@ lazy val commonSettings = Seq(
     )
   ),
   outputStrategy := Some(StdoutOutput),
-  scalacOptions += "-Yrangepos",
+  scalacOptions ++= Seq(
+    "-Ypartial-unification",
+    "-Yrangepos"
+  ),
   addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.0" cross CrossVersion.full),
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
