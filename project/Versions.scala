@@ -37,7 +37,7 @@ object Versions {
   val SpireVersion            = "0.13.0"
   val Stac4SVersion           = "0.6.0"
   val SttpClientVersion       = "2.2.9"
-  val SttpShared              = "1.1.1"
+  val SttpShared              = "1.2.5"
   val SttpModelVersion        = "1.4.7"
   val TapirVersion            = "0.17.20"
   val TapirOpenAPIVersion     = "0.17.20"
