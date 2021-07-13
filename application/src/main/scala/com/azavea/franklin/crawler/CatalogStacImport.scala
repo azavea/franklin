@@ -9,7 +9,6 @@ import com.azavea.franklin.database.{StacCollectionDao, StacItemDao}
 import com.azavea.stac4s.StacLinkType._
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.label.LabelItemExtension
-import com.azavea.stac4s.jvmTypes.TemporalExtent
 import com.azavea.stac4s.syntax._
 import doobie.ConnectionIO
 import doobie.implicits._
@@ -152,7 +151,7 @@ class CatalogStacImport(val catalogRoot: String) {
                         )
                       )
                     ),
-                    ().asJsonObject,
+                    Map.empty,
                     forItem.properties.asJson.asObject.getOrElse(JsonObject.empty),
                     List(parentCollectionLink, derivedFromItemLink),
                     Some(Map.empty)

@@ -333,7 +333,7 @@ class CollectionItemsService[F[_]: Concurrent](
   }
 
   val collectionItemEndpoints =
-    new CollectionItemEndpoints(defaultLimit, enableTransactions, enableTiles)
+    new CollectionItemEndpoints(defaultLimit, enableTransactions, enableTiles, apiConfig.path)
 
   val collectionItemTileRoutes =
     Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemTiles)({

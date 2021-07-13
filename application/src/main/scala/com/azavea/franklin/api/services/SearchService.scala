@@ -32,7 +32,7 @@ class SearchService[F[_]: Concurrent](
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
-  val searchEndpoints = new SearchEndpoints[F]
+  val searchEndpoints = new SearchEndpoints[F](apiConfig.path)
 
   def search(searchFilters: SearchFilters, searchMethod: SearchMethod): F[Either[Unit, Json]] = {
     val limit = searchFilters.limit getOrElse defaultLimit

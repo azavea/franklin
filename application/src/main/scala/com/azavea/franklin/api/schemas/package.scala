@@ -2,23 +2,26 @@ package com.azavea.franklin.api
 
 import cats.data.NonEmptyList
 import cats.syntax.either._
+import cats.syntax.invariant._
 import cats.syntax.traverse._
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
-import com.azavea.stac4s.jvmTypes.TemporalExtent
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import sttp.tapir.Codec.PlainCodec
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import sttp.tapir.{Codec, DecodeResult, Schema}
 
 import scala.util.Try
 
 package object schemas {
+
+  implicit val schemaStacCollection: Schema[StacCollection] = Schema(schemaForCirceJson.schemaType)
 
   implicit val schemaForTemporalExtent: Schema[TemporalExtent] = Schema(
     schemaForCirceJson.schemaType

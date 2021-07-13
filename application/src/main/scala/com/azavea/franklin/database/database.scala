@@ -3,8 +3,7 @@ package com.azavea.franklin
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.azavea.franklin.datamodel.BulkExtent
-import com.azavea.stac4s.jvmTypes.TemporalExtent
-import com.azavea.stac4s.{Bbox, StacItem, ThreeDimBbox, TwoDimBbox}
+import com.azavea.stac4s.{Bbox, StacItem, TemporalExtent, ThreeDimBbox, TwoDimBbox}
 import doobie.implicits.javasql._
 import doobie.util.meta.Meta
 import doobie.util.{Read, Write}
@@ -25,16 +24,19 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
     (s: String) => Either.catchNonFatal(Instant.parse(s))
 
   def temporalExtentToString(te: TemporalExtent): String = {
-    te.value match {
-      case Some(start) :: Some(end) :: _ if start != end => s"${start.toString}/${end.toString}"
-      case Some(start) :: Some(end) :: _ if start == end => s"${start.toString}"
-      case Some(start) :: None :: _                      => s"${start.toString}/.."
-      case None :: Some(end) :: _                        => s"../${end.toString}"
+    te match {
+      case TemporalExtent(Some(start), Some(end)) if start != end =>
+        s"${start.toString}/${end.toString}"
+      case TemporalExtent(Some(start), Some(end)) if start == end => s"${start.toString}"
+      case TemporalExtent(Some(start), None)                      => s"${start.toString}/.."
+      case TemporalExtent(None, Some(end))                        => s"../${end.toString}"
+      case _                                                      => "../.."
     }
   }
 
   def temporalExtentFromString(str: String): Either[String, TemporalExtent] = {
     str.split("/").toList match {
+      case ".." :: ".." :: _ => Right(TemporalExtent(None, None))
       case ".." :: endString :: _ =>
         val parsedEnd: Either[Throwable, Instant] = stringToInstant(endString)
         parsedEnd match {

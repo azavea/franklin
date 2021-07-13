@@ -36,6 +36,7 @@ import cats.effect.Temporal
 class TileService[F[_]: Concurrent: LiftIO](
     serverHost: NonEmptyString,
     enableTiles: Boolean,
+    path: Option[String],
     xa: Transactor[F]
 )(
     implicit cs: ContextShift[F],
@@ -46,7 +47,7 @@ class TileService[F[_]: Concurrent: LiftIO](
 
   import CogAssetNodeImplicits._
 
-  val tileEndpoints = new TileEndpoints(enableTiles)
+  val tileEndpoints = new TileEndpoints(enableTiles, path)
 
   def getItemRasterTile(tileRequest: ItemRasterTileRequest): F[Either[NF, Array[Byte]]] = {
     val assetKey     = tileRequest.asset

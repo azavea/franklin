@@ -13,7 +13,7 @@ object StacSearchCollection {
       "context"      -> a.context.asJson,
       "features"     -> a.features.asJson,
       "links"        -> a.links.asJson,
-      "stac_version" -> "1.0.0-rc.2".asJson
+      "stac_version" -> "1.0.0".asJson
     )
   }
 

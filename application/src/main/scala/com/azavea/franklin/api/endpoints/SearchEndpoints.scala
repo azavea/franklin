@@ -4,8 +4,7 @@ import cats.effect.Concurrent
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database._
 import com.azavea.franklin.datamodel.PaginationToken
-import com.azavea.stac4s.Bbox
-import com.azavea.stac4s.jvmTypes.TemporalExtent
+import com.azavea.stac4s.{Bbox, TemporalExtent}
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe._
 import sttp.capabilities.fs2.Fs2Streams
@@ -14,9 +13,9 @@ import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-class SearchEndpoints[F[_]: Concurrent] {
+class SearchEndpoints[F[_]: Concurrent](pathPrefix: Option[String]) {
 
-  val base = endpoint.in("search")
+  val base = endpoint.in(baseFor(pathPrefix, "search"))
 
   implicit val searchFiltersValidator: Validator[SearchFilters] = Validator.pass[SearchFilters]
 

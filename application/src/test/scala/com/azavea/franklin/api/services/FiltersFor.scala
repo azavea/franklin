@@ -4,8 +4,7 @@ import cats.data.NonEmptyList
 import cats.syntax.all._
 import cats.{Monoid, Semigroup}
 import com.azavea.franklin.database.SearchFilters
-import com.azavea.stac4s.jvmTypes.TemporalExtent
-import com.azavea.stac4s.{ItemDatetime, StacCollection, StacItem, TwoDimBbox}
+import com.azavea.stac4s.{ItemDatetime, StacCollection, StacItem, TemporalExtent, TwoDimBbox}
 import geotrellis.vector.Extent
 import io.circe.syntax._
 
@@ -219,5 +218,14 @@ object FiltersFor {
         itemFilterFor(item)
       )
     filters.combineAll
+  }
+
+  def inclusiveFilters(collection: StacCollection): SearchFilters = {
+    val filters: NonEmptyList[Option[SearchFilters]] =
+      NonEmptyList.of(collectionFilterFor(collection).some)
+    val concatenated = filters.combineAll
+    // guaranteed to succeed, since most of the filters are being converted into options
+    // just to cooperate with timeFilterFor
+    concatenated.get
   }
 }
