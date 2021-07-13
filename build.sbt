@@ -84,6 +84,7 @@ lazy val applicationSettings = commonSettings ++ Seq(
 
 lazy val applicationDependencies = Seq(
   "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
+  "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
   "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
