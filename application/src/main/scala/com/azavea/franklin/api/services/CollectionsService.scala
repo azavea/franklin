@@ -29,6 +29,7 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
@@ -166,6 +167,29 @@ class CollectionsService[F[_]: Concurrent](
     } yield inserted.leftMap({ err => NF(err.msg) })).transact(xa)
   }
 
+  def getMosaic(
+      rawCollectionId: String,
+      mosaicId: UUID
+  ): F[Either[NF, MosaicDefinition]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
+    MosaicDefinitionDao.getMosaicDefinition(collectionId, mosaicId).transact(xa) map {
+      Either.fromOption(_, NF())
+    }
+  }
+
+  def deleteMosaic(
+      rawCollectionId: String,
+      mosaicId: UUID
+  ): F[Either[NF, Unit]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
+    MosaicDefinitionDao.deleteMosaicDefinition(collectionId, mosaicId).transact(xa) map {
+      case 0 => Left(NF())
+      case _ => Right(())
+    }
+  }
+
   val collectionEndpoints =
     new CollectionEndpoints[F](enableTransactions, enableTiles, apiConfig.path)
 
@@ -179,7 +203,11 @@ class CollectionsService[F[_]: Concurrent](
        List(
          Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionTiles)(getCollectionTiles),
          Http4sServerInterpreter
-           .toRoutes(collectionEndpoints.createMosaic)(Function.tupled(createMosaic))
+           .toRoutes(collectionEndpoints.createMosaic)(Function.tupled(createMosaic)),
+         Http4sServerInterpreter
+           .toRoutes(collectionEndpoints.getMosaic)(Function.tupled(getMosaic)),
+         Http4sServerInterpreter
+           .toRoutes(collectionEndpoints.deleteMosaic)(Function.tupled(deleteMosaic))
        )
      } else Nil) ++
     (if (enableTransactions) {

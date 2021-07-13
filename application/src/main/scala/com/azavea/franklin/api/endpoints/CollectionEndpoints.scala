@@ -7,10 +7,13 @@ import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
 import io.circe._
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.model.StatusCode
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
+
+import java.util.UUID
 
 class CollectionEndpoints[F[_]: Concurrent](
     enableTransactions: Boolean,
@@ -72,9 +75,31 @@ class CollectionEndpoints[F[_]: Concurrent](
         oneOf(statusMapping(NF, jsonBody[NotFound].description("not found")))
       )
       .description("Create a mosaic from items in this collection")
-      .name("collectionMosaic")
+      .name("collectionMosaicPost")
+
+  val getMosaic: Endpoint[(String, UUID), NotFound, MosaicDefinition, Fs2Streams[F]] =
+    base.get
+      .in(path[String] / "mosaic" / path[UUID])
+      .out(jsonBody[MosaicDefinition])
+      .errorOut(
+        oneOf(
+          statusMapping(NF, jsonBody[NotFound].description("Mosaic does not exist in collection"))
+        )
+      )
+      .description("Fetch a mosaic defined for this collection")
+      .name("collectionMosaicGet")
+
+  val deleteMosaic: Endpoint[(String, UUID), NotFound, Unit, Fs2Streams[F]] =
+    base.delete
+      .in(path[String] / "mosaic" / path[UUID])
+      .out(statusCode(StatusCode.NoContent))
+      .errorOut(
+        oneOf(
+          statusMapping(NF, jsonBody[NotFound].description("Mosaic does not exist in collection"))
+        )
+      )
 
   val endpoints = List(collectionsList, collectionUnique) ++ {
-    if (enableTiles) List(collectionTiles, createMosaic) else Nil
+    if (enableTiles) List(collectionTiles, createMosaic, getMosaic, deleteMosaic) else Nil
   } ++ { if (enableTransactions) List(createCollection, deleteCollection) else Nil }
 }
