@@ -7,7 +7,7 @@ import cats.syntax.all._
 import com.azavea.franklin.datamodel.ItemAsset
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.datamodel.SearchMethod
-import com.azavea.franklin.error.MosaicDefinitionError
+import com.azavea.franklin.error.{ItemsDoNotExist, ItemsMissingAsset, MosaicDefinitionError}
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
@@ -416,10 +416,43 @@ object StacItemDao extends Dao[StacItem] {
   def checkItemsInCollection(
       items: NonEmptyList[ItemAsset],
       collectionId: String
-  ): ConnectionIO[Either[MosaicDefinitionError, Unit]] = ???
+  ): ConnectionIO[Either[MosaicDefinitionError, Unit]] = {
+    val iaToString  = (ia: ItemAsset) => s""""${ia.itemId}""""
+    val itemStrings = items.toList map iaToString
+    val itemStringArray =
+      s"""{ ${itemStrings.mkString(", ")} }"""
+    fr"""
+    with item_ids as (
+      select unnest($itemStringArray :: text[]) as item_id
+    )
+    select item_ids.item_id
+    from item_ids left join collection_items on item_ids.item_id = collection_items.id
+    where
+      collection_items.collection is null or
+      collection_items.collection <> $collectionId
+    """.query[String].to[List] map {
+      case Nil   => Right(())
+      case items => Left(ItemsDoNotExist(items, collectionId))
+    }
+  }
 
   def checkAssets(
-      items: NonEmptyList[ItemAsset]
-  ): ConnectionIO[Either[MosaicDefinitionError, Unit]] = ???
+      items: NonEmptyList[ItemAsset],
+      collectionId: String
+  ): ConnectionIO[Either[MosaicDefinitionError, Unit]] =
+    items.toList flatTraverse { itemAsset =>
+      getCollectionItem(collectionId, itemAsset.itemId) map { itemO =>
+        itemO.fold(List(itemAsset.itemId))(item =>
+          if (item.assets.contains(itemAsset.assetName)) {
+            List.empty[String]
+          } else {
+            List(item.id)
+          }
+        )
+      }
+    } map {
+      case Nil => Right(())
+      case ids => Left(ItemsMissingAsset(items.filter(ia => ids.contains(ia.itemId))))
+    }
 
 }

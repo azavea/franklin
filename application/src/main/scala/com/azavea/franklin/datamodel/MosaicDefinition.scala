@@ -5,6 +5,7 @@ import cats.kernel.Eq
 import cats.syntax.apply._
 import cats.syntax.contravariant._
 import com.azavea.stac4s.TwoDimBbox
+import geotrellis.vector.Geometry
 import io.circe.DecodingFailure
 import io.circe.generic.JsonCodec
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
@@ -16,6 +17,11 @@ import java.util.UUID
 final case class MapCenter(longitude: Double, latitude: Double, zoom: Int)
 
 object MapCenter {
+
+  def fromGeometry[G <: Geometry](geometry: G, zoom: Int) = {
+    val geoCenter = geometry.getCentroid()
+    MapCenter(geoCenter.getX(), geoCenter.getY(), zoom)
+  }
 
   implicit val decMapCenter: Decoder[MapCenter] = { cursor =>
     cursor.as[List[Json]] flatMap {

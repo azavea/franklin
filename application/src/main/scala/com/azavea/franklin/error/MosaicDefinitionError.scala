@@ -1,16 +1,21 @@
 package com.azavea.franklin.error
 
+import com.azavea.franklin.datamodel.ItemAsset
 import com.azavea.franklin.datamodel.MapCenter
 
 sealed abstract class MosaicDefinitionError {
   val msg: String
 }
 
-final case class ItemMissingAsset(itemId: String, assetKey: String) extends MosaicDefinitionError {
-  val msg = s"Item $itemId does not have an asset named $assetKey"
+final case class ItemsMissingAsset(itemAssets: List[ItemAsset]) extends MosaicDefinitionError {
+
+  private val itemAssetList =
+    (itemAssets map { ia => s"(${ia.itemId}, ${ia.assetName})" }).mkString(", ")
+  val msg = s"""Some items don't have the requested assets: $itemAssetList"""
 }
 
-final case class ItemDoesNotExist(itemId: String, collectionId: String)
+final case class ItemsDoNotExist(itemIds: List[String], collectionId: String)
     extends MosaicDefinitionError {
-  val msg = s"Item $itemId does not exist in collection $collectionId"
+  private val itemList = itemIds.mkString(", ")
+  val msg              = s"Some items do not exist in collection $collectionId: $itemList"
 }

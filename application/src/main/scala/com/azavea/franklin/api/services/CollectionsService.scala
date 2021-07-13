@@ -157,8 +157,8 @@ class CollectionsService[F[_]: Concurrent](
 
     (for {
       itemsInCollection <- StacItemDao.checkItemsInCollection(mosaicDefinition.items, collectionId)
-      itemAssetValidity <- itemsInCollection traverse { _ =>
-        StacItemDao.checkAssets(mosaicDefinition.items)
+      itemAssetValidity <- itemsInCollection flatTraverse { _ =>
+        StacItemDao.checkAssets(mosaicDefinition.items, collectionId)
       }
       inserted <- itemAssetValidity traverse { _ =>
         MosaicDefinitionDao.insert(mosaicDefinition, collectionId)
