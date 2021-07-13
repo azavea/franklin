@@ -2,7 +2,7 @@ package com.azavea.franklin.api.commands
 
 import cats.data.NonEmptyList
 import cats.effect.Sync
-import cats.effect.{ContextShift, ExitCode, IO}
+import cats.effect.{ExitCode, IO}
 import cats.syntax.all._
 import com.azavea.franklin.crawler.CatalogStacImport
 import com.azavea.franklin.crawler.StacItemImporter
@@ -33,15 +33,13 @@ object Commands {
   )
 
   private def runItemsImportOpts(
-      implicit sync: Sync[IO],
-      cs: ContextShift[IO]
-  ): Opts[RunItemsImport] =
+      implicit sync: Sync[IO]): Opts[RunItemsImport] =
     Opts.subcommand("import-items", "Import STAC items into an existing collection") {
       (Options.collectionID, Options.stacItems(sync), Options.databaseConfig, Options.dryRun)
         .mapN(RunItemsImport)
     }
 
-  private def runCatalogImportOpts(implicit cs: ContextShift[IO]): Opts[RunCatalogImport] =
+  private def runCatalogImportOpts: Opts[RunCatalogImport] =
     Opts.subcommand("import-catalog", "Import a STAC catalog") {
       (
         Options.catalogRoot,
@@ -50,12 +48,12 @@ object Commands {
       ).mapN(RunCatalogImport)
     }
 
-  private def runMigrationsOpts(implicit cs: ContextShift[IO]): Opts[RunMigrations] =
+  private def runMigrationsOpts: Opts[RunMigrations] =
     Opts.subcommand("migrate", "Runs migrations against database") {
       Options.databaseConfig map RunMigrations
     }
 
-  private def runServerOpts(implicit cs: ContextShift[IO]): Opts[RunServer] =
+  private def runServerOpts: Opts[RunServer] =
     Opts.subcommand("serve", "Runs web service") {
       (Options.apiConfig, Options.databaseConfig) mapN RunServer
     }
@@ -79,7 +77,7 @@ object Commands {
       itemUris: NonEmptyList[String],
       config: DatabaseConfig,
       dryRun: Boolean
-  )(implicit cs: ContextShift[IO], backend: SttpBackend[IO, Nothing, NothingT]) = {
+  )(implicit backend: SttpBackend[IO, Nothing, NothingT]) = {
     val xa = config.getTransactor(dryRun)
     new StacItemImporter(collectionId, itemUris).runIO(xa)
   }
@@ -89,14 +87,14 @@ object Commands {
       config: DatabaseConfig,
       dryRun: Boolean
   )(
-      implicit contextShift: ContextShift[IO],
+      implicit
       backend: SttpBackend[IO, Nothing, NothingT]
   ): IO[Unit] = {
     val xa = config.getTransactor(dryRun)
     new CatalogStacImport(stacCatalog).runIO(xa)
   }
 
-  def applicationCommand(implicit cs: ContextShift[IO]): Command[Product] =
+  def applicationCommand: Command[Product] =
     Command("", "Your Friendly Neighborhood OGC API - Features and STAC Web Service") {
       runServerOpts orElse runMigrationsOpts orElse runCatalogImportOpts orElse runItemsImportOpts
     }

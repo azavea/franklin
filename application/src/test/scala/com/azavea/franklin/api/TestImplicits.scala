@@ -1,7 +1,7 @@
 package com.azavea.franklin.api
 
 import cats.Applicative
-import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.effect.Concurrent
 import cats.syntax.functor._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService, SearchService}

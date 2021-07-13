@@ -40,6 +40,7 @@ import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import cats.effect.Temporal
 
 class CollectionItemsService[F[_]: Concurrent](
     xa: Transactor[F],
@@ -48,7 +49,7 @@ class CollectionItemsService[F[_]: Concurrent](
     rootLink: StacLink
 )(
     implicit contextShift: ContextShift[F],
-    timer: Timer[F],
+    timer: Temporal[F],
     serverOptions: Http4sServerOptions[F],
     backend: SttpBackend[F, Nothing, NothingT],
     logger: Logger[F]

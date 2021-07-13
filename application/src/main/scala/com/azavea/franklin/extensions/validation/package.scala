@@ -3,7 +3,6 @@ package com.azavea.franklin.extensions
 import cats.Functor
 import cats.data.NonEmptyList
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.extensions.validation.syntax._
 import com.azavea.stac4s.StacCollection
@@ -28,6 +27,7 @@ import sttp.client.circe._
 import sttp.model.{Uri => SttpUri}
 
 import scala.util.{Failure, Success, Try}
+import cats.effect.Ref
 
 package object validation {
 
