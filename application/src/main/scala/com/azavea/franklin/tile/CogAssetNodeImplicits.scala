@@ -1,7 +1,8 @@
 package com.azavea.franklin.tile
 
-import cats.effect.ContextShift
-import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 import geotrellis.proj4.WebMercator
 import geotrellis.raster._
 import geotrellis.raster.io.geotiff.AutoHigherResolution
@@ -12,47 +13,39 @@ import geotrellis.vector.Extent
 
 object CogAssetNodeImplicits extends TileUtil {
 
-  implicit def cogAssetNodeTmsReification: TmsReification[CogAssetNode] =
-    new TmsReification[CogAssetNode] {
-
-      def tmsReification(
-          self: CogAssetNode,
-          buffer: Int
-      )(implicit cs: ContextShift[IO]): (Int, Int, Int) => IO[ProjectedRaster[MultibandTile]] =
-        (z: Int, x: Int, y: Int) => {
-          def fetch(xCoord: Int, yCoord: Int): IO[Raster[MultibandTile]] = {
-            self.fetchTile(z, xCoord, yCoord, WebMercator).flatMap(a => IO(a))
-          }
-
-          fetch(x, y).map { tile =>
-            val extent = tmsLevels(z).mapTransform.keyToExtent(x, y)
-            ProjectedRaster(tile.tile, extent, WebMercator)
-          }
+  implicit def cogAssetNodeTmsReification[F[_]: Sync]: TmsReification[F, CogAssetNode] = {
+    (self, _) => (z: Int, x: Int, y: Int) =>
+      {
+        def fetch(xCoord: Int, yCoord: Int): F[Raster[MultibandTile]] = {
+          self.fetchTile(z, xCoord, yCoord, WebMercator).flatMap(a => Sync[F].delay(a))
         }
-    }
 
-  implicit def cogAssetNodeExtentReification: ExtentReification[CogAssetNode] =
-    new ExtentReification[CogAssetNode] {
+        fetch(x, y).map { tile =>
+          val extent = tmsLevels(z).mapTransform.keyToExtent(x, y)
+          ProjectedRaster(tile.tile, extent, WebMercator)
+        }
+      }
+  }
 
-      def extentReification(
-          self: CogAssetNode
-      )(implicit cs: ContextShift[IO]): (Extent, CellSize) => IO[ProjectedRaster[MultibandTile]] =
-        (extent: Extent, cs: CellSize) => {
-          self.getRasterSource map { rs =>
-            rs.resample(
-                TargetRegion(new GridExtent[Long](extent, cs)),
-                NearestNeighbor,
-                AutoHigherResolution
+  implicit def cogAssetNodeExtentReification[F[_]: Sync]: ExtentReification[F, CogAssetNode] = {
+    self => (extent: Extent, ocs: Option[CellSize]) =>
+      {
+        self.getRasterSource map { rs =>
+          val cs = ocs.getOrElse(rs.cellSize)
+          rs.resample(
+              TargetRegion(new GridExtent[Long](extent, cs)),
+              NearestNeighbor,
+              AutoHigherResolution
+            )
+            .read(extent)
+            .map(ProjectedRaster(_, WebMercator)) match {
+            case Some(mbt) => mbt
+            case _ =>
+              throw new Exception(
+                s"No tile available for RasterExtent: ${RasterExtent(extent, cs)}"
               )
-              .read(extent)
-              .map { ProjectedRaster(_, WebMercator) } match {
-              case Some(mbt) => mbt
-              case _ =>
-                throw new Exception(
-                  s"No tile available for RasterExtent: ${RasterExtent(extent, cs)}"
-                )
-            }
           }
         }
-    }
+      }
+  }
 }
