@@ -5,12 +5,15 @@ import eu.timepit.refined.types.string.NonEmptyString
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 
 sealed trait TileMatrixRequest {
   val z: Int
   val x: Int
   val y: Int
   val collection: String
+
+  val zxy: (Int, Int, Int) = (z, x, y)
 
   def urlDecode(rawString: String): String =
     URLDecoder.decode(rawString, StandardCharsets.UTF_8.toString)
@@ -44,8 +47,6 @@ case class ItemRasterTileRequest(
   val upperQuantile = upperQuantileOption.map(_.value).getOrElse(100) - 1
   val lowerQuantile = lowerQuantileOption.map(_.value).getOrElse(-1) + 1
 
-  val zxy = (z, x, y)
-
 }
 
 case class MapboxVectorTileFootprintRequest(
@@ -56,4 +57,31 @@ case class MapboxVectorTileFootprintRequest(
     withField: List[NonEmptyString]
 ) extends TileMatrixRequest {
   val collection = urlDecode(collectionRaw)
+}
+
+case class CollectionMosaicRequest(
+    collectionRaw: String,
+    mosaicId: UUID,
+    z: Int,
+    x: Int,
+    y: Int,
+    redBandOption: Option[Int],
+    greenBandOption: Option[Int],
+    blueBandOption: Option[Int],
+    upperQuantileOption: Option[Quantile],
+    lowerQuantileOption: Option[Quantile],
+    singleBand: Option[NonNegInt]
+) extends TileMatrixRequest {
+  val collection = urlDecode(collectionRaw)
+
+  val redBand   = redBandOption.getOrElse(0)
+  val greenBand = greenBandOption.getOrElse(1)
+  val blueBand  = blueBandOption.getOrElse(2)
+
+  val bands = Seq(redBand, greenBand, blueBand)
+
+  // Because lists are 0 indexed and humans are 1 indexed we need to adjust
+  val upperQuantile = upperQuantileOption.map(_.value).getOrElse(100) - 1
+  val lowerQuantile = lowerQuantileOption.map(_.value).getOrElse(-1) + 1
+
 }

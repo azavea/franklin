@@ -455,4 +455,9 @@ object StacItemDao extends Dao[StacItem] {
       case ids => Left(ItemsMissingAsset(items.filter(ia => ids.contains(ia.itemId))))
     }
 
+  def unsafeGetAsset(itemId: String, assetName: String): ConnectionIO[StacAsset] =
+    fr"select item -> assets -> $assetName from collection_items where id = $itemId"
+      .query[StacAsset]
+      .unique
+
 }

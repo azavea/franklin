@@ -1,5 +1,7 @@
 package com.azavea.franklin.database
 
+import cats.data.NonEmptyList
+import com.azavea.franklin.datamodel.ItemAsset
 import com.azavea.franklin.datamodel.MosaicDefinition
 import doobie.ConnectionIO
 import doobie.implicits._
@@ -30,4 +32,26 @@ object MosaicDefinitionDao extends Dao[MosaicDefinition] {
 
   def deleteMosaicDefinition(collectionId: String, mosaicDefinitionId: UUID): ConnectionIO[Int] =
     collectionMosaicQB(collectionId, mosaicDefinitionId).delete
+
+  def getItems(
+      itemAssets: NonEmptyList[ItemAsset],
+      z: Int,
+      x: Int,
+      y: Int
+  ): ConnectionIO[List[ItemAsset]] = {
+    val iaToString  = (ia: ItemAsset) => s""""${ia.itemId}""""
+    val itemStrings = itemAssets.toList map iaToString
+    val itemStringArray =
+      s"""{ ${itemStrings.mkString(", ")} }"""
+    fr"""
+    with item_ids as (
+      select unnest($itemStringArray :: text[]) as item_id
+    )
+    select id from item_ids join item_ids on item_ids.item_id = collection_items.id
+    where st_intersects(collection_items.geometry, ST_TileEnvelope(${z},${x},${y}))
+    """.query[String].to[List] map { itemIds =>
+      val itemIdsSet = itemIds.toSet
+      itemAssets.filter(ia => itemIdsSet.contains(ia.itemId))
+    }
+  }
 }

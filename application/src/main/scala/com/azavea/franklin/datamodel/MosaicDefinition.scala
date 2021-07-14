@@ -75,14 +75,6 @@ object MosaicDefinition {
 
   implicit val encMosaicDefinition: Encoder[MosaicDefinition] = deriveEncoder
 
-//   implicit val decMosaicDefinition: Decoder[MosaicDefinition] = { cursor =>
-//     for {
-//         description <- cursor.get[Option[String]]("description")
-//         center <- cursor.get[MapCenter]("center")
-//         items <- cursor.get[NonEmptyList[ItemAsset]]("items")
-//         minZoom <- cursor.get[Int]("minZoom")
-
-//     }
   implicit val decMosaicDefinition: Decoder[MosaicDefinition] =
     deriveDecoder[MosaicDefinition].ensure(definition => ensureCenterInBounds(definition))
 }

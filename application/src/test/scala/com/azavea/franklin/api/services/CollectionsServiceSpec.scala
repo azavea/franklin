@@ -36,10 +36,10 @@ class CollectionsServiceSpec
   This specification verifies that the collections service can run without crashing
 
   The collections service should:
-    - create and delete collections createDeleteCollectionExpectation
-    - list collections              listCollectionsExpectation
-    - get collections by id         getCollectionsExpectation
-    - create a mosaic definition    createMosaicDefinitionExpectation
+    - create and delete collections $createDeleteCollectionExpectation
+    - list collections              $listCollectionsExpectation
+    - get collections by id         $getCollectionsExpectation
+    - create a mosaic definition    $createMosaicDefinitionExpectation
     - get a mosaic by id            $getMosaicExpectation
 """
 
