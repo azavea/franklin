@@ -47,8 +47,8 @@ object MosaicDefinitionDao extends Dao[MosaicDefinition] {
     with item_ids as (
       select unnest($itemStringArray :: text[]) as item_id
     )
-    select id from item_ids join item_ids on item_ids.item_id = collection_items.id
-    where st_intersects(collection_items.geometry, ST_TileEnvelope(${z},${x},${y}))
+    select id from item_ids join collection_items on item_ids.item_id = collection_items.id
+    where st_intersects(collection_items.geom, st_transform(ST_TileEnvelope(${z},${x},${y}), 4326))
     """.query[String].to[List] map { itemIds =>
       val itemIdsSet = itemIds.toSet
       itemAssets.filter(ia => itemIdsSet.contains(ia.itemId))

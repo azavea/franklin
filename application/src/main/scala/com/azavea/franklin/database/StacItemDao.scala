@@ -455,9 +455,10 @@ object StacItemDao extends Dao[StacItem] {
       case ids => Left(ItemsMissingAsset(items.filter(ia => ids.contains(ia.itemId))))
     }
 
+  // since mosaic definitions are validated on creation, we know that the item exists and has
+  // this asset.
+  @SuppressWarnings(Array("OptionGet"))
   def unsafeGetAsset(itemId: String, assetName: String): ConnectionIO[StacAsset] =
-    fr"select item -> assets -> $assetName from collection_items where id = $itemId"
-      .query[StacAsset]
-      .unique
+    query.filter(fr"id = $itemId").select map { item => item.assets.get(assetName).get }
 
 }
