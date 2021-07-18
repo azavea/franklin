@@ -251,6 +251,7 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
         } else {
           Right(
             tileRequest.singleBand map { bandSelect =>
+              println(s"In the single band case $bandSelect")
               tiles
                 .foldLeft(invisiTile)(
                   (acc: Tile, tup: (MultibandTile, GeoTiffRasterSource, List[Histogram[Int]])) => {
