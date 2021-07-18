@@ -23,6 +23,8 @@ import doobie._
 import doobie.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
+import geotrellis.layer.Implicits._
+import geotrellis.raster.MosaicRasterSource
 import geotrellis.raster.geotiff.GeoTiffRasterSource
 import geotrellis.raster.render.ColorRamps.greyscale
 import geotrellis.raster.render.{Implicits => RenderImplicits}
@@ -39,6 +41,10 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import geotrellis.proj4.CRS
+import geotrellis.layer.SpatialKey
+import geotrellis.layer.ZoomedLayoutScheme
+import geotrellis.proj4.WebMercator
 
 class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
     serverHost: NonEmptyString,
@@ -50,6 +56,11 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
 
   import CogAssetNodeImplicits._
 
+  private val tmsLevels = {
+    val scheme = ZoomedLayoutScheme(WebMercator, 256)
+    for (zoom <- 0 to 64) yield scheme.levelForZoom(zoom).layout
+  }.toArray
+
   private val invisiCellType = IntUserDefinedNoDataCellType(0)
 
   private val invisiTile: Tile = IntUserDefinedNoDataArrayTile(
@@ -60,6 +71,14 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
   )
 
   private val invisiMBTile = MultibandTile(invisiTile, invisiTile, invisiTile)
+
+  // todo
+  // todo: memoize
+  private def getHistogram(mosaicDefinitionId: UUID): F[Array[Histogram[Int]]] = ???
+
+  // todo: memoize
+  def getRasterSource(href: String): F[GeoTiffRasterSource] =
+    Sync[F].delay(GeoTiffRasterSource(href))
 
   val tileEndpoints = new TileEndpoints(enableTiles, path)
 
@@ -183,96 +202,45 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
     for {
       itemAssets <- getItemsList(tileRequest.collection, tileRequest.mosaicId, z, x, y)
       _          <- Logger[F].debug(s"got items list with ${itemAssets.size} items")
-      tiles <- itemAssets.parTraverseN(8) {
+      assetHrefs <- itemAssets.parTraverseN(8) {
         case ItemAsset(itemId, assetName) =>
           for {
             ()    <- Logger[F].debug(s"getting asset ${itemId}-${assetName}")
             asset <- StacItemDao.unsafeGetAsset(itemId, assetName).transact(xa)
             ()    <- Logger[F].debug(s"got asset ${itemId}-${assetName}")
-            cogAssetNode = CogAssetNode(asset, tileRequest.singleBand map { sb =>
-              List(sb.value)
-            } getOrElse {
-              tileRequest.bands
-            })
-            ()         <- Logger[F].debug("Created node")
-            histograms <- cogAssetNode.getHistograms[F]
-            ()         <- Logger[F].debug("Got histograms")
-            rs         <- cogAssetNode.getRasterSource[F]
-            tile <- {
-              val eval = LayerTms.identity(cogAssetNode)
-              eval(z, x, y).map { mbTile => (mbTile getOrElse invisiMBTile, rs, histograms) }
-            }
-          } yield tile
+          } yield asset
       }
+      mosaicSource <- assetHrefs traverse { asset =>
+        getRasterSource(asset.href)
+      } map { sources =>
+        sources.toNel map { rs => MosaicRasterSource(rs, CRS.fromEpsgCode(3857)) }
+      }
+      tileO <- mosaicSource flatTraverse { rs =>
+        Sync[F].delay(
+          rs.tileToLayout(tmsLevels(tileRequest.z)).read(SpatialKey(x, y), tileRequest.bands)
+        )
+      }
+      // TODO memoize
+      histO = tileO map { _.histogram }
     } yield {
-      val hists = tiles map { _._3 }
-      val combinedHistO = hists.headOption map { headHist =>
-        val histSize   = headHist.size
-        val emptyHists = (1 to histSize).toList map { _ => IntHistogram(): Histogram[Int] }
-        hists.foldLeft(emptyHists)((h1: List[Histogram[Int]], h2: List[Histogram[Int]]) => {
-          val zipped = h1.zip(h2)
-          zipped map {
-            case (_h1, _h2) => _h1 merge _h2
-          }
-        })
-      }
-      combinedHistO map { combinedHist =>
-        if (tileRequest.singleBand.isEmpty) {
-          Right(
-            tiles
-              .foldLeft(invisiMBTile)(
-                (
-                    acc: MultibandTile,
-                    tup: (MultibandTile, GeoTiffRasterSource, List[Histogram[Int]])
-                ) => {
-                  val (tile, _, _)  = tup
-                  val filteredHists = tileRequest.bands map { combinedHist(_) }
-                  val bands = tile.bands.zip(filteredHists).map {
-                    case (tile, histogram) =>
-                      val breaks = histogram.quantileBreaks(100)
-                      val oldMin = breaks(tileRequest.lowerQuantile)
-                      val oldMax = breaks(tileRequest.upperQuantile)
-                      tile
-                        .mapIfSet { cell =>
-                          if (cell < oldMin) oldMin
-                          else if (cell > oldMax) oldMax
-                          else cell
-                        }
-                        .normalize(oldMin, oldMax, 1, 255)
-                  }
-                  val combineMbt = MultibandTile(bands)
-                  acc.merge(combineMbt)
+      // TODO: nodata not getting set correctly
+      val outTile = (tileO, histO) mapN {
+        case (mbt, hists) =>
+          MultibandTile(mbt.bands.zip(hists).map {
+            case (tile, histogram) =>
+              val breaks = histogram.quantileBreaks(100)
+              val oldMin = breaks(tileRequest.lowerQuantile)
+              val oldMax = breaks(tileRequest.upperQuantile)
+              tile
+                .mapIfSet { cell =>
+                  if (cell < oldMin) oldMin
+                  else if (cell > oldMax) oldMax
+                  else cell
                 }
-              )
-              .renderPng
-              .bytes
-          )
-
-        } else {
-          Right(
-            tileRequest.singleBand map { bandSelect =>
-              println(s"In the single band case $bandSelect")
-              tiles
-                .foldLeft(invisiTile)(
-                  (acc: Tile, tup: (MultibandTile, GeoTiffRasterSource, List[Histogram[Int]])) => {
-                    val (tile, rs, _) = tup
-                    val cmap = rs.tiff.options.colorMap getOrElse {
-                      val greyscaleRamp = greyscale(255)
-                      val hist          = combinedHist(bandSelect)
-                      val breaks        = hist.quantileBreaks(100)
-                      greyscaleRamp.toColorMap(breaks)
-                    }
-                    val renderedTile = cmap.render(tile.band(0))
-                    acc.merge(renderedTile)
-                  }
-                )
-                .renderPng
-                .bytes
-            } getOrElse invisiTile.renderPng.bytes
-          )
-        }
-      } getOrElse Right(invisiTile.renderPng.bytes)
-
+                .normalize(oldMin, oldMax, 1, 255)
+          })
+      } getOrElse invisiMBTile
+      Right(outTile.renderPng.bytes)
     }
   }
 

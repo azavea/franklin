@@ -1,5 +1,6 @@
 package com.azavea.franklin.datamodel
 
+import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.string.NonEmptyString
 
@@ -78,7 +79,7 @@ case class CollectionMosaicRequest(
   val greenBand = greenBandOption.getOrElse(1)
   val blueBand  = blueBandOption.getOrElse(2)
 
-  val bands = Seq(redBand, greenBand, blueBand)
+  val bands = singleBand.fold(Seq(redBand, greenBand, blueBand))(Seq(_))
 
   // Because lists are 0 indexed and humans are 1 indexed we need to adjust
   val upperQuantile = upperQuantileOption.map(_.value).getOrElse(100) - 1
