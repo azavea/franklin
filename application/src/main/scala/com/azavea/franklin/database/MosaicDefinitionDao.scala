@@ -29,7 +29,9 @@ object MosaicDefinitionDao extends Dao[MosaicDefinition] {
       mosaicDefinition: MosaicDefinition,
       collectionId: String
   ): ConnectionIO[MosaicDefinition] =
-    fr"insert into mosaic_definitions (id, collection, mosaic) values (${mosaicDefinition.id}, $collectionId, $mosaicDefinition)".update
+    fr"""insert into mosaic_definitions (id, collection, mosaic, created_at) values (
+      ${mosaicDefinition.id}, $collectionId, $mosaicDefinition, now())
+    """.update
       .withUniqueGeneratedKeys[MosaicDefinition]("mosaic")
 
   private def collectionMosaicQB(collectionId: String, mosaicDefinitionId: UUID) =
@@ -38,7 +40,7 @@ object MosaicDefinitionDao extends Dao[MosaicDefinition] {
   def listMosaicDefinitions(
       collectionId: String
   ): ConnectionIO[List[MosaicDefinition]] =
-    query.filter(fr"collection_id = $collectionId").list
+    query.filter(fr"collection = $collectionId").list
 
   def getMosaicDefinition(
       collectionId: String,

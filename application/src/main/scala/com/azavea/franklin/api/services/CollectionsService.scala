@@ -103,11 +103,14 @@ class CollectionsService[F[_]: Concurrent](
       collectionOption <- StacCollectionDao
         .getCollection(collectionId)
         .transact(xa)
+      mosaicDefinitions <- collectionOption.toList flatTraverse { _ =>
+        MosaicDefinitionDao.listMosaicDefinitions(collectionId).transact(xa)
+      }
     } yield {
       Either.fromOption(
         collectionOption.map(collection =>
           (
-            TileInfo.fromStacCollection(apiHost, collection).asJson,
+            TileInfo.fromStacCollection(apiHost, collection, mosaicDefinitions).asJson,
             collection.##.toString
           )
         ),
@@ -204,6 +207,24 @@ class CollectionsService[F[_]: Concurrent](
     }
   }
 
+  def listMosaics(
+      rawCollectionId: String
+  ): F[Either[NF, List[MosaicDefinition]]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    (for {
+      collectionOption <- StacCollectionDao.getCollection(collectionId)
+      mosaics <- collectionOption traverse { collection =>
+        MosaicDefinitionDao.listMosaicDefinitions(collection.id)
+      }
+    } yield {
+      mosaics match {
+        case Some(mosaicDefinitions) => Right(mosaicDefinitions)
+        case _                       => Left(NF())
+      }
+    }).transact(xa)
+
+  }
+
   val collectionEndpoints =
     new CollectionEndpoints[F](enableTransactions, enableTiles, apiConfig.path)
 
@@ -221,7 +242,8 @@ class CollectionsService[F[_]: Concurrent](
          Http4sServerInterpreter
            .toRoutes(collectionEndpoints.getMosaic)(Function.tupled(getMosaic)),
          Http4sServerInterpreter
-           .toRoutes(collectionEndpoints.deleteMosaic)(Function.tupled(deleteMosaic))
+           .toRoutes(collectionEndpoints.deleteMosaic)(Function.tupled(deleteMosaic)),
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.listMosaics)(listMosaics)
        )
      } else Nil) ++
     (if (enableTransactions) {

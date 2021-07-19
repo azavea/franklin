@@ -99,7 +99,16 @@ class CollectionEndpoints[F[_]: Concurrent](
         )
       )
 
+  val listMosaics: Endpoint[String, NotFound, List[MosaicDefinition], Fs2Streams[F]] =
+    base.get
+      .in(path[String] / "mosaic")
+      .out(jsonBody[List[MosaicDefinition]])
+      .errorOut(
+        oneOf(statusMapping(NF, jsonBody[NotFound].description("Collection does not exist")))
+      )
+
   val endpoints = List(collectionsList, collectionUnique) ++ {
-    if (enableTiles) List(collectionTiles, createMosaic, getMosaic, deleteMosaic) else Nil
+    if (enableTiles) List(collectionTiles, createMosaic, getMosaic, deleteMosaic, listMosaics)
+    else Nil
   } ++ { if (enableTransactions) List(createCollection, deleteCollection) else Nil }
 }

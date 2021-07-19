@@ -1,12 +1,12 @@
 package com.azavea.franklin.api
 
 import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import com.azavea.franklin.datamodel.MosaicDefinition
 
 package object implicits {
 
