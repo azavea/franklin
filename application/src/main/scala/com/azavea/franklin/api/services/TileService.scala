@@ -76,6 +76,22 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
     invisiCellType
   )
 
+  private def getNoDataValue(cellType: CellType): Option[Double] = {
+    cellType match {
+      case ByteUserDefinedNoDataCellType(value)   => Some(value.toDouble)
+      case UByteUserDefinedNoDataCellType(value)  => Some(value.toDouble)
+      case UByteConstantNoDataCellType            => Some(0)
+      case ShortUserDefinedNoDataCellType(value)  => Some(value.toDouble)
+      case UShortUserDefinedNoDataCellType(value) => Some(value.toDouble)
+      case UShortConstantNoDataCellType           => Some(0)
+      case IntUserDefinedNoDataCellType(value)    => Some(value.toDouble)
+      case FloatUserDefinedNoDataCellType(value)  => Some(value.toDouble)
+      case DoubleUserDefinedNoDataCellType(value) => Some(value.toDouble)
+      case _: NoNoData                            => None
+      case _: ConstantNoData[_]                   => Some(Double.NaN)
+    }
+  }
+
   private val invisiMBTile = MultibandTile(invisiTile, invisiTile, invisiTile)
 
   private def getHistogram(mosaicDefinitionId: UUID): F[Option[Array[Histogram[Int]]]] =
@@ -83,7 +99,6 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
       MosaicDefinitionDao.getHistogramUnsafe(mosaicDefinitionId).transact(xa)
     }
 
-  // todo: memoize
   private def getItemsList(
       collectionId: String,
       mosaicDefinitionId: UUID,
@@ -91,17 +106,18 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
       x: Int,
       y: Int
   ): F[List[ItemAsset]] =
-    (for {
-      // todo: memoize
-      mosaicDefinition <- MosaicDefinitionDao
-        .getMosaicDefinition(
-          collectionId,
-          mosaicDefinitionId
-        )
-      itemsList <- mosaicDefinition traverse { mosaic =>
-        MosaicDefinitionDao.getItems(mosaic.items, z, x, y)
-      }
-    } yield (itemsList getOrElse Nil)).transact(xa)
+    memoizeF[F, List[ItemAsset]](None) {
+      (for {
+        mosaicDefinition <- MosaicDefinitionDao
+          .getMosaicDefinition(
+            collectionId,
+            mosaicDefinitionId
+          )
+        itemsList <- mosaicDefinition traverse { mosaic =>
+          MosaicDefinitionDao.getItems(mosaic.items, z, x, y)
+        }
+      } yield (itemsList getOrElse Nil)).transact(xa)
+    }
 
   def getRasterSource(href: String): F[GeoTiffRasterSource] =
     memoizeF[F, GeoTiffRasterSource](Some(30.minutes)) {
@@ -226,13 +242,16 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
       }
       tileO <- mosaicSource flatTraverse { rs =>
         Sync[F].delay(
-          rs.tileToLayout(tmsLevels(tileRequest.z)).read(SpatialKey(x, y), tileRequest.bands)
+          rs.tileToLayout(tmsLevels(tileRequest.z))
+            .read(SpatialKey(x, y), tileRequest.bands)
         )
       }
     } yield {
-      // TODO: nodata not getting set correctly
+      val outCellTypeWithNoData =
+        mosaicSource
+          .flatMap({ src => getNoDataValue(src.cellType) map { _ => src.cellType } })
+          .fold(invisiCellType: CellType)(identity)
       val outTile = (tileO, histO) mapN {
-        // TODO: separately handle single-band (using internal cmap) and multiband
         case (mbt, hists) =>
           MultibandTile(mbt.bands.zip(hists).map {
             case (tile, histogram) =>
@@ -240,12 +259,14 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
               val oldMin = breaks(tileRequest.lowerQuantile)
               val oldMax = breaks(tileRequest.upperQuantile)
               tile
+                .interpretAs(outCellTypeWithNoData)
                 .mapIfSet { cell =>
                   if (cell < oldMin) oldMin
                   else if (cell > oldMax) oldMax
                   else cell
                 }
                 .normalize(oldMin, oldMax, 1, 255)
+
           })
       } getOrElse invisiMBTile
       Right(outTile.renderPng.bytes)
