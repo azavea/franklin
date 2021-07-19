@@ -107,7 +107,7 @@ lazy val applicationDependencies = Seq(
   "com.softwaremill.sttp.client" %% "core"                           % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "json-common"                    % Versions.SttpClientVersion,
   "com.softwaremill.sttp.shared" %% "core"                           % Versions.SttpShared,
-  "com.softwaremill.sttp.shared" %% "fs2"                            % Versions.SttpShared,
+  "com.softwaremill.sttp.shared" %% "fs2-ce2"                        % Versions.SttpShared,
   "com.softwaremill.sttp.model"  %% "core"                           % Versions.SttpModelVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-core"                     % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-http4s-server"            % Versions.TapirVersion,
