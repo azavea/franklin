@@ -71,6 +71,13 @@ class CollectionsService[F[_]: Concurrent](
       collectionOption <- StacCollectionDao
         .getCollection(collectionId)
         .transact(xa)
+      // it looks unnecessary to check enableTiles here given the logic below, but
+      // we can skip the query if we know we don't need the mosaics
+      mosaicDefinitions <- if (enableTiles) {
+        MosaicDefinitionDao.listMosaicDefinitions(collectionId).transact(xa)
+      } else {
+        List.empty[MosaicDefinition].pure[F]
+      }
       validatorOption <- collectionOption traverse { collection =>
         makeCollectionValidator(collection.stacExtensions, collectionExtensionsRef)
       }
@@ -79,7 +86,10 @@ class CollectionsService[F[_]: Concurrent](
         (collectionOption, validatorOption) mapN {
           case (collection, validator) =>
             validator(
-              collection.maybeAddTilesLink(enableTiles, apiHost).updateLinksWithHost(apiConfig)
+              collection
+                .maybeAddTilesLink(enableTiles, apiHost)
+                .maybeAddMosaicLinks(enableTiles, apiHost, mosaicDefinitions)
+                .updateLinksWithHost(apiConfig)
             ).asJson.dropNullValues
         },
         NF(s"Collection $collectionId not found")

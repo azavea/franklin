@@ -35,6 +35,11 @@ object MosaicDefinitionDao extends Dao[MosaicDefinition] {
   private def collectionMosaicQB(collectionId: String, mosaicDefinitionId: UUID) =
     query.filter(mosaicDefinitionId).filter(fr"collection = $collectionId")
 
+  def listMosaicDefinitions(
+      collectionId: String
+  ): ConnectionIO[List[MosaicDefinition]] =
+    query.filter(fr"collection_id = $collectionId").list
+
   def getMosaicDefinition(
       collectionId: String,
       mosaicDefinitionId: UUID
