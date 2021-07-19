@@ -1,5 +1,6 @@
 package com.azavea.franklin.api.services
 
+import cats.Parallel
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.effect._
@@ -23,6 +24,7 @@ import geotrellis.raster.render.{Implicits => RenderImplicits}
 import geotrellis.raster.{io => _, _}
 import geotrellis.server.LayerTms
 import geotrellis.server._
+import io.chrisdavenport.log4cats.Logger
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.HttpRoutes
@@ -32,20 +34,17 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-class TileService[F[_]: Concurrent: LiftIO](
+class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
     serverHost: NonEmptyString,
     enableTiles: Boolean,
+    path: Option[String],
     xa: Transactor[F]
-)(
-    implicit cs: ContextShift[F],
-    csIO: ContextShift[IO],
-    timerF: Timer[F]
 ) extends Http4sDsl[F]
     with RenderImplicits {
 
   import CogAssetNodeImplicits._
 
-  val tileEndpoints = new TileEndpoints(enableTiles)
+  val tileEndpoints = new TileEndpoints(enableTiles, path)
 
   def getItemRasterTile(tileRequest: ItemRasterTileRequest): F[Either[NF, Array[Byte]]] = {
     val assetKey     = tileRequest.asset
@@ -70,15 +69,11 @@ class TileService[F[_]: Concurrent: LiftIO](
           tileRequest.bands
         }
       )
-      histograms <- EitherT.liftF[F, NF, List[Histogram[Int]]](
-        LiftIO[F].liftIO(cogAssetNode.getHistograms)
-      )
-      rs <- EitherT.liftF[F, NF, GeoTiffRasterSource] {
-        LiftIO[F].liftIO(cogAssetNode.getRasterSource)
-      }
+      histograms <- EitherT.liftF(cogAssetNode.getHistograms[F])
+      rs         <- EitherT.liftF(cogAssetNode.getRasterSource[F])
       tile <- EitherT {
         val eval = LayerTms.identity(cogAssetNode)
-        LiftIO[F].liftIO(eval(z, x, y).map {
+        eval(z, x, y).map {
           case Valid(mbt: MultibandTile) if mbt.bandCount > 1 => {
             Either.right {
               val bands = mbt.bands.zip(histograms).map {
@@ -109,7 +104,7 @@ class TileService[F[_]: Concurrent: LiftIO](
             val renderedTile = cmap.render(mbt.band(0))
             Either.right(renderedTile.renderPng.bytes)
           case Invalid(e) => Either.left(NF(s"Could not produce tile: $e"))
-        })
+        }
       }
     } yield tile
     tileEither.value

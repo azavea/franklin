@@ -5,16 +5,14 @@ import eu.timepit.refined._
 import eu.timepit.refined.api._
 import eu.timepit.refined.numeric._
 import eu.timepit.refined.types.string.NonEmptyString
-import geotrellis.vector.io.json.Implicits._
 import geotrellis.vector.io.json.JsonFeatureCollection
-import geotrellis.vector.{Feature, MultiPolygon, Polygon}
-import io.circe._
+import geotrellis.vector.{Extent, Feature, MultiPolygon}
 import io.circe.generic.JsonCodec
 import io.circe.refined._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
-import sttp.tapir._
-import sttp.tapir.json.circe._
+
+import java.time.Instant
 
 package object datamodel {
   implicit val decoderNonEmptyString: Decoder[NonEmptyString] = refinedDecoder
@@ -28,17 +26,17 @@ package object datamodel {
     @JsonCodec
     case class Properties(id: String)
 
-    def toGeoJson = {
+    def toGeoJson: String =
       JsonFeatureCollection(collections.map { collection =>
         val geom       = collection.extent.extentGeom
         val properties = Properties(collection.id)
         Feature(geom, properties)
       }).asJson.noSpaces
-    }
 
-    def extentMap = collections.map(c => (c.id -> c.extent.extent)).toMap
+    def extentMap: Map[String, Extent] = collections.map(c => c.id -> c.extent.extent).toMap
 
-    def extent = {
+    @SuppressWarnings(Array("UnsafeTraversableMethods"))
+    def extent: Extent =
       collections
         .flatMap(
           _.extent.spatial.bbox.flatMap(l =>
@@ -49,44 +47,42 @@ package object datamodel {
           )
         )
         .reduce(_ combine _)
-    }
   }
 
   implicit class CollectionStacExtent(stacExtent: StacExtent) {
 
-    def startTime = {
-      stacExtent.temporal.interval.flatMap(_.value.headOption).flatten match {
+    @SuppressWarnings(Array("UnsafeTraversableMethods"))
+    def startTime: Option[Instant] =
+      stacExtent.temporal.interval.flatMap(_.start) match {
         case l if l.isEmpty => None
         case l              => Some(l.min)
       }
-    }
 
-    def endTime = {
-      stacExtent.temporal.interval.flatMap(_.value.lift(1)).flatten match {
+    @SuppressWarnings(Array("UnsafeTraversableMethods"))
+    def endTime: Option[Instant] =
+      stacExtent.temporal.interval.flatMap(_.end) match {
         case l if l.isEmpty => None
         case l              => Some(l.max)
       }
-    }
 
-    def extent = {
-      (stacExtent.spatial.bbox
+    @SuppressWarnings(Array("UnsafeTraversableMethods"))
+    def extent: Extent =
+      stacExtent.spatial.bbox
         .flatMap { l =>
           l.toExtent match {
             case Left(_)  => None
             case Right(e) => Some(e)
           }
-        })
+        }
         .reduce(_ combine _)
-    }
 
-    def extentGeom = {
+    def extentGeom: MultiPolygon =
       MultiPolygon(stacExtent.spatial.bbox.flatMap { l =>
         l.toExtent match {
           case Left(_)  => None
           case Right(e) => Some(e.toPolygon)
         }
       })
-    }
   }
 
 }

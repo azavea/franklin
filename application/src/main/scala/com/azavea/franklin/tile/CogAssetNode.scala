@@ -1,7 +1,10 @@
 package com.azavea.franklin.tile
 
 import cats.data.{NonEmptyList => NEL}
-import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.applicative._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 import com.azavea.franklin.cache._
 import com.azavea.stac4s.StacAsset
 import geotrellis.layer._
@@ -17,30 +20,28 @@ case class CogAssetNode(asset: StacAsset, bands: Seq[Int]) extends TileUtil {
   private val histoKey = s"histogram - $bands - ${asset.href}"
   private val tiffKey  = s"tiff - ${asset.href}"
 
-  def getRasterSource: IO[GeoTiffRasterSource] = {
+  def getRasterSource[F[_]: Sync]: F[GeoTiffRasterSource] = {
 
     val infoFromCache = sync.get[SerializableGeotiffInfo](tiffKey)
-    val tiffInfoIO = infoFromCache match {
-      case Some(info) => IO.pure(info)
-      case _ => {
+    val tiffInfoF = infoFromCache match {
+      case Some(info) => info.pure
+      case _ =>
         for {
-          info <- IO.delay(GeotiffReader.getGeotiffInfo(asset.href))
-        } yield {
-          sync.put(tiffKey)(info)
-          info
-        }
-      }
+          info <- Sync[F].delay(GeotiffReader.getGeotiffInfo(asset.href))
+          _ = sync.put(tiffKey)(info)
+        } yield info
     }
 
     for {
-      info <- tiffInfoIO
+      info <- tiffInfoF
       byteReader = getByteReader(asset.href)
       gtiffInfo  = info.toGeotiffInfo(byteReader)
       geotiff    = GeotiffReader.readMultibandWithInfo(gtiffInfo)
     } yield GeoTiffRasterSource(asset.href, baseTiff = Some(geotiff))
   }
 
-  def getHistograms: IO[List[Histogram[Int]]] = {
+  @SuppressWarnings(Array("UnsafeTraversableMethods"))
+  def getHistograms[F[_]: Sync]: F[List[Histogram[Int]]] = {
     val histogramFromSource = getRasterSource.map { rs =>
       val overviews = rs.tiff.overviews
       val smallestOverview = overviews.maxBy { overview =>
@@ -51,17 +52,16 @@ case class CogAssetNode(asset: StacAsset, bands: Seq[Int]) extends TileUtil {
     }
 
     sync.get[List[Histogram[Int]]](histoKey) match {
-      case Some(histograms) => IO.pure(histograms)
-      case _ => {
+      case Some(histograms) => histograms.pure
+      case _ =>
         for {
           histograms <- histogramFromSource
-          _          <- IO.pure(sync.put(histoKey)(histograms, None))
+          _          <- sync.put(histoKey)(histograms, None).pure
         } yield histograms
-      }
     }
   }
 
-  def getRasterExtents: IO[NEL[RasterExtent]] = {
+  def getRasterExtents[F[_]: Sync]: F[NEL[RasterExtent]] = {
     getRasterSource map { rs =>
       NEL
         .fromList(rs.resolutions.map { cs => RasterExtent(rs.extent, cs) })
@@ -69,14 +69,14 @@ case class CogAssetNode(asset: StacAsset, bands: Seq[Int]) extends TileUtil {
     }
   }
 
-  def fetchTile(
+  def fetchTile[F[_]: Sync](
       zoom: Int,
       x: Int,
       y: Int,
       crs: CRS = WebMercator,
       method: ResampleMethod = NearestNeighbor,
       target: ResampleTarget = DefaultTarget
-  ): IO[Raster[MultibandTile]] = {
+  ): F[Raster[MultibandTile]] = {
     getRasterSource map { rs =>
       val key              = SpatialKey(x, y)
       val layoutDefinition = tmsLevels(zoom)

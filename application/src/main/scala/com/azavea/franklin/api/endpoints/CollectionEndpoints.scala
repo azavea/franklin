@@ -1,6 +1,7 @@
 package com.azavea.franklin.api.endpoints
 
 import cats.effect.Concurrent
+import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
 import io.circe._
@@ -10,9 +11,15 @@ import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-class CollectionEndpoints[F[_]: Concurrent](enableTransactions: Boolean, enableTiles: Boolean) {
+class CollectionEndpoints[F[_]: Concurrent](
+    enableTransactions: Boolean,
+    enableTiles: Boolean,
+    pathPrefix: Option[String]
+) {
 
-  val base = endpoint.in("collections")
+  val basePath = baseFor(pathPrefix, "collections")
+
+  val base = endpoint.in(basePath)
 
   val collectionsList: Endpoint[Unit, Unit, Json, Fs2Streams[F]] =
     base.get
