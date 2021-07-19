@@ -1,11 +1,22 @@
 package com.azavea.franklin.database
 
 import cats.data.NonEmptyList
+import cats.data.OptionT
+import cats.effect.ContextShift
+import cats.effect.IO
+import cats.effect.LiftIO
+import cats.syntax.applicative._
+import cats.syntax.apply._
+import cats.syntax.functor._
+import cats.syntax.traverse._
 import com.azavea.franklin.datamodel.ItemAsset
 import com.azavea.franklin.datamodel.MosaicDefinition
+import com.azavea.stac4s.StacAsset
 import doobie.ConnectionIO
 import doobie.implicits._
 import doobie.postgres.implicits._
+import geotrellis.raster.geotiff.GeoTiffRasterSource
+import geotrellis.raster.histogram.Histogram
 
 import java.util.UUID
 
@@ -54,4 +65,40 @@ object MosaicDefinitionDao extends Dao[MosaicDefinition] {
       itemAssets.filter(ia => itemIdsSet.contains(ia.itemId))
     }
   }
+
+  def insertHistogram(
+      mosaicDefinitionId: UUID,
+      assets: NonEmptyList[(String, String, StacAsset)]
+  ): ConnectionIO[Unit] =
+    assets traverse {
+      case (itemId, assetName, asset) =>
+        val fallbackHistIO: IO[Array[Histogram[Int]]] = IO.delay(
+          GeoTiffRasterSource(asset.href).tiff.overviews
+            .maxBy(_.cellSize.width)
+            .tile
+            .histogram
+        )
+        val histFromDb: OptionT[ConnectionIO, Array[Histogram[Int]]] =
+          OptionT(StacItemDao.getHistogram(itemId, assetName))
+        histFromDb getOrElseF
+          (LiftIO[ConnectionIO].liftIO(
+            fallbackHistIO
+          ) flatMap { hists => StacItemDao.insertHistogram(itemId, assetName, hists) })
+    } flatMap { hists =>
+      // add all the histograms to the individual items
+      // also update the mosaic definition with the merged histogram
+      val merged =
+        hists.tail.foldLeft(hists.head)((h1, h2) =>
+          h1.zip(h2)
+            .map({
+              case (hist1, hist2) => hist1.merge(hist2)
+            })
+        )
+      fr"""update mosaic_definitions set histograms = ${merged} where id = $mosaicDefinitionId""".update.run.void
+    }
+
+  def getHistogramUnsafe(mosaicDefinitionId: UUID): ConnectionIO[Option[Array[Histogram[Int]]]] =
+    fr"select histograms from mosaic_definitions where id = $mosaicDefinitionId"
+      .query[Array[Histogram[Int]]]
+      .option
 }

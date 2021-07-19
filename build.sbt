@@ -94,6 +94,7 @@ lazy val applicationDependencies = Seq(
   "com.azavea.stac4s"            %% "testing"                        % Versions.Stac4SVersion % Test,
   "com.chuusai"                  %% "shapeless"                      % Versions.ShapelessVersion,
   "com.github.cb372"             %% "scalacache-caffeine"            % Versions.ScalacacheVersion,
+  "com.github.cb372"             %% "scalacache-cats-effect"         % Versions.ScalacacheVersion,
   "com.github.cb372"             %% "scalacache-core"                % Versions.ScalacacheVersion,
   "com.github.julien-truffaut"   %% "monocle-core"                   % Versions.MonocleVersion,
   "com.github.julien-truffaut"   %% "monocle-macro"                  % Versions.MonocleVersion,

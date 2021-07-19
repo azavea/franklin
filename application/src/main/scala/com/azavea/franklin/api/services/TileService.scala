@@ -7,6 +7,8 @@ import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
 import com.azavea.franklin.api.endpoints._
+import com.azavea.franklin.cache._
+import com.azavea.franklin.cache.histogramCache
 import com.azavea.franklin.database.MosaicDefinitionDao
 import com.azavea.franklin.database.StacCollectionDao
 import com.azavea.franklin.database.StacItemDao
@@ -24,6 +26,10 @@ import doobie.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.layer.Implicits._
+import geotrellis.layer.SpatialKey
+import geotrellis.layer.ZoomedLayoutScheme
+import geotrellis.proj4.CRS
+import geotrellis.proj4.WebMercator
 import geotrellis.raster.MosaicRasterSource
 import geotrellis.raster.geotiff.GeoTiffRasterSource
 import geotrellis.raster.render.ColorRamps.greyscale
@@ -36,15 +42,15 @@ import io.circe.Json
 import io.circe.syntax._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
+import scalacache.CatsEffect.modes._
+import scalacache.memoization._
 import sttp.tapir.server.http4s._
+
+import scala.concurrent.duration._
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.UUID
-import geotrellis.proj4.CRS
-import geotrellis.layer.SpatialKey
-import geotrellis.layer.ZoomedLayoutScheme
-import geotrellis.proj4.WebMercator
 
 class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
     serverHost: NonEmptyString,
@@ -72,13 +78,35 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
 
   private val invisiMBTile = MultibandTile(invisiTile, invisiTile, invisiTile)
 
-  // todo
-  // todo: memoize
-  private def getHistogram(mosaicDefinitionId: UUID): F[Array[Histogram[Int]]] = ???
+  private def getHistogram(mosaicDefinitionId: UUID): F[Option[Array[Histogram[Int]]]] =
+    memoizeF[F, Option[Array[Histogram[Int]]]](Some(30.minutes)) {
+      MosaicDefinitionDao.getHistogramUnsafe(mosaicDefinitionId).transact(xa)
+    }
 
   // todo: memoize
+  private def getItemsList(
+      collectionId: String,
+      mosaicDefinitionId: UUID,
+      z: Int,
+      x: Int,
+      y: Int
+  ): F[List[ItemAsset]] =
+    (for {
+      // todo: memoize
+      mosaicDefinition <- MosaicDefinitionDao
+        .getMosaicDefinition(
+          collectionId,
+          mosaicDefinitionId
+        )
+      itemsList <- mosaicDefinition traverse { mosaic =>
+        MosaicDefinitionDao.getItems(mosaic.items, z, x, y)
+      }
+    } yield (itemsList getOrElse Nil)).transact(xa)
+
   def getRasterSource(href: String): F[GeoTiffRasterSource] =
-    Sync[F].delay(GeoTiffRasterSource(href))
+    memoizeF[F, GeoTiffRasterSource](Some(30.minutes)) {
+      Sync[F].delay(GeoTiffRasterSource(href))
+    }
 
   val tileEndpoints = new TileEndpoints(enableTiles, path)
 
@@ -174,26 +202,6 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
     }
   }
 
-  // todo: memoize
-  private def getItemsList(
-      collectionId: String,
-      mosaicDefinitionId: UUID,
-      z: Int,
-      x: Int,
-      y: Int
-  ): F[List[ItemAsset]] =
-    (for {
-      // todo: memoize
-      mosaicDefinition <- MosaicDefinitionDao
-        .getMosaicDefinition(
-          collectionId,
-          mosaicDefinitionId
-        )
-      itemsList <- mosaicDefinition traverse { mosaic =>
-        MosaicDefinitionDao.getItems(mosaic.items, z, x, y)
-      }
-    } yield (itemsList getOrElse Nil)).transact(xa)
-
   def getCollectionMosaicTile(
       tileRequest: CollectionMosaicRequest
   ): F[Either[Unit, Array[Byte]]] = {
@@ -210,6 +218,7 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
             ()    <- Logger[F].debug(s"got asset ${itemId}-${assetName}")
           } yield asset
       }
+      histO <- getHistogram(tileRequest.mosaicId)
       mosaicSource <- assetHrefs traverse { asset =>
         getRasterSource(asset.href)
       } map { sources =>
@@ -220,11 +229,10 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
           rs.tileToLayout(tmsLevels(tileRequest.z)).read(SpatialKey(x, y), tileRequest.bands)
         )
       }
-      // TODO memoize
-      histO = tileO map { _.histogram }
     } yield {
       // TODO: nodata not getting set correctly
       val outTile = (tileO, histO) mapN {
+        // TODO: separately handle single-band (using internal cmap) and multiband
         case (mbt, hists) =>
           MultibandTile(mbt.bands.zip(hists).map {
             case (tile, histogram) =>

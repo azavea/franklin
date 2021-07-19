@@ -2,6 +2,7 @@ package com.azavea.franklin.database
 
 import cats.data.EitherT
 import cats.data.NonEmptyList
+import cats.data.NonEmptyMap
 import cats.data.OptionT
 import cats.syntax.all._
 import com.azavea.franklin.datamodel.ItemAsset
@@ -21,12 +22,15 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
+import geotrellis.raster.histogram.Histogram
 import geotrellis.vector.Geometry
 import geotrellis.vector.Projected
 import io.circe.DecodingFailure
 import io.circe.Json
 import io.circe.syntax._
 import org.threeten.extra.PeriodDuration
+
+import scala.collection.immutable.SortedMap
 
 import java.time.Instant
 import java.time.LocalDateTime
@@ -439,20 +443,39 @@ object StacItemDao extends Dao[StacItem] {
   def checkAssets(
       items: NonEmptyList[ItemAsset],
       collectionId: String
-  ): ConnectionIO[Either[MosaicDefinitionError, Unit]] =
-    items.toList flatTraverse { itemAsset =>
+  ): ConnectionIO[Either[MosaicDefinitionError, NonEmptyList[(String, String, StacAsset)]]] =
+    items traverse { itemAsset =>
       getCollectionItem(collectionId, itemAsset.itemId) map { itemO =>
-        itemO.fold(List(itemAsset.itemId))(item =>
-          if (item.assets.contains(itemAsset.assetName)) {
-            List.empty[String]
-          } else {
-            List(item.id)
-          }
+        itemO.fold(Map.empty[String, StacAsset])(item =>
+          item.assets
+            .get(itemAsset.assetName)
+            .fold(
+              Map.empty[String, StacAsset]
+            )(asset => Map(item.id -> asset))
         )
       }
-    } map {
-      case Nil => Right(())
-      case ids => Left(ItemsMissingAsset(items.filter(ia => ids.contains(ia.itemId))))
+    } map { assetMaps =>
+      val assetMap =
+        assetMaps.tail
+          .foldLeft(assetMaps.head)(_ ++ _)
+      items.filter(item => assetMap.get(item.itemId).isEmpty) match {
+        case Nil =>
+          Right(items.map {
+            case ItemAsset(itemId, assetName) =>
+              (
+                itemId,
+                assetName,
+                assetMap
+                  .getOrElse(
+                    itemId,
+                    throw new Exception(
+                      s"impossible due to previous filter. assetMap keys: ${assetMap.keys.toList}"
+                    )
+                  )
+              )
+          })
+        case ids => Left(ItemsMissingAsset(ids))
+      }
     }
 
   // since mosaic definitions are validated on creation, we know that the item exists and has
@@ -461,4 +484,16 @@ object StacItemDao extends Dao[StacItem] {
   def unsafeGetAsset(itemId: String, assetName: String): ConnectionIO[StacAsset] =
     query.filter(fr"id = $itemId").select map { item => item.assets.get(assetName).get }
 
+  def getHistogram(itemId: String, assetName: String): ConnectionIO[Option[Array[Histogram[Int]]]] =
+    fr"select histograms from item_asset_histograms where item_id = ${itemId} and asset_name = ${assetName}"
+      .query[Array[Histogram[Int]]]
+      .option
+
+  def insertHistogram(
+      itemId: String,
+      assetName: String,
+      hists: Array[Histogram[Int]]
+  ): ConnectionIO[Array[Histogram[Int]]] =
+    fr"insert into item_asset_histograms (item_id, asset_name, histograms) values ($itemId, $assetName, $hists)".update
+      .withUniqueGeneratedKeys[Array[Histogram[Int]]]("histograms")
 }

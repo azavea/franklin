@@ -1,6 +1,7 @@
 package com.azavea.franklin
 
 import com.azavea.franklin.tile.SerializableGeotiffInfo
+import geotrellis.raster.geotiff.GeoTiffRasterSource
 import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff.MultibandGeoTiff
 import scalacache._
@@ -13,4 +14,10 @@ package object cache {
 
   implicit val tiffInfoCache: Cache[SerializableGeotiffInfo] =
     CaffeineCache[SerializableGeotiffInfo]
+
+  implicit val histArrayCache: Cache[Option[Array[Histogram[Int]]]] =
+    CaffeineCache[Option[Array[Histogram[Int]]]]
+
+  implicit val gtRasterSourceCache: Cache[GeoTiffRasterSource] = CaffeineCache[GeoTiffRasterSource]
+
 }

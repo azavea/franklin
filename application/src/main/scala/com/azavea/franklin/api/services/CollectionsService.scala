@@ -164,6 +164,10 @@ class CollectionsService[F[_]: Concurrent](
       inserted <- itemAssetValidity traverse { _ =>
         MosaicDefinitionDao.insert(mosaicDefinition, collectionId)
       }
+      _ <- (inserted, itemAssetValidity).tupled traverse {
+        case (mosaic, assets) =>
+          MosaicDefinitionDao.insertHistogram(mosaic.id, assets)
+      }
     } yield inserted.leftMap({ err => NF(err.msg) })).transact(xa)
   }
 
