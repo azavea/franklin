@@ -1,6 +1,7 @@
 package com.azavea.franklin.api.endpoints
 
 import cats.effect.Concurrent
+import com.azavea.franklin.datamodel.CollectionMosaicRequest
 import com.azavea.franklin.datamodel.{
   ItemRasterTileRequest,
   MapboxVectorTileFootprintRequest,
@@ -17,16 +18,18 @@ import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
+import java.util.UUID
+
 class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[String]) {
 
   val basePath = baseFor(pathPrefix, "tiles" / "collections")
   val zxyPath  = path[Int] / path[Int] / path[Int]
 
   val itemRasterTilePath: EndpointInput[(String, String, Int, Int, Int)] =
-    (basePath / path[String] / "items" / path[String] / "WebMercatorQuad" / zxyPath)
+    basePath / path[String] / "items" / path[String] / "WebMercatorQuad" / zxyPath
 
   val collectionFootprintTilePath: EndpointInput[(String, Int, Int, Int)] =
-    (basePath / path[String] / "footprint" / "WebMercatorQuad" / zxyPath)
+    basePath / path[String] / "footprint" / "WebMercatorQuad" / zxyPath
 
   val collectionFootprintTileParameters
       : EndpointInput[(String, Int, Int, Int, List[NonEmptyString])] =
@@ -34,6 +37,9 @@ class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[S
 
   val collectionFootprintTileJsonPath: EndpointInput[String] =
     (basePath / path[String] / "footprint" / "tile-json")
+
+  val collectionMosaicTilePath: EndpointInput[(String, UUID, Int, Int, Int)] =
+    (basePath / path[String] / "mosaic" / path[UUID] / "WebMercatorQuad" / zxyPath)
 
   val itemRasterTileParameters: EndpointInput[ItemRasterTileRequest] =
     itemRasterTilePath
@@ -45,6 +51,16 @@ class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[S
       .and(query[Option[Quantile]]("lowerQuantile"))
       .and(query[Option[NonNegInt]]("singleBand"))
       .mapTo(ItemRasterTileRequest)
+
+  val collectionRasterTileParameters: EndpointInput[CollectionMosaicRequest] =
+    collectionMosaicTilePath
+      .and(query[Option[Int]]("redBand"))
+      .and(query[Option[Int]]("greenBand"))
+      .and(query[Option[Int]]("blueBand"))
+      .and(query[Option[Quantile]]("upperQuantile"))
+      .and(query[Option[Quantile]]("lowerQuantile"))
+      .and(query[Option[NonNegInt]]("singleBand"))
+      .mapTo(CollectionMosaicRequest)
 
   val itemRasterTileEndpoint
       : Endpoint[ItemRasterTileRequest, NotFound, Array[Byte], Fs2Streams[F]] =
@@ -74,9 +90,25 @@ class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[S
       .description("TileJSON representation of this collection's footprint tiles")
       .name("collectionFootprintTileJSON")
 
+  val collectionMosaicEndpoint
+      : Endpoint[CollectionMosaicRequest, Unit, Array[Byte], Fs2Streams[F]] =
+    endpoint.get
+      .in(collectionRasterTileParameters)
+      .out(rawBinaryBody[Array[Byte]])
+      .out(header("content-type", "image/png"))
+      .description(
+        "Raster tile endpoint for collection mosaic"
+      )
+      .name("collectionMosaicTiles")
+
   val endpoints = enableTiles match {
     case true =>
-      List(itemRasterTileEndpoint, collectionFootprintTileEndpoint, collectionFootprintTileJson)
+      List(
+        itemRasterTileEndpoint,
+        collectionFootprintTileEndpoint,
+        collectionFootprintTileJson,
+        collectionMosaicEndpoint
+      )
     case _ => List.empty
   }
 }

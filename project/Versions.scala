@@ -2,6 +2,7 @@
 object Versions {
   val AsyncHttpClientVersion  = "2.12.3"
   val AWSVersion              = "1.11.751"
+  val AWSSdk2Version          = "2.16.13"
   val CatsEffectVersion       = "2.5.1"
   val CatsScalacheckVersion   = "0.3.0"
   val CatsVersion             = "2.6.1"
@@ -9,6 +10,7 @@ object Versions {
   val CirceJsonSchemaVersion  = "0.2.0"
   val CirceVersion            = "0.14.1"
   val DeclineVersion          = "2.0.0"
+  val DisciplineScalatest     = "2.1.5"
   val DoobieVersion           = "0.13.4"
   val EmojiVersion            = "1.2.3"
   val Flyway                  = "7.11.3"

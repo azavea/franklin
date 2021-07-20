@@ -32,7 +32,6 @@ import sttp.tapir.openapi.circe.yaml._
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -82,6 +81,7 @@ $$$$
       Some(`application/json`),
       Some("Welcome to Franklin")
     )
+    implicit val logger = Slf4jLogger.getLogger[IO]
     AsyncHttpClientCatsBackend.resource[IO]() flatMap { implicit backend =>
       for {
         connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
@@ -94,7 +94,6 @@ $$$$
           connectionEc,
           Blocker.liftExecutionContext(transactionEc)
         )
-        implicit0(logger: log4cats.Logger[IO]) = Slf4jLogger.getLogger[IO]
         collectionItemEndpoints = new CollectionItemEndpoints[IO](
           apiConfig.defaultLimit,
           apiConfig.enableTransactions,
