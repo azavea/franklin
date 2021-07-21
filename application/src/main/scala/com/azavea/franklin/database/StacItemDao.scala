@@ -2,10 +2,13 @@ package com.azavea.franklin.database
 
 import cats.data.EitherT
 import cats.data.NonEmptyList
+import cats.data.NonEmptyMap
 import cats.data.OptionT
 import cats.syntax.all._
+import com.azavea.franklin.datamodel.ItemAsset
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.datamodel.SearchMethod
+import com.azavea.franklin.error.{ItemsDoNotExist, ItemsMissingAsset, MosaicDefinitionError}
 import com.azavea.franklin.extensions.paging.PagingLinkExtension
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
@@ -19,12 +22,15 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 import eu.timepit.refined.types.string.NonEmptyString
+import geotrellis.raster.histogram.Histogram
 import geotrellis.vector.Geometry
 import geotrellis.vector.Projected
 import io.circe.DecodingFailure
 import io.circe.Json
 import io.circe.syntax._
 import org.threeten.extra.PeriodDuration
+
+import scala.collection.immutable.SortedMap
 
 import java.time.Instant
 import java.time.LocalDateTime
@@ -411,4 +417,83 @@ object StacItemDao extends Dao[StacItem] {
     } yield update)
   }
 
+  def checkItemsInCollection(
+      items: NonEmptyList[ItemAsset],
+      collectionId: String
+  ): ConnectionIO[Either[MosaicDefinitionError, Unit]] = {
+    val iaToString  = (ia: ItemAsset) => s""""${ia.itemId}""""
+    val itemStrings = items.toList map iaToString
+    val itemStringArray =
+      s"""{ ${itemStrings.mkString(", ")} }"""
+    fr"""
+    with item_ids as (
+      select unnest($itemStringArray :: text[]) as item_id
+    )
+    select item_ids.item_id
+    from item_ids left join collection_items on item_ids.item_id = collection_items.id
+    where
+      collection_items.collection is null or
+      collection_items.collection <> $collectionId
+    """.query[String].to[List] map {
+      case Nil   => Right(())
+      case items => Left(ItemsDoNotExist(items, collectionId))
+    }
+  }
+
+  def checkAssets(
+      items: NonEmptyList[ItemAsset],
+      collectionId: String
+  ): ConnectionIO[Either[MosaicDefinitionError, NonEmptyList[(String, String, StacAsset)]]] =
+    items traverse { itemAsset =>
+      getCollectionItem(collectionId, itemAsset.itemId) map { itemO =>
+        itemO.fold(Map.empty[String, StacAsset])(item =>
+          item.assets
+            .get(itemAsset.assetName)
+            .fold(
+              Map.empty[String, StacAsset]
+            )(asset => Map(item.id -> asset))
+        )
+      }
+    } map { assetMaps =>
+      val assetMap =
+        assetMaps.tail
+          .foldLeft(assetMaps.head)(_ ++ _)
+      items.filter(item => assetMap.get(item.itemId).isEmpty) match {
+        case Nil =>
+          Right(items.map {
+            case ItemAsset(itemId, assetName) =>
+              (
+                itemId,
+                assetName,
+                assetMap
+                  .getOrElse(
+                    itemId,
+                    throw new Exception(
+                      s"impossible due to previous filter. assetMap keys: ${assetMap.keys.toList}"
+                    )
+                  )
+              )
+          })
+        case ids => Left(ItemsMissingAsset(ids))
+      }
+    }
+
+  // since mosaic definitions are validated on creation, we know that the item exists and has
+  // this asset.
+  @SuppressWarnings(Array("OptionGet"))
+  def unsafeGetAsset(itemId: String, assetName: String): ConnectionIO[StacAsset] =
+    query.filter(fr"id = $itemId").select map { item => item.assets.get(assetName).get }
+
+  def getHistogram(itemId: String, assetName: String): ConnectionIO[Option[Array[Histogram[Int]]]] =
+    fr"select histograms from item_asset_histograms where item_id = ${itemId} and asset_name = ${assetName}"
+      .query[Array[Histogram[Int]]]
+      .option
+
+  def insertHistogram(
+      itemId: String,
+      assetName: String,
+      hists: Array[Histogram[Int]]
+  ): ConnectionIO[Array[Histogram[Int]]] =
+    fr"insert into item_asset_histograms (item_id, asset_name, histograms) values ($itemId, $assetName, $hists)".update
+      .withUniqueGeneratedKeys[Array[Histogram[Int]]]("histograms")
 }

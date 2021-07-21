@@ -84,6 +84,7 @@ lazy val applicationSettings = commonSettings ++ Seq(
 
 lazy val applicationDependencies = Seq(
   "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
+  "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
   "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
@@ -93,6 +94,7 @@ lazy val applicationDependencies = Seq(
   "com.azavea.stac4s"            %% "testing"                        % Versions.Stac4SVersion % Test,
   "com.chuusai"                  %% "shapeless"                      % Versions.ShapelessVersion,
   "com.github.cb372"             %% "scalacache-caffeine"            % Versions.ScalacacheVersion,
+  "com.github.cb372"             %% "scalacache-cats-effect"         % Versions.ScalacacheVersion,
   "com.github.cb372"             %% "scalacache-core"                % Versions.ScalacacheVersion,
   "com.github.julien-truffaut"   %% "monocle-core"                   % Versions.MonocleVersion,
   "com.github.julien-truffaut"   %% "monocle-macro"                  % Versions.MonocleVersion,
@@ -169,7 +171,8 @@ lazy val applicationDependencies = Seq(
   "org.typelevel"                %% "cats-core"                      % Versions.CatsVersion,
   "org.typelevel"                %% "cats-effect"                    % Versions.CatsEffectVersion,
   "org.typelevel"                %% "cats-free"                      % Versions.CatsVersion,
-  "org.typelevel"                %% "cats-kernel"                    % Versions.CatsVersion
+  "org.typelevel"                %% "cats-kernel"                    % Versions.CatsVersion,
+  "org.typelevel"                %% "discipline-scalatest"           % Versions.DisciplineScalatest % Test
 )
 
 lazy val application = (project in file("application"))
