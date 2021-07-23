@@ -44,6 +44,12 @@ trait Generators extends NumericInstances {
       )
     }
 
+  private def mapCenterGen: Gen[MapCenter] = (Gen.choose(0, 30), rectangleGen) mapN {
+    case (zoom, geom) =>
+      val centroid = geom.getCentroid()
+      MapCenter(centroid.getX, centroid.getY, zoom)
+  }
+
   private def nonEmptyAlphaStringGen: Gen[String] =
     Gen.listOfN(15, Gen.alphaChar) map { _.mkString("") }
 
@@ -105,4 +111,5 @@ trait Generators extends NumericInstances {
 
   implicit val arbSearchFilters   = Arbitrary { searchFiltersGen }
   implicit val arbPaginationToken = Arbitrary { paginationTokenGen }
+  implicit val arbMapCenter       = Arbitrary { mapCenterGen }
 }

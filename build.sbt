@@ -4,7 +4,7 @@ lazy val commonSettings = Seq(
   organization := "com.azavea",
   name := "franklin",
   version := "0.0.1-SNAPSHOT",
-  scalaVersion := "2.12.10",
+  scalaVersion := "2.12.14",
   ThisBuild / scapegoatVersion := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
   scalacOptions ~= filterConsoleScalacOptions,
@@ -25,7 +25,10 @@ lazy val commonSettings = Seq(
     )
   ),
   outputStrategy := Some(StdoutOutput),
-  scalacOptions += "-Yrangepos",
+  scalacOptions ++= Seq(
+    "-Ypartial-unification",
+    "-Yrangepos"
+  ),
   addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.0" cross CrossVersion.full),
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
@@ -48,7 +51,7 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.23" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.24" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
@@ -81,6 +84,7 @@ lazy val applicationSettings = commonSettings ++ Seq(
 
 lazy val applicationDependencies = Seq(
   "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
+  "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
   "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
@@ -90,6 +94,7 @@ lazy val applicationDependencies = Seq(
   "com.azavea.stac4s"            %% "testing"                        % Versions.Stac4SVersion % Test,
   "com.chuusai"                  %% "shapeless"                      % Versions.ShapelessVersion,
   "com.github.cb372"             %% "scalacache-caffeine"            % Versions.ScalacacheVersion,
+  "com.github.cb372"             %% "scalacache-cats-effect"         % Versions.ScalacacheVersion,
   "com.github.cb372"             %% "scalacache-core"                % Versions.ScalacacheVersion,
   "com.github.julien-truffaut"   %% "monocle-core"                   % Versions.MonocleVersion,
   "com.github.julien-truffaut"   %% "monocle-macro"                  % Versions.MonocleVersion,
@@ -104,7 +109,7 @@ lazy val applicationDependencies = Seq(
   "com.softwaremill.sttp.client" %% "core"                           % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "json-common"                    % Versions.SttpClientVersion,
   "com.softwaremill.sttp.shared" %% "core"                           % Versions.SttpShared,
-  "com.softwaremill.sttp.shared" %% "fs2"                            % Versions.SttpShared,
+  "com.softwaremill.sttp.shared" %% "fs2-ce2"                        % Versions.SttpShared,
   "com.softwaremill.sttp.model"  %% "core"                           % Versions.SttpModelVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-core"                     % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-http4s-server"            % Versions.TapirVersion,
@@ -147,7 +152,6 @@ lazy val applicationDependencies = Seq(
   "org.locationtech.geotrellis"  %% "geotrellis-vector"              % Versions.GeoTrellisVersion,
   "org.locationtech.jts"         % "jts-core"                        % Versions.JtsVersion,
   "org.scalacheck"               %% "scalacheck"                     % Versions.ScalacheckVersion % Test,
-  "org.scala-lang"               % "scala-reflect"                   % Versions.ScalaReflectVersion,
   "org.slf4j"                    % "slf4j-api"                       % Versions.Slf4jVersion,
   "org.slf4j"                    % "slf4j-simple"                    % Versions.Slf4jVersion,
   "org.specs2"                   %% "specs2-core"                    % Versions.Specs2Version % Test,
@@ -167,7 +171,8 @@ lazy val applicationDependencies = Seq(
   "org.typelevel"                %% "cats-core"                      % Versions.CatsVersion,
   "org.typelevel"                %% "cats-effect"                    % Versions.CatsEffectVersion,
   "org.typelevel"                %% "cats-free"                      % Versions.CatsVersion,
-  "org.typelevel"                %% "cats-kernel"                    % Versions.CatsVersion
+  "org.typelevel"                %% "cats-kernel"                    % Versions.CatsVersion,
+  "org.typelevel"                %% "discipline-scalatest"           % Versions.DisciplineScalatest % Test
 )
 
 lazy val application = (project in file("application"))
