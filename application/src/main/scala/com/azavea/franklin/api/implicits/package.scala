@@ -1,6 +1,7 @@
 package com.azavea.franklin.api
 
 import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString
 
@@ -87,8 +88,28 @@ package object implicits {
       collection.copy(links = tileLink :: collection.links)
     }
 
+    def addMosaicLinks(apiHost: String, mosaicDefinitions: List[MosaicDefinition]) = {
+      val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+      val mosaicLinks = mosaicDefinitions map { mosaicDefinition =>
+        StacLink(
+          s"$apiHost/collections/$encodedCollectionId/mosaic/${mosaicDefinition.id}",
+          StacLinkType.VendorLinkType("mosaic-definition"),
+          Some(`application/json`),
+          mosaicDefinition.description orElse Some(s"Mosaic ${mosaicDefinition.id}")
+        )
+      }
+      collection.copy(links = collection.links ++ mosaicLinks)
+    }
+
     def maybeAddTilesLink(enableTiles: Boolean, apiHost: String) =
       if (enableTiles) addTilesLink(apiHost) else collection
+
+    def maybeAddMosaicLinks(
+        enableTiles: Boolean,
+        apiHost: String,
+        mosaicDefinitions: List[MosaicDefinition]
+    ) =
+      if (enableTiles) addMosaicLinks(apiHost, mosaicDefinitions) else collection
 
     def updateLinksWithHost(apiConfig: ApiConfig) = {
       val updatedLinks = collection.links.map(_.addServerHost(apiConfig))

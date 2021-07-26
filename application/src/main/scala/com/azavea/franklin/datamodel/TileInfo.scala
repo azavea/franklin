@@ -47,9 +47,14 @@ object TileInfo {
     }
   }
 
-  def fromStacCollection(host: String, collection: StacCollection): TileInfo = {
+  def fromStacCollection(
+      host: String,
+      collection: StacCollection,
+      mosaicDefinitions: List[MosaicDefinition]
+  ): TileInfo = {
+    val encodedId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
     val mvtHref =
-      s"$host/tiles/collections/${collection.id}/footprint/{tileMatrixSetId}/{tileMatrix}/{tileCol}/{tileRow}"
+      s"$host/tiles/collections/$encodedId/footprint/{tileMatrixSetId}/{tileMatrix}/{tileCol}/{tileRow}"
     val tileEndpointLink = TileSetLink(
       mvtHref,
       StacLinkType.VendorLinkType("tiles"),
@@ -59,7 +64,20 @@ object TileInfo {
     )
 
     val tileJsonHref =
-      s"$host/tiles/collections/${collection.id}/footprint/tile-json"
+      s"$host/tiles/collections/$encodedId/footprint/tile-json"
+
+    val mosaicEndpointLink = (mosaicDefinition: MosaicDefinition) => {
+      val title = mosaicDefinition.description map { desc =>
+        s"${collection.id} - $desc"
+      } getOrElse { s"${collection.id} - tiles for mosaic ${mosaicDefinition.id}" }
+      TileSetLink(
+        s"$host/tiles/collections/$encodedId/mosaic/${mosaicDefinition.id}/{tileMatrixSetId}/{tileMatrix}/{tileCol}/{tileRow}",
+        StacLinkType.VendorLinkType("tiles"),
+        Some(`image/png`),
+        Some(title),
+        Some(true)
+      )
+    }
 
     val tileJsonLink = TileSetLink(
       tileJsonHref,
@@ -77,7 +95,7 @@ object TileInfo {
       List(
         tileEndpointLink,
         tileJsonLink
-      )
+      ) ++ (mosaicDefinitions map { mosaicEndpointLink })
     )
   }
 }
