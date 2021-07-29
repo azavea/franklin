@@ -69,6 +69,8 @@ $$$$$         $$/    $$/       $$$$$$$/ $$/   $$/ $$/   $$/ $$/ $$/ $$/   $$/
 $$$$
 """.split("\n").toList
 
+  implicit val serverOptions = ServerOptions.defaultServerOptions[IO]
+
   private def createServer(
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig

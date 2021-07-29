@@ -1,6 +1,7 @@
 package com.azavea.franklin.api
 
 import cats.effect.{ContextShift, Sync}
+import com.azavea.franklin.api.implicits._
 import io.circe.{CursorOp, DecodingFailure}
 import sttp.tapir.DecodeResult
 import sttp.tapir.server.http4s.Http4sServerOptions
@@ -8,23 +9,23 @@ import sttp.tapir.server.{DecodeFailureContext, ServerDefaults}
 
 object ServerOptions {
 
-  private def handleDecodingErr(err: Throwable): Option[String] = err match {
-    case DecodingFailure("Attempt to decode value on failed cursor", history) =>
-      Some(
-        s"I expected to find a value at ${CursorOp.opsToPath(history)}, but there was nothing"
-      )
-    case DecodingFailure(s, history) =>
-      Some(
-        s"I found something unexpected at ${CursorOp.opsToPath(history)}. I expected a value of type $s"
-      )
-    case _ => None
+  private def handleDecodingErr(err: Throwable): Option[String] = {
+    err match {
+      case DecodeResult.Error.JsonDecodeException(_, underlying) =>
+        Some(
+          underlying.getMessage()
+        )
+      case _ => None
+    }
   }
 
   private def failureMessage(ctx: DecodeFailureContext): String = {
     ctx.failure match {
       case DecodeResult.Mismatch(expected, actual) => s"Expected: $expected. Received: $actual"
       case DecodeResult.Error(original, err)       => handleDecodingErr(err) getOrElse original
-      case _                                       => ServerDefaults.FailureMessages.failureMessage(ctx)
+      case err =>
+        println(s"err => ${err.getClass}")
+        ServerDefaults.FailureMessages.failureMessage(ctx)
     }
   }
 
