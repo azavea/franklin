@@ -54,8 +54,6 @@ object Server extends IOApp.WithContext {
       )
       .map(ExecutionContext.fromExecutor _)
 
-  implicit val serverOptions = ServerOptions.defaultServerOptions[IO]
-
   private val banner: List[String] =
     """
    $$$$$$$$$

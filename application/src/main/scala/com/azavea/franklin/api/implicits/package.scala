@@ -1,9 +1,15 @@
 package com.azavea.franklin.api
 
+import cats.data.Validated
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString
+import io.circe.syntax._
+import io.circe.{CursorOp, Decoder, DecodingFailure, Encoder, ParsingFailure}
+import sttp.tapir.Codec.JsonCodec
+import sttp.tapir.SchemaType._
+import sttp.tapir.{DecodeResult, FieldName, Schema}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -116,4 +122,27 @@ package object implicits {
       collection.copy(links = updatedLinks)
     }
   }
+
+  private def circeErrorToFailure(
+      failure: io.circe.Error
+  ): DecodeResult.Error.JsonError = failure match {
+    case DecodingFailure(err, hist) =>
+      val path   = CursorOp.opsToPath(hist)
+      val fields = path.split("\\.").toList.filter(_.nonEmpty).map(FieldName.apply)
+      DecodeResult.Error.JsonError(err, fields)
+    case ParsingFailure(message, _) =>
+      DecodeResult.Error.JsonError(message, path = List.empty)
+  }
+
+  // TODO -- borrow logic from logCirceError to print much better information about what went wrong
+  implicit def circeCodec[T: Encoder: Decoder: Schema]: JsonCodec[T] =
+    sttp.tapir.Codec.json[T] { s =>
+      io.circe.parser.decodeAccumulating[T](s) match {
+        case Validated.Invalid(errs) =>
+          DecodeResult.Error(s, DecodeResult.Error.JsonDecodeException(errs.toList map {
+            circeErrorToFailure
+          }, errs.head))
+        case Validated.Valid(v) => DecodeResult.Value(v)
+      }
+    } { t => t.asJson.noSpaces }
 }
