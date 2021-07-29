@@ -4,11 +4,6 @@ import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString
-import io.circe.syntax._
-import io.circe.{CursorOp, Decoder, DecodingFailure, Encoder, Json, ParsingFailure}
-import sttp.tapir.Codec.JsonCodec
-import sttp.tapir.SchemaType._
-import sttp.tapir.{DecodeResult, FieldName, Schema}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets

@@ -1,7 +1,6 @@
 package com.azavea.franklin.api
 
 import cats.effect.{ContextShift, Sync}
-import com.azavea.franklin.api.implicits._
 import io.circe.{CursorOp, DecodingFailure}
 import sttp.tapir.DecodeResult
 import sttp.tapir.server.http4s.Http4sServerOptions
@@ -23,9 +22,7 @@ object ServerOptions {
     ctx.failure match {
       case DecodeResult.Mismatch(expected, actual) => s"Expected: $expected. Received: $actual"
       case DecodeResult.Error(original, err)       => handleDecodingErr(err) getOrElse original
-      case err =>
-        println(s"err => ${err.getClass}")
-        ServerDefaults.FailureMessages.failureMessage(ctx)
+      case _                                       => ServerDefaults.FailureMessages.failureMessage(ctx)
     }
   }
 
