@@ -64,8 +64,6 @@ package object endpoints {
     sttp.tapir.Codec.json[T] { s =>
       io.circe.parser.decodeAccumulating[T](s) match {
         case Validated.Invalid(errs) =>
-          println(s"How many errs: ${errs.size}")
-          println(s"Errs: ${errs}")
           DecodeResult.Error(s, DecodeResult.Error.JsonDecodeException(errs.toList map {
             circeErrorToFailure
           }, errsToMessage(errs)))
