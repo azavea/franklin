@@ -51,7 +51,7 @@ package object endpoints {
               s"${CursorOp.opsToPath(history)} had the wrong type.",
               s"The error was: $s.",
               "If the error is a plain type like 'String', the value is an incorrect plain type, for example an Int instead of a String.",
-              s"If the error says 'Predicate failed: ___', then the stated predicate must succeed for the value to be valid."
+              "If the error says 'Predicate failed: ___', then the stated predicate must succeed for the value to be valid."
             ).mkString(" ")
 
         })
