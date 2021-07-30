@@ -74,7 +74,7 @@ class CollectionItemEndpoints[F[_]: Concurrent](
   val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Fs2Streams[F]] =
     base.post
       .in(path[String] / "items")
-      .in(jsonBody[StacItem])
+      .in(accumulatingJsonBody[StacItem])
       .out(jsonBody[Json])
       .out(header[String]("ETag"))
       .errorOut(
@@ -93,7 +93,7 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       : Endpoint[(String, String, StacItem, String), CrudError, (Json, String), Fs2Streams[F]] =
     base.put
       .in(path[String] / "items" / path[String])
-      .in(jsonBody[StacItem])
+      .in(accumulatingJsonBody[StacItem])
       .in(header[String]("If-Match"))
       .out(jsonBody[Json])
       .out(header[String]("ETag"))
@@ -126,7 +126,7 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       : Endpoint[(String, String, Json, String), CrudError, (Json, String), Fs2Streams[F]] =
     base.patch
       .in(path[String] / "items" / path[String])
-      .in(jsonBody[Json])
+      .in(accumulatingJsonBody[Json])
       .in(header[String]("If-Match"))
       .out(jsonBody[Json])
       .out(header[String]("ETag"))
