@@ -8,16 +8,14 @@ import sttp.tapir.server.{DecodeFailureContext, ServerDefaults}
 
 object ServerOptions {
 
-  private def handleDecodingErr(err: Throwable): Option[String] = err match {
-    case DecodingFailure("Attempt to decode value on failed cursor", history) =>
-      Some(
-        s"I expected to find a value at ${CursorOp.opsToPath(history)}, but there was nothing"
-      )
-    case DecodingFailure(s, history) =>
-      Some(
-        s"I found something unexpected at ${CursorOp.opsToPath(history)}. I expected a value of type $s"
-      )
-    case _ => None
+  private def handleDecodingErr(err: Throwable): Option[String] = {
+    err match {
+      case DecodeResult.Error.JsonDecodeException(_, underlying) =>
+        Some(
+          underlying.getMessage()
+        )
+      case _ => None
+    }
   }
 
   private def failureMessage(ctx: DecodeFailureContext): String = {
