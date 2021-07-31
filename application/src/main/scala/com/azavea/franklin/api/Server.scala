@@ -35,6 +35,7 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import cats.effect.Resource
 
 object Server extends IOApp.WithContext {
 
@@ -145,7 +146,7 @@ $$$$
             collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes
           )
         ).orNotFound
-        serverBuilderBlocker <- Blocker[IO]
+        serverBuilderBlocker <- Resource.unit[IO]
         server <- {
           BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)
             .bindHttp(apiConfig.internalPort.value, "0.0.0.0")

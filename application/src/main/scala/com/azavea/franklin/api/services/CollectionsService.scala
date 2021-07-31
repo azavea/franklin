@@ -2,7 +2,6 @@ package com.azavea.franklin.api.services
 
 import cats.data.EitherT
 import cats.effect._
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
@@ -30,6 +29,7 @@ import sttp.tapir.server.http4s._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import cats.effect.Temporal
 
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
@@ -37,7 +37,7 @@ class CollectionsService[F[_]: Concurrent](
     collectionExtensionsRef: ExtensionRef[F, StacCollection]
 )(
     implicit contextShift: ContextShift[F],
-    timer: Timer[F],
+    timer: Temporal[F],
     serverOptions: Http4sServerOptions[F],
     backend: SttpBackend[F, Nothing, NothingT],
     logger: Logger[F]
