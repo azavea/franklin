@@ -1,6 +1,6 @@
 # 5. Release versioning
 
-Date: 2021-07-28
+Date: 2021-08-03
 
 ## Status
 
