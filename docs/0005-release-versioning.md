@@ -109,11 +109,8 @@ Several tasks come out of this decision. We'll need to:
 - christen the first release `2021-09-02T18:00:00` when it's ready 🎉
 
 [MinIO]: https://hub.docker.com/r/minio/minio/tags?page=1&ordering=last_updated
-[versioning scheme used by STAC]:
-https://github.com/radiantearth/stac-spec#current-version-and-branches [Raster
-Foundry]:
-https://github.com/raster-foundry/raster-foundry/blob/develop/CHANGELOG.md
-[allowing an asterisk in If-Match]:
-https://github.com/azavea/franklin/issues/781 [Chrome's versioning]:
-https://www.chromium.org/developers/version-numbers [rapid now]:
-https://support.mozilla.org/en-US/questions/896705
+[versioning scheme used by STAC]: https://github.com/radiantearth/stac-spec#current-version-and-branches
+[Raster Foundry]: https://github.com/raster-foundry/raster-foundry/blob/develop/CHANGELOG.md
+[allowing an asterisk in If-Match]: https://github.com/azavea/franklin/issues/781
+[Chrome's versioning]: https://www.chromium.org/developers/version-numbers
+[rapid now]: https://support.mozilla.org/en-US/questions/896705
