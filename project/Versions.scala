@@ -2,8 +2,8 @@
 object Versions {
   val AsyncHttpClientVersion  = "2.12.3"
   val AWSVersion              = "1.11.751"
-  val AWSSdk2Version          = "2.17.14"
-  val CatsEffectVersion       = "3.2.2"
+  val AWSSdk2Version          = "2.17.15"
+  val CatsEffectVersion       = "2.5.3"
   val CatsScalacheckVersion   = "0.3.1"
   val CatsVersion             = "2.6.1"
   val CirceFs2Version         = "0.14.1"
