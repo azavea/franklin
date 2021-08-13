@@ -1,5 +1,6 @@
 package com.azavea.franklin.api.services
 
+import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.effect.IO
 import cats.syntax.all._
@@ -7,15 +8,24 @@ import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
 import com.azavea.franklin.datamodel.CollectionsResponse
+import com.azavea.franklin.datamodel.ItemAsset
+import com.azavea.franklin.datamodel.MapCenter
+import com.azavea.franklin.datamodel.MosaicDefinition
+import com.azavea.stac4s.StacItem
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
 import com.azavea.stac4s.{StacCollection, StacLinkType}
+import io.circe.syntax._
 import org.http4s.circe.CirceEntityDecoder._
+import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.{Method, Request, Uri}
+import org.scalacheck.Prop
+import org.specs2.execute.Result
 import org.specs2.{ScalaCheck, Specification}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 
 class CollectionsServiceSpec
     extends Specification
@@ -29,6 +39,8 @@ class CollectionsServiceSpec
     - create and delete collections $createDeleteCollectionExpectation
     - list collections              $listCollectionsExpectation
     - get collections by id         $getCollectionsExpectation
+    - create a mosaic definition    $createMosaicDefinitionExpectation
+    - get a mosaic by id            $getMosaicExpectation
 """
 
   val testServices: TestServices[IO] = new TestServices[IO](transactor)
@@ -97,4 +109,131 @@ class CollectionsServiceSpec
     )
   }
 
+  @SuppressWarnings(Array("TraversableHead"))
+  def createMosaicDefinitionExpectation =
+    (prop { (stacCollection: StacCollection, stacItem: StacItem) =>
+      val expectationIO = (testClient, testServices.collectionsService).tupled flatMap {
+        case (client, collectionsService) =>
+          client.getCollectionItemsResource(List(stacItem), stacCollection) use {
+            case (collection, items) =>
+              val encodedCollectionId =
+                URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+              val item = items.head
+              val mosaicDefinition = if (item.assets.isEmpty) {
+                val name = "bogus asset name"
+                MosaicDefinition(
+                  UUID.randomUUID,
+                  Option("Testing mosaic definition"),
+                  MapCenter.fromGeometry(item.geometry, 8),
+                  NonEmptyList.of(ItemAsset(item.id, name)),
+                  2,
+                  30,
+                  item.bbox
+                )
+              } else {
+                val name = item.assets.keys.head
+                MosaicDefinition(
+                  UUID.randomUUID,
+                  Option("Testing mosaic definition"),
+                  MapCenter.fromGeometry(item.geometry, 8),
+                  NonEmptyList.of(ItemAsset(item.id, name)),
+                  2,
+                  30,
+                  item.bbox
+                )
+              }
+
+              val request =
+                Request[IO](
+                  method = Method.POST,
+                  Uri.unsafeFromString(s"/collections/$encodedCollectionId/mosaic")
+                ).withEntity(
+                  mosaicDefinition
+                )
+
+              collectionsService.routes.run(request).value flatMap {
+                case Some(resp) =>
+                  if (stacItem.assets.isEmpty) {
+                    IO.pure(resp.status.code must beTypedEqualTo(404): Result)
+                  } else {
+                    resp.as[MosaicDefinition] map { result =>
+                      result must beEqualTo(mosaicDefinition): Result
+                    }
+                  }
+                case None => IO.pure(failure: Result)
+              }
+          }
+
+      }
+      expectationIO.unsafeRunSync
+
+    }).pendingUntilFixed(
+      "Creating mosaics relies on actual assets that we can read histograms from"
+    )
+
+  @SuppressWarnings(Array("TraversableHead"))
+  def getMosaicExpectation =
+    (prop { (stacCollection: StacCollection, stacItem: StacItem) =>
+      (!stacItem.assets.isEmpty) ==> {
+        val expectationIO = (testClient, testServices.collectionsService).tupled flatMap {
+          case (client, collectionsService) =>
+            client.getCollectionItemsResource(List(stacItem), stacCollection) use {
+              case (collection, items) =>
+                val encodedCollectionId =
+                  URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+                val item = items.head
+                val name = item.assets.keys.head
+                val mosaicDefinition =
+                  MosaicDefinition(
+                    UUID.randomUUID,
+                    Option("Testing mosaic definition"),
+                    MapCenter.fromGeometry(item.geometry, 8),
+                    NonEmptyList.of(ItemAsset(item.id, name)),
+                    2,
+                    30,
+                    item.bbox
+                  )
+
+                val createRequest =
+                  Request[IO](
+                    method = Method.POST,
+                    Uri.unsafeFromString(s"/collections/$encodedCollectionId/mosaic")
+                  ).withEntity(
+                    mosaicDefinition
+                  )
+
+                val getRequest =
+                  Request[IO](
+                    method = Method.GET,
+                    Uri.unsafeFromString(
+                      s"/collections/$encodedCollectionId/mosaic/${mosaicDefinition.id}"
+                    )
+                  )
+
+                val deleteRequest =
+                  Request[IO](
+                    method = Method.DELETE,
+                    Uri.unsafeFromString(
+                      s"/collections/$encodedCollectionId/mosaic/${mosaicDefinition.id}"
+                    )
+                  )
+
+                (for {
+                  _          <- collectionsService.routes.run(createRequest)
+                  resp       <- collectionsService.routes.run(getRequest)
+                  decoded    <- OptionT.liftF { resp.as[MosaicDefinition] }
+                  deleteResp <- collectionsService.routes.run(deleteRequest)
+                } yield (decoded, deleteResp)).value map {
+                  case Some((respData, deleteResp)) =>
+                    respData === mosaicDefinition && deleteResp.status.code === 204: Prop
+                  case None => false: Prop
+                }
+            }
+
+        }
+        expectationIO.unsafeRunSync
+      }
+    }).pendingUntilFixed(
+      "Creating mosaics relies on actual assets that we can read histograms from"
+    )
 }
