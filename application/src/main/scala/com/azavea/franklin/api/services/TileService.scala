@@ -21,6 +21,7 @@ import com.azavea.franklin.datamodel.{
 }
 import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.tile._
+import com.azavea.franklin.tile.syntax._
 import doobie._
 import doobie.implicits._
 import eu.timepit.refined.auto._
@@ -35,8 +36,6 @@ import geotrellis.raster.geotiff.GeoTiffRasterSource
 import geotrellis.raster.render.ColorRamps.greyscale
 import geotrellis.raster.render.{Implicits => RenderImplicits}
 import geotrellis.raster.{io => _, _}
-import geotrellis.server.LayerTms
-import geotrellis.server._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.Json
 import io.circe.syntax._
@@ -52,15 +51,13 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
+class TileService[F[_]: Async: Concurrent: Parallel: Logger: Timer: ContextShift](
     serverHost: NonEmptyString,
     enableTiles: Boolean,
     path: Option[String],
     xa: Transactor[F]
 ) extends Http4sDsl[F]
     with RenderImplicits {
-
-  import CogAssetNodeImplicits._
 
   private val tmsLevels = {
     val scheme = ZoomedLayoutScheme(WebMercator, 256)
@@ -132,30 +129,16 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
     val itemId       = tileRequest.item
     val (z, x, y)    = tileRequest.zxy
 
-    val tileEither = for {
-      item <- EitherT.fromOptionF(
-        StacItemDao.getCollectionItem(collectionId, itemId).transact(xa),
-        NF(s"Could not find item ($itemId) in collection ($collectionId)")
-      )
-      cogAsset <- EitherT.fromOption[F](
-        item.assets.get(assetKey),
-        NF(s"Could not find asset ($assetKey) in item ($itemId)")
-      )
-      cogAssetNode = CogAssetNode(
-        cogAsset,
-        tileRequest.singleBand map { sb =>
-          List(sb.value)
-        } getOrElse {
-          tileRequest.bands
-        }
-      )
-      histograms <- EitherT.liftF(cogAssetNode.getHistograms[F])
-      rs         <- EitherT.liftF(cogAssetNode.getRasterSource[F])
-      tile <- EitherT {
-        val eval = LayerTms.identity(cogAssetNode)
-        eval(z, x, y).map {
-          case Valid(mbt: MultibandTile) if mbt.bandCount > 1 => {
-            Either.right {
+    for {
+      item  <- StacItemDao.getCollectionItem(collectionId, itemId).transact(xa)
+      rs    <- item flatTraverse { item => item.getRasterSource[F](assetKey) }
+      hists <- item flatTraverse { item => item.getHistogram[F](assetKey, xa) }
+      tile <- (rs, hists).tupled flatTraverse {
+        case (rasterSource, histograms) =>
+          Sync[F].delay {
+            rasterSource.tileToLayout(TileUtil.tmsLevels(z)).read(SpatialKey(x, y))
+          } map {
+            case Some(mbt) =>
               val bands = mbt.bands.zip(histograms).map {
                 case (tile, histogram) =>
                   val breaks = histogram.quantileBreaks(100)
@@ -169,25 +152,18 @@ class TileService[F[_]: Concurrent: Parallel: Logger: Timer: ContextShift](
                     }
                     .normalize(oldMin, oldMax, 1, 255)
               }
-              MultibandTile(bands)
-                .renderPng()
-                .bytes
-            }
+              Some(
+                MultibandTile(bands)
+                  .renderPng()
+                  .bytes
+              )
+            case None => None
           }
-          case Valid(mbt: MultibandTile) if mbt.bandCount == 1 =>
-            val cmap = rs.tiff.options.colorMap getOrElse {
-              val greyscaleRamp = greyscale(255)
-              val hist          = histograms(0)
-              val breaks        = hist.quantileBreaks(100)
-              greyscaleRamp.toColorMap(breaks)
-            }
-            val renderedTile = cmap.render(mbt.band(0))
-            Either.right(renderedTile.renderPng.bytes)
-          case Invalid(e) => Either.left(NF(s"Could not produce tile: $e"))
-        }
       }
-    } yield tile
-    tileEither.value
+    } yield Either.fromOption(
+      tile,
+      NF(s"Could not produce a tile for $assetKey in $itemId at ($z/$x/$y)")
+    )
   }
 
   def getCollectionFootprintTile(
