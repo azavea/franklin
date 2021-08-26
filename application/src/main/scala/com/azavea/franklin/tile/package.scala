@@ -1,21 +1,8 @@
 package com.azavea.franklin
 
-import cats.data.OptionT
-import cats.effect.Async
-import cats.effect.Sync
-import cats.syntax.all._
 import com.amazonaws.services.s3.AmazonS3URI
-import com.azavea.franklin.database.StacItemDao
-import com.azavea.stac4s.{`image/cog`, StacAsset, StacItem}
-import doobie.Transactor
-import doobie.implicits._
-import geotrellis.raster.geotiff.GeoTiffRasterSource
-import geotrellis.raster.histogram.Histogram
 import geotrellis.store.s3.util.S3RangeReader
 import geotrellis.util.{FileRangeReader, StreamingByteReader}
-import scalacache.Cache
-import scalacache.CatsEffect.modes.async
-import scalacache.memoization.memoizeF
 
 import scala.concurrent.duration._
 
