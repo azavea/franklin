@@ -145,7 +145,6 @@ lazy val applicationDependencies = Seq(
   "org.locationtech.geotrellis"  %% "geotrellis-proj4"               % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis"  %% "geotrellis-raster"              % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis"  %% "geotrellis-s3"                  % Versions.GeoTrellisVersion,
-  "org.locationtech.geotrellis"  %% "geotrellis-util"                % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis"  %% "geotrellis-vector"              % Versions.GeoTrellisVersion,
   "org.locationtech.jts"         % "jts-core"                        % Versions.JtsVersion,
   "org.scalacheck"               %% "scalacheck"                     % Versions.ScalacheckVersion % Test,
