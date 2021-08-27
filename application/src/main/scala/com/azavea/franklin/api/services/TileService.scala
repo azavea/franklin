@@ -135,10 +135,12 @@ class TileService[F[_]: Async: Concurrent: Parallel: Logger: Timer: ContextShift
       hists <- item flatTraverse { item => item.getHistogram[F](assetKey, xa) }
       tile <- (rs, hists).tupled flatTraverse {
         case (rasterSource, histograms) =>
-          Sync[F].delay {
-            rasterSource.tileToLayout(TileUtil.tmsLevels(z)).read(SpatialKey(x, y))
-          } map {
-            case Some(mbt) =>
+          (Sync[F]
+            .delay {
+              rasterSource.tileToLayout(TileUtil.tmsLevels(z)).read(SpatialKey(x, y))
+            })
+            .nested
+            .map({ mbt =>
               val bands = mbt.bands.zip(histograms).map {
                 case (tile, histogram) =>
                   val breaks = histogram.quantileBreaks(100)
@@ -152,13 +154,11 @@ class TileService[F[_]: Async: Concurrent: Parallel: Logger: Timer: ContextShift
                     }
                     .normalize(oldMin, oldMax, 1, 255)
               }
-              Some(
-                MultibandTile(bands)
-                  .renderPng()
-                  .bytes
-              )
-            case None => None
-          }
+              MultibandTile(bands)
+                .renderPng()
+                .bytes
+            })
+            .value
       }
     } yield Either.fromOption(
       tile,
