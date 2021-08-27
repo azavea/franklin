@@ -29,7 +29,7 @@ lazy val commonSettings = Seq(
     "-Ypartial-unification",
     "-Yrangepos"
   ),
-  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.0" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.1" cross CrossVersion.full),
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
     "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full
@@ -51,7 +51,7 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.24" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.27" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
@@ -88,8 +88,6 @@ lazy val applicationDependencies = Seq(
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
   "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
-  "com.azavea.geotrellis"        %% "geotrellis-server-core"         % Versions.GeotrellisServerVersion,
-  "com.azavea.geotrellis"        %% "maml-jvm"                       % Versions.MamlVersion,
   "com.azavea.stac4s"            %% "core"                           % Versions.Stac4SVersion,
   "com.azavea.stac4s"            %% "testing"                        % Versions.Stac4SVersion % Test,
   "com.chuusai"                  %% "shapeless"                      % Versions.ShapelessVersion,
@@ -120,7 +118,6 @@ lazy val applicationDependencies = Seq(
   "com.softwaremill.sttp.tapir"  %% "tapir-refined"                  % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-sttp-client"              % Versions.TapirVersion % Test,
   "com.softwaremill.sttp.tapir"  %% "tapir-swagger-ui-http4s"        % Versions.TapirVersion,
-  "com.typesafe.scala-logging"   %% "scala-logging"                  % Versions.ScalaLoggingVersion,
   "com.zaxxer"                   % "HikariCP"                        % Versions.HikariVersion,
   "eu.timepit"                   %% "refined-scalacheck"             % Versions.Refined % Test,
   "eu.timepit"                   %% "refined"                        % Versions.Refined,
@@ -148,7 +145,6 @@ lazy val applicationDependencies = Seq(
   "org.locationtech.geotrellis"  %% "geotrellis-proj4"               % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis"  %% "geotrellis-raster"              % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis"  %% "geotrellis-s3"                  % Versions.GeoTrellisVersion,
-  "org.locationtech.geotrellis"  %% "geotrellis-util"                % Versions.GeoTrellisVersion,
   "org.locationtech.geotrellis"  %% "geotrellis-vector"              % Versions.GeoTrellisVersion,
   "org.locationtech.jts"         % "jts-core"                        % Versions.JtsVersion,
   "org.scalacheck"               %% "scalacheck"                     % Versions.ScalacheckVersion % Test,
@@ -157,7 +153,6 @@ lazy val applicationDependencies = Seq(
   "org.specs2"                   %% "specs2-core"                    % Versions.Specs2Version % Test,
   "org.specs2"                   %% "specs2-core"                    % Versions.Specs2Version % Test,
   "org.specs2"                   %% "specs2-scalacheck"              % Versions.Specs2Version % Test,
-  "org.spire-math"               %% "spire"                          % Versions.SpireVersion,
   "org.threeten"                 % "threeten-extra"                  % Versions.ThreeTenExtra,
   "org.tpolecat"                 %% "doobie-core"                    % Versions.DoobieVersion,
   "org.tpolecat"                 %% "doobie-free"                    % Versions.DoobieVersion,
