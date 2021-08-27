@@ -33,7 +33,7 @@ class CollectionEndpoints[F[_]: Concurrent](
 
   val createCollection: Endpoint[StacCollection, Unit, Json, Fs2Streams[F]] =
     base.post
-      .in(jsonBody[StacCollection])
+      .in(accumulatingJsonBody[StacCollection])
       .out(jsonBody[Json])
       .description("""
         | Create a new collection. Item links in the POSTed collection will be ignored in
@@ -69,7 +69,7 @@ class CollectionEndpoints[F[_]: Concurrent](
       : Endpoint[(String, MosaicDefinition), NotFound, MosaicDefinition, Fs2Streams[F]] =
     base.post
       .in(path[String] / "mosaic")
-      .in(jsonBody[MosaicDefinition])
+      .in(accumulatingJsonBody[MosaicDefinition])
       .out(jsonBody[MosaicDefinition])
       .errorOut(
         oneOf(statusMapping(NF, jsonBody[NotFound].description("not found")))
