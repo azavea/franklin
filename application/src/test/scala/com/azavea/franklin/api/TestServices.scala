@@ -1,7 +1,7 @@
 package com.azavea.franklin.api
 
 import cats.Applicative
-import cats.effect.{Concurrent, ContextShift, Timer}
+import cats.effect.Concurrent
 import cats.syntax.functor._
 import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService, SearchService}
@@ -11,10 +11,11 @@ import doobie.Transactor
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import cats.effect.Temporal
 
 class TestServices[F[_]: Concurrent](xa: Transactor[F])(
     implicit cs: ContextShift[F],
-    timer: Timer[F]
+    timer: Temporal[F]
 ) extends TestImplicits[F] {
 
   val rootLink = StacLink(
