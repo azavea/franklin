@@ -10,6 +10,7 @@ import com.azavea.franklin.api.endpoints.{
   SearchEndpoints,
   TileEndpoints
 }
+import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 import com.azavea.franklin.api.services._
 import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
@@ -35,7 +36,6 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 
 object Server extends IOApp.WithContext {
 
