@@ -35,6 +35,7 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 
 object Server extends IOApp.WithContext {
 
@@ -141,9 +142,10 @@ $$$$
         ).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
-          ResponseLogger.httpRoutes(false, false)(
-            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes
-          )
+          new AccessLoggingMiddleware(
+            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes,
+            logger
+          ).withLogging(true)
         ).orNotFound
         serverBuilderBlocker <- Blocker[IO]
         server <- {
