@@ -51,8 +51,9 @@ class SearchService[F[_]: Concurrent](
       }
       ((items, links), count) <- (itemsFib, countFib).tupled.join
     } yield {
-      val withApiHost  = items map { _.updateLinksWithHost(apiConfig) }
-      val searchResult = StacSearchCollection(Context(items.length, count), withApiHost, links)
+      val withApiHost = items map { _.updateLinksWithHost(apiConfig) }
+      val searchResult =
+        StacSearchCollection(Context(limit, items.length, count), withApiHost, links)
       val updatedFeatures = searchResult.features
         .map { item =>
           ((item.collection, enableTiles) match {
