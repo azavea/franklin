@@ -3,9 +3,9 @@ package com.azavea.franklin.database
 import com.azavea.stac4s.TemporalExtent
 import org.specs2.Specification
 
+import java.sql.Timestamp
 import java.time.Instant
 import java.time.Period
-import java.sql.Timestamp
 
 class TemporalExtentFromStringSpec extends Specification {
   def is = s2"""
