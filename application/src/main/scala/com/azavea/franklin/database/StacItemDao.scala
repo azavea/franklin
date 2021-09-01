@@ -282,7 +282,7 @@ object StacItemDao extends Dao[StacItem] {
     }
   }
 
-  def insertStacItem(item: StacItem): ConnectionIO[Either[StacItemDaoError, StacItem]] = {
+  def insertStacItem(item: StacItem): ConnectionIO[Either[StacItemDaoError, (StacItem, String)]] = {
 
     val projectedGeometry = Projected(item.geometry, 4326)
 
@@ -313,7 +313,7 @@ object StacItemDao extends Dao[StacItem] {
         }
       }
     } yield {
-      itemInsert
+      itemInsert map { item => (item, item.##.toString) }
     }
 
   }
@@ -343,7 +343,7 @@ object StacItemDao extends Dao[StacItem] {
       itemId: String,
       item: StacItem,
       etag: IfMatchMode
-  ): ConnectionIO[Either[StacItemDaoError, StacItem]] =
+  ): ConnectionIO[Either[StacItemDaoError, (StacItem, String)]] =
     (for {
       (itemInDB, collectionInDb) <- EitherT
         .fromOptionF[ConnectionIO, StacItemDaoError, (StacItem, StacCollection)](
@@ -373,14 +373,14 @@ object StacItemDao extends Dao[StacItem] {
       _ <- EitherT.liftF[ConnectionIO, StacItemDaoError, Int](
         StacCollectionDao.updateExtent(collectionId, expansion)
       )
-    } yield update).value
+    } yield (update, update.##.toString)).value
 
   def patchItem(
       collectionId: String,
       itemId: String,
       jsonPatch: Json,
       etag: IfMatchMode
-  ): ConnectionIO[Option[Either[StacItemDaoError, StacItem]]] = {
+  ): ConnectionIO[Option[Either[StacItemDaoError, (StacItem, String)]]] = {
     (for {
       itemAndCollectionOpt <- (
         getCollectionItem(collectionId, itemId),
@@ -415,7 +415,7 @@ object StacItemDao extends Dao[StacItem] {
         val expansion = getItemsBulkExtent(itemsNel)
         StacCollectionDao.updateExtent(collectionId, expansion)
       }
-    } yield update)
+    } yield update.nested.map(item => (item, item.##.toString)).value)
   }
 
   def checkItemsInCollection(

@@ -80,7 +80,7 @@ class CollectionItemsServiceSpec
     val testIO: IO[Result] = (testClient, testServices.collectionsService).tupled flatMap {
       case (client, collectionsService) =>
         client.getCollectionItemResource(stacItem, stacCollection) use {
-          case (collection, item) =>
+          case (collection, (item, _)) =>
             val encodedCollectionId =
               URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
             val request = Request[IO](
@@ -107,7 +107,7 @@ class CollectionItemsServiceSpec
     val fetchIO = (testClient, testServices.collectionItemsService).tupled flatMap {
       case (client, collectionItemsService) =>
         client.getCollectionItemResource(stacItem, stacCollection) use {
-          case (collection, item) =>
+          case (collection, (item, _)) =>
             val encodedCollectionId =
               URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
             val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
@@ -143,11 +143,10 @@ class CollectionItemsServiceSpec
       val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
         case (client, collectionItemsService) =>
           client.getCollectionItemResource(stacItem, stacCollection) use {
-            case (collection, item) =>
+            case (collection, (item, etag)) =>
               val encodedCollectionId =
                 URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
               val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
-              val etag          = item.##
               val toUpdate = update.copy(
                 links = item.links,
                 id = item.id
@@ -188,11 +187,10 @@ class CollectionItemsServiceSpec
       val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
         case (client, collectionItemsService) =>
           client.getCollectionItemResource(stacItem, stacCollection) use {
-            case (collection, item) =>
+            case (collection, (item, etag)) =>
               val encodedCollectionId =
                 URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
               val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
-              val etag          = item.##
               val patch         = Map("properties" -> Map("veryUnlikelyProperty" -> true).asJson)
 
               val request = Request[IO](

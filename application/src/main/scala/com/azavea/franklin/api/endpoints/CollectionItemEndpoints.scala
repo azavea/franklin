@@ -63,12 +63,11 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       .description("A single feature")
       .name("collectionItemUnique")
 
-  val collectionItemTiles: Endpoint[(String, String), NotFound, (Json, String), Fs2Streams[F]] =
+  val collectionItemTiles: Endpoint[(String, String), NotFound, Json, Fs2Streams[F]] =
     base.get
       .in(path[String] / "items" / path[String] / "tiles")
       .out(jsonBody[Json])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
-      .out(header[String]("ETag"))
       .description("An item's tile endpoints")
       .name("collectionItemTiles")
 
