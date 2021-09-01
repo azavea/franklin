@@ -42,9 +42,11 @@ object StacItemDao extends Dao[StacItem] {
 
   sealed abstract class StacItemDaoError(val msg: String) extends Throwable
   case object UpdateFailed                                extends StacItemDaoError("Failed to update STAC item")
-  case object StaleObject                                 extends StacItemDaoError("Server-side object updated")
-  case object ItemNotFound                                extends StacItemDaoError("Not found")
-  case object CollectionNotFound                          extends StacItemDaoError("Collection not found")
+
+  case class StaleObject(currentEtag: String, item: StacItem)
+      extends StacItemDaoError("Server-side object updated")
+  case object ItemNotFound       extends StacItemDaoError("Not found")
+  case object CollectionNotFound extends StacItemDaoError("Collection not found")
 
   case object InvalidTimeForPeriod
       extends StacItemDaoError("Item datetime does not align with collection periodic extent")
@@ -361,7 +363,9 @@ object StacItemDao extends Dao[StacItem] {
           UpdateFailed: StacItemDaoError
         }
       } else {
-        EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
+        EitherT.leftT[ConnectionIO, StacItem] {
+          StaleObject(etagInDb.toString, itemInDB): StacItemDaoError
+        }
       }
       // only the first bbox / interval will be expanded. While technically these are plural, OGC
       // added a clarification about the intent of the plurality in
@@ -400,7 +404,9 @@ object StacItemDao extends Dao[StacItem] {
                 }
               }
             case (_, false) =>
-              (Either.left[StacItemDaoError, StacItem](StaleObject)).pure[ConnectionIO]
+              (Either
+                .left[StacItemDaoError, StacItem](StaleObject(etagInDb.toString, itemInDb)))
+                .pure[ConnectionIO]
             case (Left(err), _) =>
               (Either
                 .left[StacItemDaoError, StacItem](PatchInvalidatesItem(err)))

@@ -229,8 +229,14 @@ class CollectionItemsService[F[_]: Concurrent](
 
     makeItemValidator(itemUpdate.stacExtensions, itemExtensionsRef) flatMap { validator =>
       StacItemDao.updateStacItem(collectionId, itemId, itemUpdate, etag).transact(xa) map {
-        case Left(StacItemDao.StaleObject) =>
-          Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
+        case Left(StacItemDao.StaleObject(etag, item)) =>
+          Left(
+            MidAirCollision(
+              s"Item $itemId changed server side. Refresh object and try again",
+              etag,
+              item
+            )
+          )
         case Left(StacItemDao.ItemNotFound) =>
           Left(NF(s"Item $itemId in collection $collectionId not found"))
         case Left(StacItemDao.InvalidTimeForPeriod) =>
@@ -281,10 +287,14 @@ class CollectionItemsService[F[_]: Concurrent](
             NF(s"Item $itemId in collection $collectionId not found")
           )
           .pure[F]
-      case Some(Left(StacItemDao.StaleObject)) =>
+      case Some(Left(StacItemDao.StaleObject(etag, item))) =>
         Either
           .left[CrudError, (Json, String)](
-            MidAirCollision(s"Item $itemId changed server side. Refresh object and try again")
+            MidAirCollision(
+              s"Item $itemId changed server side. Refresh object and try again",
+              etag,
+              item
+            )
           )
           .pure[F]
       case Some(Left(StacItemDao.UpdateFailed)) =>
