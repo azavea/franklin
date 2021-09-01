@@ -1,5 +1,6 @@
 package com.azavea.franklin.api
 
+import cats.MonadError
 import cats.effect.Resource
 import cats.effect.Sync
 import cats.syntax.all._
@@ -10,6 +11,7 @@ import io.circe.syntax._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.implicits._
+import org.http4s.util.CaseInsensitiveString
 import org.http4s.{Method, Request, Uri}
 
 import java.net.URLEncoder
@@ -44,14 +46,25 @@ class TestClient[F[_]: Sync](
       .void
   }
 
-  private def createItemInCollection(collection: StacCollection, item: StacItem): F[StacItem] = {
+  private def createItemInCollection(
+      collection: StacCollection,
+      item: StacItem
+  ): F[(StacItem, String)] = {
     val encodedCollectionId = URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-    collectionItemsService.routes.orNotFound.run(
-      Request(
-        method = Method.POST,
-        uri = Uri.unsafeFromString(s"/collections/$encodedCollectionId/items")
-      ).withEntity(item.copy(collection = None))
-    ) flatMap { _.as[StacItem] }
+    for {
+      resp <- collectionItemsService.routes.orNotFound.run(
+        Request(
+          method = Method.POST,
+          uri = Uri.unsafeFromString(s"/collections/$encodedCollectionId/items")
+        ).withEntity(item.copy(collection = None))
+      )
+      item <- resp.as[StacItem]
+      etag <- resp.headers
+        .find(h => h.name == CaseInsensitiveString("etag"))
+        .map(h => h.value.pure[F]) getOrElse {
+        MonadError[F, Throwable].raiseError(new Exception("No etag in response!"))
+      }
+    } yield (item, etag)
   }
 
   private def deleteItemInCollection(collection: StacCollection, item: StacItem): F[Unit] = {
@@ -67,10 +80,11 @@ class TestClient[F[_]: Sync](
       .void
   }
 
-  def getItemResource(collection: StacCollection, item: StacItem): Resource[F, StacItem] =
-    Resource.make(createItemInCollection(collection, item))(item =>
-      deleteItemInCollection(collection, item)
-    )
+  def getItemResource(collection: StacCollection, item: StacItem): Resource[F, (StacItem, String)] =
+    Resource.make(createItemInCollection(collection, item))({
+      case (item, _) =>
+        deleteItemInCollection(collection, item)
+    })
 
   def getCollectionResource(collection: StacCollection): Resource[F, StacCollection] =
     Resource.make(createCollection(collection))(collection => deleteCollection(collection))
@@ -78,12 +92,12 @@ class TestClient[F[_]: Sync](
   def getCollectionItemResource(
       item: StacItem,
       collection: StacCollection
-  ): Resource[F, (StacCollection, StacItem)] =
+  ): Resource[F, (StacCollection, (StacItem, String))] =
     (getCollectionResource(collection), getItemResource(collection, item)).tupled
 
   def getCollectionItemsResource(
       items: List[StacItem],
       collection: StacCollection
-  ): Resource[F, (StacCollection, List[StacItem])] =
+  ): Resource[F, (StacCollection, List[(StacItem, String)])] =
     (getCollectionResource(collection), items.traverse(getItemResource(collection, _))).tupled
 }
