@@ -222,7 +222,7 @@ class CollectionItemsService[F[_]: Concurrent](
       rawCollectionId: String,
       rawItemId: String,
       itemUpdate: StacItem,
-      etag: String
+      etag: IfMatchMode
   ): F[Either[CrudError, (Json, String)]] = {
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
@@ -261,7 +261,7 @@ class CollectionItemsService[F[_]: Concurrent](
       rawCollectionId: String,
       rawItemId: String,
       jsonPatch: Json,
-      etag: String
+      etag: IfMatchMode
   ): F[Either[CrudError, (Json, String)]] = {
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)

@@ -2,6 +2,7 @@ package com.azavea.franklin.api.endpoints
 
 import cats.effect.Concurrent
 import com.azavea.franklin.api.schemas._
+import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.{
   CrudError,
@@ -90,11 +91,13 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       .name("postItem")
 
   val putItem
-      : Endpoint[(String, String, StacItem, String), CrudError, (Json, String), Fs2Streams[F]] =
+      : Endpoint[(String, String, StacItem, IfMatchMode), CrudError, (Json, String), Fs2Streams[
+        F
+      ]] =
     base.put
       .in(path[String] / "items" / path[String])
       .in(accumulatingJsonBody[StacItem])
-      .in(header[String]("If-Match"))
+      .in(header[IfMatchMode]("If-Match"))
       .out(jsonBody[Json])
       .out(header[String]("ETag"))
       .errorOut(
@@ -123,11 +126,11 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       .out(statusCode(StatusCode.NoContent))
 
   val patchItem
-      : Endpoint[(String, String, Json, String), CrudError, (Json, String), Fs2Streams[F]] =
+      : Endpoint[(String, String, Json, IfMatchMode), CrudError, (Json, String), Fs2Streams[F]] =
     base.patch
       .in(path[String] / "items" / path[String])
       .in(accumulatingJsonBody[Json])
-      .in(header[String]("If-Match"))
+      .in(header[IfMatchMode]("If-Match"))
       .out(jsonBody[Json])
       .out(header[String]("ETag"))
       .errorOut(

@@ -5,6 +5,7 @@ import cats.data.NonEmptyList
 import cats.data.NonEmptyMap
 import cats.data.OptionT
 import cats.syntax.all._
+import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.franklin.datamodel.ItemAsset
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.datamodel.SearchMethod
@@ -341,7 +342,7 @@ object StacItemDao extends Dao[StacItem] {
       collectionId: String,
       itemId: String,
       item: StacItem,
-      etag: String
+      etag: IfMatchMode
   ): ConnectionIO[Either[StacItemDaoError, StacItem]] =
     (for {
       (itemInDB, collectionInDb) <- EitherT
@@ -355,7 +356,7 @@ object StacItemDao extends Dao[StacItem] {
         checkItemTimeAgainstCollection(collectionInDb, item).leftWiden[StacItemDaoError]
       )
       etagInDb = itemInDB.##
-      update <- if (etagInDb.toString == etag) {
+      update <- if (etag.matches(etagInDb.toString)) {
         EitherT { doUpdate(itemId, validatedTime).attempt } leftMap { _ =>
           UpdateFailed: StacItemDaoError
         }
@@ -378,7 +379,7 @@ object StacItemDao extends Dao[StacItem] {
       collectionId: String,
       itemId: String,
       jsonPatch: Json,
-      etag: String
+      etag: IfMatchMode
   ): ConnectionIO[Option[Either[StacItemDaoError, StacItem]]] = {
     (for {
       itemAndCollectionOpt <- (
@@ -390,7 +391,7 @@ object StacItemDao extends Dao[StacItem] {
           val etagInDb = itemInDb.##
           val patched  = itemInDb.asJson.deepMerge(jsonPatch).dropNullValues
           val decoded  = patched.as[StacItem]
-          (decoded, etagInDb.toString == etag) match {
+          (decoded, etag.matches(etagInDb.toString)) match {
             case (Right(patchedItem), true) =>
               checkItemTimeAgainstCollection(collectionInDb, patchedItem)
                 .leftWiden[StacItemDaoError] flatTraverse { validated =>
