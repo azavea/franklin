@@ -62,9 +62,9 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
   )
 
   private val conformances: List[NonEmptyString] = List[NonEmptyString](
-    "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/core",
-    "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30",
-    "http://www.opengis.net/spec/ogcapi-features-1/1.0/req/geojson",
+    "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
+    "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
+    "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson",
     "https://api.stacspec.org/v1.0.0-beta.1/core",
     "https://api.stacspec.org/v1.0.0-beta.1/item-search",
     "https://api.stacspec.org/v1.0.0-beta.1/item-search#context",

@@ -3,16 +3,18 @@ package com.azavea.franklin
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.azavea.franklin.datamodel.BulkExtent
+import com.azavea.stac4s.meta.ForeignImplicits._
 import com.azavea.stac4s.{Bbox, StacItem, TemporalExtent, ThreeDimBbox, TwoDimBbox}
 import doobie.implicits.javasql._
 import doobie.util.meta.Meta
 import doobie.util.{Read, Write}
 import geotrellis.vector.Extent
+import io.circe.parser.decode
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, Error => CirceError}
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Instant, OffsetDateTime}
 
 package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filterables {
 
@@ -21,7 +23,7 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
   implicit val instantWrite: Write[Instant] = Write[Timestamp].imap(_.toInstant)(Timestamp.from)
 
   def stringToInstant: String => Either[Throwable, Instant] =
-    (s: String) => Either.catchNonFatal(Instant.parse(s))
+    (s: String) => Either.catchNonFatal(OffsetDateTime.parse(s, RFC3339formatter).toInstant)
 
   def temporalExtentToString(te: TemporalExtent): String = {
     te match {
@@ -36,31 +38,40 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filte
 
   def temporalExtentFromString(str: String): Either[String, TemporalExtent] = {
     str.split("/").toList match {
-      case ".." :: ".." :: _ => Right(TemporalExtent(None, None))
-      case ".." :: endString :: _ =>
-        val parsedEnd: Either[Throwable, Instant] = stringToInstant(endString)
-        parsedEnd match {
-          case Left(_)             => Left(s"Could not decode instant: $str")
-          case Right(end: Instant) => Right(TemporalExtent(None, end))
-        }
+      case ".." :: ".." :: _ | "" :: "" :: _ => Right(TemporalExtent(None, None))
+      case (".." | "") :: endString :: _ =>
+        stringToInstant(endString).bimap(
+          _ => s"Could not decode instant: $str",
+          end => TemporalExtent(None, end)
+        )
       case startString :: ".." :: _ =>
-        val parsedStart: Either[Throwable, Instant] = stringToInstant(startString)
-        parsedStart match {
-          case Left(_)               => Left(s"Could not decode instant: $str")
-          case Right(start: Instant) => Right(TemporalExtent(start, None))
-        }
+        stringToInstant(startString).bimap(
+          _ => s"Could not decode instant: $str",
+          start => TemporalExtent(start, None)
+        )
       case startString :: endString :: _ =>
         val parsedStart: Either[Throwable, Instant] = stringToInstant(startString)
         val parsedEnd: Either[Throwable, Instant]   = stringToInstant(endString)
-        (parsedStart, parsedEnd).tupled match {
-          case Left(_)                               => Left(s"Could not decode instant: $str")
-          case Right((start: Instant, end: Instant)) => Right(TemporalExtent(start, end))
-        }
+        (parsedStart, parsedEnd).tupled.bimap(_ => s"Could not decode instant: $str", {
+          case (start: Instant, end: Instant) => TemporalExtent(start, end)
+        })
+      // the behavior of split is that if the last character of the string is the splitting
+      // character, you get everything before it, then nothing. this is different from if it's
+      // the first character, in which case you get an empty string and then the rest.
+      // however, we need to differentiate cases where splitting on "/" only gets us a single element
+      // list, because for us, foo/ and foo indicate different things --
+      // with the trailing slash, it's an open ended interval starting at foo. without the trailing slash,
+      // it's the exact point in time represented by foo.
+      case startString :: Nil if str.endsWith("/") =>
+        stringToInstant(startString).bimap(
+          _ => s"Could not decode instant: $str",
+          start => TemporalExtent(start, None)
+        )
       case _ =>
-        Either.catchNonFatal(Instant.parse(str)) match {
-          case Left(_)           => Left(s"Could not decode instant: $str")
-          case Right(t: Instant) => Right(TemporalExtent(t, t))
-        }
+        stringToInstant(str).bimap(
+          _ => s"Could not decode instant: $str",
+          t => TemporalExtent(t, t)
+        )
     }
   }
 
