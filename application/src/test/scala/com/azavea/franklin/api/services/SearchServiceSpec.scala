@@ -100,7 +100,7 @@ class SearchServiceSpec
     val resourceIO = testClient map { _.getCollectionItemResource(stacItem, stacCollection) }
     val requestIO = resourceIO flatMap { resource =>
       resource.use {
-        case (collection, item) =>
+        case (collection, (item, _)) =>
           val inclusiveParams =
             FiltersFor.inclusiveFilters(collection, item)
           val request =

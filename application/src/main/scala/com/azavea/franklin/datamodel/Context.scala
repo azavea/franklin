@@ -8,6 +8,7 @@ object Context {
 }
 
 case class Context(
+    limit: Int,
     returned: Int,
     matched: Int
 )

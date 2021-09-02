@@ -42,10 +42,6 @@ lazy val commonSettings = Seq(
     "org.slf4j",
     "slf4j-simple"
   ),
-  unusedCompileDependenciesFilter -= moduleFilter(
-    "ch.qos.logback",
-    "logback-classic"
-  ),
   excludeDependencies ++= Seq(
     "log4j"     % "log4j",
     "org.slf4j" % "slf4j-log4j12",
@@ -83,7 +79,6 @@ lazy val applicationSettings = commonSettings ++ Seq(
 )
 
 lazy val applicationDependencies = Seq(
-  "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
   "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
