@@ -5,6 +5,7 @@ import cats.syntax.either._
 import cats.syntax.invariant._
 import cats.syntax.traverse._
 import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
+import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
@@ -91,4 +92,6 @@ package object schemas {
   implicit val schemaForStacLink: Schema[StacLinkType] =
     Schema.schemaForString.map(s => s.asJson.as[StacLinkType].toOption)(_.repr)
 
+  implicit val codecIfMatchMode: Codec.PlainCodec[IfMatchMode] =
+    Codec.string.mapDecode(s => DecodeResult.Value(IfMatchMode.fromString(s)))(_.toString)
 }

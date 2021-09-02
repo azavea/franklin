@@ -5,6 +5,7 @@ import cats.data.NonEmptyList
 import cats.data.NonEmptyMap
 import cats.data.OptionT
 import cats.syntax.all._
+import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.franklin.datamodel.ItemAsset
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.datamodel.SearchMethod
@@ -41,9 +42,11 @@ object StacItemDao extends Dao[StacItem] {
 
   sealed abstract class StacItemDaoError(val msg: String) extends Throwable
   case object UpdateFailed                                extends StacItemDaoError("Failed to update STAC item")
-  case object StaleObject                                 extends StacItemDaoError("Server-side object updated")
-  case object ItemNotFound                                extends StacItemDaoError("Not found")
-  case object CollectionNotFound                          extends StacItemDaoError("Collection not found")
+
+  case class StaleObject(currentEtag: String, item: StacItem)
+      extends StacItemDaoError("Server-side object updated")
+  case object ItemNotFound       extends StacItemDaoError("Not found")
+  case object CollectionNotFound extends StacItemDaoError("Collection not found")
 
   case object InvalidTimeForPeriod
       extends StacItemDaoError("Item datetime does not align with collection periodic extent")
@@ -281,7 +284,7 @@ object StacItemDao extends Dao[StacItem] {
     }
   }
 
-  def insertStacItem(item: StacItem): ConnectionIO[Either[StacItemDaoError, StacItem]] = {
+  def insertStacItem(item: StacItem): ConnectionIO[Either[StacItemDaoError, (StacItem, String)]] = {
 
     val projectedGeometry = Projected(item.geometry, 4326)
 
@@ -312,7 +315,7 @@ object StacItemDao extends Dao[StacItem] {
         }
       }
     } yield {
-      itemInsert
+      itemInsert map { item => (item, item.##.toString) }
     }
 
   }
@@ -341,8 +344,8 @@ object StacItemDao extends Dao[StacItem] {
       collectionId: String,
       itemId: String,
       item: StacItem,
-      etag: String
-  ): ConnectionIO[Either[StacItemDaoError, StacItem]] =
+      etag: IfMatchMode
+  ): ConnectionIO[Either[StacItemDaoError, (StacItem, String)]] =
     (for {
       (itemInDB, collectionInDb) <- EitherT
         .fromOptionF[ConnectionIO, StacItemDaoError, (StacItem, StacCollection)](
@@ -355,12 +358,14 @@ object StacItemDao extends Dao[StacItem] {
         checkItemTimeAgainstCollection(collectionInDb, item).leftWiden[StacItemDaoError]
       )
       etagInDb = itemInDB.##
-      update <- if (etagInDb.toString == etag) {
+      update <- if (etag.matches(etagInDb.toString)) {
         EitherT { doUpdate(itemId, validatedTime).attempt } leftMap { _ =>
           UpdateFailed: StacItemDaoError
         }
       } else {
-        EitherT.leftT[ConnectionIO, StacItem] { StaleObject: StacItemDaoError }
+        EitherT.leftT[ConnectionIO, StacItem] {
+          StaleObject(etagInDb.toString, itemInDB): StacItemDaoError
+        }
       }
       // only the first bbox / interval will be expanded. While technically these are plural, OGC
       // added a clarification about the intent of the plurality in
@@ -372,14 +377,14 @@ object StacItemDao extends Dao[StacItem] {
       _ <- EitherT.liftF[ConnectionIO, StacItemDaoError, Int](
         StacCollectionDao.updateExtent(collectionId, expansion)
       )
-    } yield update).value
+    } yield (update, update.##.toString)).value
 
   def patchItem(
       collectionId: String,
       itemId: String,
       jsonPatch: Json,
-      etag: String
-  ): ConnectionIO[Option[Either[StacItemDaoError, StacItem]]] = {
+      etag: IfMatchMode
+  ): ConnectionIO[Option[Either[StacItemDaoError, (StacItem, String)]]] = {
     (for {
       itemAndCollectionOpt <- (
         getCollectionItem(collectionId, itemId),
@@ -390,7 +395,7 @@ object StacItemDao extends Dao[StacItem] {
           val etagInDb = itemInDb.##
           val patched  = itemInDb.asJson.deepMerge(jsonPatch).dropNullValues
           val decoded  = patched.as[StacItem]
-          (decoded, etagInDb.toString == etag) match {
+          (decoded, etag.matches(etagInDb.toString)) match {
             case (Right(patchedItem), true) =>
               checkItemTimeAgainstCollection(collectionInDb, patchedItem)
                 .leftWiden[StacItemDaoError] flatTraverse { validated =>
@@ -399,7 +404,9 @@ object StacItemDao extends Dao[StacItem] {
                 }
               }
             case (_, false) =>
-              (Either.left[StacItemDaoError, StacItem](StaleObject)).pure[ConnectionIO]
+              (Either
+                .left[StacItemDaoError, StacItem](StaleObject(etagInDb.toString, itemInDb)))
+                .pure[ConnectionIO]
             case (Left(err), _) =>
               (Either
                 .left[StacItemDaoError, StacItem](PatchInvalidatesItem(err)))
@@ -414,7 +421,7 @@ object StacItemDao extends Dao[StacItem] {
         val expansion = getItemsBulkExtent(itemsNel)
         StacCollectionDao.updateExtent(collectionId, expansion)
       }
-    } yield update)
+    } yield update.nested.map(item => (item, item.##.toString)).value)
   }
 
   def checkItemsInCollection(
