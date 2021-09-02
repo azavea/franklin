@@ -118,7 +118,7 @@ class CollectionsServiceSpec
             case (collection, items) =>
               val encodedCollectionId =
                 URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-              val item = items.head
+              val (item, _) = items.head
               val mosaicDefinition = if (item.assets.isEmpty) {
                 val name = "bogus asset name"
                 MosaicDefinition(
@@ -181,8 +181,8 @@ class CollectionsServiceSpec
               case (collection, items) =>
                 val encodedCollectionId =
                   URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-                val item = items.head
-                val name = item.assets.keys.head
+                val (item, _) = items.head
+                val name      = item.assets.keys.head
                 val mosaicDefinition =
                   MosaicDefinition(
                     UUID.randomUUID,

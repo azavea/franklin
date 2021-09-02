@@ -91,11 +91,12 @@ class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[S
       .name("collectionFootprintTileJSON")
 
   val collectionMosaicEndpoint
-      : Endpoint[CollectionMosaicRequest, Unit, Array[Byte], Fs2Streams[F]] =
+      : Endpoint[CollectionMosaicRequest, NotFound, Array[Byte], Fs2Streams[F]] =
     endpoint.get
       .in(collectionRasterTileParameters)
       .out(rawBinaryBody[Array[Byte]])
       .out(header("content-type", "image/png"))
+      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .description(
         "Raster tile endpoint for collection mosaic"
       )

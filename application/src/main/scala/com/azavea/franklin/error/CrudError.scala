@@ -1,5 +1,6 @@
 package com.azavea.franklin.error
 
+import com.azavea.stac4s.StacItem
 import io.circe.generic.semiauto._
 import io.circe.{Codec => _, _}
 
@@ -19,7 +20,8 @@ object ValidationError {
   implicit val decValidationError: Decoder[ValidationError] = deriveDecoder
 }
 
-case class MidAirCollision(msg: String) extends CrudError
+case class MidAirCollision(msg: String, currentEtag: String, currentItem: StacItem)
+    extends CrudError
 
 object MidAirCollision {
   implicit val encMidAirCollision: Encoder[MidAirCollision] = deriveEncoder
