@@ -7,6 +7,7 @@ import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
 import com.azavea.franklin.datamodel.CollectionItemsResponse
+import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
 import com.azavea.stac4s.{StacCollection, StacItem}
@@ -79,7 +80,7 @@ class CollectionItemsServiceSpec
     val testIO: IO[Result] = (testClient, testServices.collectionsService).tupled flatMap {
       case (client, collectionsService) =>
         client.getCollectionItemResource(stacItem, stacCollection) use {
-          case (collection, item) =>
+          case (collection, (item, _)) =>
             val encodedCollectionId =
               URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
             val request = Request[IO](
@@ -106,7 +107,7 @@ class CollectionItemsServiceSpec
     val fetchIO = (testClient, testServices.collectionItemsService).tupled flatMap {
       case (client, collectionItemsService) =>
         client.getCollectionItemResource(stacItem, stacCollection) use {
-          case (collection, item) =>
+          case (collection, (item, _)) =>
             val encodedCollectionId =
               URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
             val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
@@ -138,15 +139,14 @@ class CollectionItemsServiceSpec
   }
 
   def updateItemExpectation = prop {
-    (stacCollection: StacCollection, stacItem: StacItem, update: StacItem) =>
+    (stacCollection: StacCollection, stacItem: StacItem, update: StacItem, mode: IfMatchMode) =>
       val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
         case (client, collectionItemsService) =>
           client.getCollectionItemResource(stacItem, stacCollection) use {
-            case (collection, item) =>
+            case (collection, (item, etag)) =>
               val encodedCollectionId =
                 URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
               val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
-              val etag          = item.##
               val toUpdate = update.copy(
                 links = item.links,
                 id = item.id
@@ -154,7 +154,8 @@ class CollectionItemsServiceSpec
               val request = Request[IO](
                 method = Method.PUT,
                 Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
-                headers = Headers.of(Header("If-Match", s"$etag"))
+                headers = Headers.of(Header("If-Match", (if (mode == IfMatchMode.YOLO) { "*" }
+                                                         else { s"$etag" })))
               ).withEntity(toUpdate)
               (for {
                 response <- collectionItemsService.routes.run(request)
@@ -181,38 +182,39 @@ class CollectionItemsServiceSpec
         (updatedProperties should beTypedEqualTo(updateProperties))
   }
 
-  def patchItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
-    val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
-      case (client, collectionItemsService) =>
-        client.getCollectionItemResource(stacItem, stacCollection) use {
-          case (collection, item) =>
-            val encodedCollectionId =
-              URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
-            val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
-            val etag          = item.##
-            val patch         = Map("properties" -> Map("veryUnlikelyProperty" -> true).asJson)
+  def patchItemExpectation = prop {
+    (stacCollection: StacCollection, stacItem: StacItem, mode: IfMatchMode) =>
+      val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
+        case (client, collectionItemsService) =>
+          client.getCollectionItemResource(stacItem, stacCollection) use {
+            case (collection, (item, etag)) =>
+              val encodedCollectionId =
+                URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
+              val encodedItemId = URLEncoder.encode(item.id, StandardCharsets.UTF_8.toString)
+              val patch         = Map("properties" -> Map("veryUnlikelyProperty" -> true).asJson)
 
-            val request = Request[IO](
-              method = Method.PATCH,
-              Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
-              headers = Headers.of(Header("If-Match", s"$etag"))
-            ).withEntity(patch)
+              val request = Request[IO](
+                method = Method.PATCH,
+                Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
+                headers = Headers.of(Header("If-Match", (if (mode == IfMatchMode.YOLO) { "*" }
+                                                         else { s"$etag" })))
+              ).withEntity(patch)
 
-            (for {
-              response <- collectionItemsService.routes.run(request)
-              decoded  <- OptionT.liftF { response.as[StacItem] }
-            } yield decoded).value
-        }
-    }
+              (for {
+                response <- collectionItemsService.routes.run(request)
+                decoded  <- OptionT.liftF { response.as[StacItem] }
+              } yield decoded).value
+          }
+      }
 
-    val result = updateIO.unsafeRunSync
-    result flatMap { res =>
-      res.properties.asJson.as[Map[String, Json]].toOption
-    } flatMap {
-      _.get("veryUnlikelyProperty")
-    } flatMap {
-      _.as[Boolean].toOption
-    } must beSome(true)
+      val result = updateIO.unsafeRunSync
+      result flatMap { res =>
+        res.properties.asJson.as[Map[String, Json]].toOption
+      } flatMap {
+        _.get("veryUnlikelyProperty")
+      } flatMap {
+        _.as[Boolean].toOption
+      } must beSome(true)
   }
 
 }

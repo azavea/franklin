@@ -112,4 +112,11 @@ trait Generators extends NumericInstances {
   implicit val arbSearchFilters   = Arbitrary { searchFiltersGen }
   implicit val arbPaginationToken = Arbitrary { paginationTokenGen }
   implicit val arbMapCenter       = Arbitrary { mapCenterGen }
+
+  private def ifMatchGen: Gen[IfMatchMode] = Gen.oneOf(
+    Gen.const(IfMatchMode.YOLO),
+    nonEmptyAlphaStringGen map { IfMatchMode.Safe(_) }
+  )
+
+  implicit val arbIfMatchMode = Arbitrary { ifMatchGen }
 }
