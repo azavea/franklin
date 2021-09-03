@@ -196,56 +196,57 @@ class TileService[F[_]: Async: Concurrent: Parallel: Logger: Timer: ContextShift
 
   def getCollectionMosaicTile(
       tileRequest: CollectionMosaicRequest
-  ): F[Either[Unit, Array[Byte]]] = {
+  ): F[Either[NF, Array[Byte]]] = {
     val (z, x, y) = tileRequest.zxy
 
-    for {
-      itemAssets <- getItemsList(tileRequest.collection, tileRequest.mosaicId, z, x, y)
-      _          <- Logger[F].debug(s"got items list with ${itemAssets.size} items")
-      assetHrefs <- itemAssets.parTraverseN(8) {
-        case ItemAsset(itemId, assetName) =>
+    getItemsList(tileRequest.collection, tileRequest.mosaicId, z, x, y) flatMap { itemAssets =>
+      itemAssets.toNel.fold(Either.left[NF, Array[Byte]](NF()).pure[F])(
+        (itemAssets: NonEmptyList[ItemAsset]) =>
           for {
-            ()    <- Logger[F].debug(s"getting asset ${itemId}-${assetName}")
-            asset <- StacItemDao.unsafeGetAsset(itemId, assetName).transact(xa)
-            ()    <- Logger[F].debug(s"got asset ${itemId}-${assetName}")
-          } yield asset
-      }
-      histO <- getHistogram(tileRequest.mosaicId)
-      mosaicSource <- assetHrefs traverse { asset =>
-        getRasterSource(asset.href)
-      } map { sources =>
-        sources.toNel map { rs => MosaicRasterSource(rs, CRS.fromEpsgCode(3857)) }
-      }
-      tileO <- mosaicSource flatTraverse { rs =>
-        Sync[F].delay(
-          rs.tileToLayout(tmsLevels(tileRequest.z))
-            .read(SpatialKey(x, y), tileRequest.bands)
-        )
-      }
-    } yield {
-      val outCellTypeWithNoData =
-        mosaicSource
-          .flatMap({ src => getNoDataValue(src.cellType) map { _ => src.cellType } })
-          .fold(invisiCellType: CellType)(identity)
-      val outTile = (tileO, histO) mapN {
-        case (mbt, hists) =>
-          MultibandTile(mbt.bands.zip(hists).map {
-            case (tile, histogram) =>
-              val breaks = histogram.quantileBreaks(100)
-              val oldMin = breaks(tileRequest.lowerQuantile)
-              val oldMax = breaks(tileRequest.upperQuantile)
-              tile
-                .interpretAs(outCellTypeWithNoData)
-                .mapIfSet { cell =>
-                  if (cell < oldMin) oldMin
-                  else if (cell > oldMax) oldMax
-                  else cell
-                }
-                .normalize(oldMin, oldMax, 1, 255)
+            _ <- Logger[F].debug(s"got items list with ${itemAssets.size} items")
+            assetHrefs <- itemAssets.parTraverseN(8) {
+              case ItemAsset(itemId, assetName) =>
+                for {
+                  ()    <- Logger[F].debug(s"getting asset ${itemId}-${assetName}")
+                  asset <- StacItemDao.unsafeGetAsset(itemId, assetName).transact(xa)
+                  ()    <- Logger[F].debug(s"got asset ${itemId}-${assetName}")
+                } yield asset
+            }
+            histO <- getHistogram(tileRequest.mosaicId)
+            mosaicSource <- assetHrefs traverse { asset =>
+              getRasterSource(asset.href)
+            } map { sources => MosaicRasterSource(sources, CRS.fromEpsgCode(3857)) }
+            tileO <- Sync[F].delay(
+              mosaicSource
+                .tileToLayout(tmsLevels(tileRequest.z))
+                .read(SpatialKey(x, y), tileRequest.bands)
+            )
+          } yield {
+            val outCellTypeWithNoData =
+              getNoDataValue(mosaicSource.cellType).fold(invisiCellType: CellType)(_ =>
+                mosaicSource.cellType
+              )
+            val outTile = (tileO, histO) mapN {
+              case (mbt, hists) =>
+                MultibandTile(mbt.bands.zip(hists).map {
+                  case (tile, histogram) =>
+                    val breaks = histogram.quantileBreaks(100)
+                    val oldMin = breaks(tileRequest.lowerQuantile)
+                    val oldMax = breaks(tileRequest.upperQuantile)
+                    tile
+                      .interpretAs(outCellTypeWithNoData)
+                      .mapIfSet { cell =>
+                        if (cell < oldMin) oldMin
+                        else if (cell > oldMax) oldMax
+                        else cell
+                      }
+                      .normalize(oldMin, oldMax, 1, 255)
 
-          })
-      } getOrElse invisiMBTile
-      Right(outTile.renderPng.bytes)
+                })
+            } getOrElse invisiMBTile
+            Right(outTile.renderPng.bytes)
+          }
+      )
     }
   }
 

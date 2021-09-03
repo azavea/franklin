@@ -10,6 +10,7 @@ import com.azavea.franklin.api.endpoints.{
   SearchEndpoints,
   TileEndpoints
 }
+import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 import com.azavea.franklin.api.services._
 import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
@@ -141,9 +142,10 @@ $$$$
         ).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
-          ResponseLogger.httpRoutes(false, false)(
-            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes
-          )
+          new AccessLoggingMiddleware(
+            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes,
+            logger
+          ).withLogging(true)
         ).orNotFound
         serverBuilderBlocker <- Blocker[IO]
         server <- {

@@ -137,7 +137,7 @@ class CollectionItemsService[F[_]: Concurrent](
   def getCollectionItemTileInfo(
       rawCollectionId: String,
       rawItemId: String
-  ): F[Either[NF, (Json, String)]] = {
+  ): F[Either[NF, Json]] = {
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
 
@@ -149,7 +149,7 @@ class CollectionItemsService[F[_]: Concurrent](
           Either.fromOption(
             TileInfo
               .fromStacItem(apiHost, collectionId, item)
-              .map(info => (info.asJson, info.##.toString)),
+              .map(_.asJson),
             NF(
               s"Unable to construct tile info object for item $itemId in collection $collectionId. Is there at least one COG asset?"
             )
@@ -182,9 +182,9 @@ class CollectionItemsService[F[_]: Concurrent](
             val withParent =
               item.copy(links = parentLink +: item.links.filter(_.rel != StacLinkType.Parent))
             StacItemDao.insertStacItem(withParent).transact(xa) map {
-              case Right(inserted) =>
+              case Right((inserted, etag)) =>
                 val validated = validator(inserted)
-                Right((validated.asJson, validated.##.toString))
+                Right((validated.asJson, etag))
               case Left(StacItemDao.InvalidTimeForPeriod) =>
                 Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
               // this fall through covers the only other failure mode for item creation
@@ -204,9 +204,9 @@ class CollectionItemsService[F[_]: Concurrent](
               .copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
               .addRootLink(rootLink)
           StacItemDao.insertStacItem(withParent).transact(xa) map {
-            case Right(inserted) =>
+            case Right((inserted, etag)) =>
               val validated = validator(inserted)
-              Right((validated.asJson, validated.##.toString))
+              Right((validated.asJson, etag))
             case Left(StacItemDao.InvalidTimeForPeriod) =>
               Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
             // this fall through covers the only other failure mode for item creation
@@ -222,23 +222,29 @@ class CollectionItemsService[F[_]: Concurrent](
       rawCollectionId: String,
       rawItemId: String,
       itemUpdate: StacItem,
-      etag: String
+      etag: IfMatchMode
   ): F[Either[CrudError, (Json, String)]] = {
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
 
     makeItemValidator(itemUpdate.stacExtensions, itemExtensionsRef) flatMap { validator =>
       StacItemDao.updateStacItem(collectionId, itemId, itemUpdate, etag).transact(xa) map {
-        case Left(StacItemDao.StaleObject) =>
-          Left(MidAirCollision(s"Item $itemId changed server side. Refresh object and try again"))
+        case Left(StacItemDao.StaleObject(etag, item)) =>
+          Left(
+            MidAirCollision(
+              s"Item $itemId changed server side. Refresh object and try again",
+              etag,
+              item
+            )
+          )
         case Left(StacItemDao.ItemNotFound) =>
           Left(NF(s"Item $itemId in collection $collectionId not found"))
         case Left(StacItemDao.InvalidTimeForPeriod) =>
           Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
         case Left(_) =>
           Left(ValidationError(s"Update of $itemId not possible with value passed"))
-        case Right(item) =>
-          Right((validator(item).addRootLink(rootLink).asJson, item.##.toString))
+        case Right((item, etag)) =>
+          Right((validator(item).addRootLink(rootLink).asJson, etag))
       }
     }
   }
@@ -261,7 +267,7 @@ class CollectionItemsService[F[_]: Concurrent](
       rawCollectionId: String,
       rawItemId: String,
       jsonPatch: Json,
-      etag: String
+      etag: IfMatchMode
   ): F[Either[CrudError, (Json, String)]] = {
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
@@ -281,10 +287,14 @@ class CollectionItemsService[F[_]: Concurrent](
             NF(s"Item $itemId in collection $collectionId not found")
           )
           .pure[F]
-      case Some(Left(StacItemDao.StaleObject)) =>
+      case Some(Left(StacItemDao.StaleObject(etag, item))) =>
         Either
           .left[CrudError, (Json, String)](
-            MidAirCollision(s"Item $itemId changed server side. Refresh object and try again")
+            MidAirCollision(
+              s"Item $itemId changed server side. Refresh object and try again",
+              etag,
+              item
+            )
           )
           .pure[F]
       case Some(Left(StacItemDao.UpdateFailed)) =>
@@ -318,12 +328,12 @@ class CollectionItemsService[F[_]: Concurrent](
             )
           )
           .pure[F]
-      case Some(Right(updated)) =>
+      case Some(Right((updated, etag))) =>
         makeItemValidator(updated.stacExtensions, itemExtensionsRef) map { validator =>
           Either.right(
             (
               validator(updated).addRootLink(rootLink).asJson,
-              updated.##.toString
+              etag
             )
           )
         }
