@@ -29,7 +29,7 @@ lazy val commonSettings = Seq(
     "-Ypartial-unification",
     "-Yrangepos"
   ),
-  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.1" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.2" cross CrossVersion.full),
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
     "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full
