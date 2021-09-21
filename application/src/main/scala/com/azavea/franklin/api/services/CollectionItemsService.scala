@@ -34,8 +34,6 @@ import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import sttp.client.{NothingT, SttpBackend}
 import sttp.tapir.DecodeResult
-import sttp.tapir.server.DecodeFailureContext
-import sttp.tapir.server.ServerDefaults
 import sttp.tapir.server.http4s._
 
 import java.net.URLDecoder
@@ -45,12 +43,10 @@ class CollectionItemsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
     itemExtensionsRef: ExtensionRef[F, StacItem],
-    rootLink: StacLink
+    rootLink: StacLink,
+    interpreter: Http4sServerInterpreter[F]
 )(
-    implicit contextShift: ContextShift[F],
-    timer: Timer[F],
-    serverOptions: Http4sServerOptions[F],
-    backend: SttpBackend[F, Nothing, NothingT],
+    implicit backend: SttpBackend[F, Nothing, NothingT],
     logger: Logger[F]
 ) extends Http4sDsl[F] {
 
@@ -345,31 +341,31 @@ class CollectionItemsService[F[_]: Concurrent](
     new CollectionItemEndpoints(defaultLimit, enableTransactions, enableTiles, apiConfig.path)
 
   val collectionItemTileRoutes =
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemTiles)({
+    interpreter.toRoutes(collectionItemEndpoints.collectionItemTiles)({
       case (collectionId, itemId) => getCollectionItemTileInfo(collectionId, itemId)
     })
 
   val transactionRoutes: List[HttpRoutes[F]] = List(
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.postItem)({
+    interpreter.toRoutes(collectionItemEndpoints.postItem)({
       case (collectionId, stacItem) => postItem(collectionId, stacItem)
     }),
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.putItem)({
+    interpreter.toRoutes(collectionItemEndpoints.putItem)({
       case (collectionId, itemId, stacItem, etag) => putItem(collectionId, itemId, stacItem, etag)
     }),
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.deleteItem)({
+    interpreter.toRoutes(collectionItemEndpoints.deleteItem)({
       case (collectionId, itemId) => deleteItem(collectionId, itemId)
     }),
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.patchItem)({
+    interpreter.toRoutes(collectionItemEndpoints.patchItem)({
       case (collectionId, itemId, jsonPatch, etag) =>
         patchItem(collectionId, itemId, jsonPatch, etag)
     })
   )
 
   val routesList: NonEmptyList[HttpRoutes[F]] = NonEmptyList.of(
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemsList)({ query =>
+    interpreter.toRoutes(collectionItemEndpoints.collectionItemsList)({ query =>
       Function.tupled(listCollectionItems _)(query)
     }),
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemsUnique)({
+    interpreter.toRoutes(collectionItemEndpoints.collectionItemsUnique)({
       case (collectionId, itemId) => getCollectionItemUnique(collectionId, itemId)
     })
   ) ++ (if (enableTransactions) {

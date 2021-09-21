@@ -50,7 +50,7 @@ class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[S
       .and(query[Option[Quantile]]("upperQuantile"))
       .and(query[Option[Quantile]]("lowerQuantile"))
       .and(query[Option[NonNegInt]]("singleBand"))
-      .mapTo(ItemRasterTileRequest)
+      .mapTo[ItemRasterTileRequest]
 
   val collectionRasterTileParameters: EndpointInput[CollectionMosaicRequest] =
     collectionMosaicTilePath
@@ -60,7 +60,7 @@ class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[S
       .and(query[Option[Quantile]]("upperQuantile"))
       .and(query[Option[Quantile]]("lowerQuantile"))
       .and(query[Option[NonNegInt]]("singleBand"))
-      .mapTo(CollectionMosaicRequest)
+      .mapTo[CollectionMosaicRequest]
 
   val itemRasterTileEndpoint
       : Endpoint[ItemRasterTileRequest, NotFound, Array[Byte], Fs2Streams[F]] =
@@ -75,7 +75,7 @@ class TileEndpoints[F[_]: Concurrent](enableTiles: Boolean, pathPrefix: Option[S
   val collectionFootprintTileEndpoint
       : Endpoint[MapboxVectorTileFootprintRequest, NotFound, Array[Byte], Fs2Streams[F]] =
     endpoint.get
-      .in(collectionFootprintTileParameters.mapTo(MapboxVectorTileFootprintRequest))
+      .in(collectionFootprintTileParameters.mapTo[MapboxVectorTileFootprintRequest])
       .out(rawBinaryBody[Array[Byte]])
       .out(header("content-type", "application/vnd.mapbox-vector-tile"))
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))

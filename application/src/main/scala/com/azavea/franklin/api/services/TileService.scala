@@ -55,7 +55,8 @@ class TileService[F[_]: Async: Concurrent: Parallel: Logger: Timer: ContextShift
     serverHost: NonEmptyString,
     enableTiles: Boolean,
     path: Option[String],
-    xa: Transactor[F]
+    xa: Transactor[F],
+    interpreter: Http4sServerInterpreter[F]
 ) extends Http4sDsl[F]
     with RenderImplicits {
 
@@ -251,12 +252,12 @@ class TileService[F[_]: Async: Concurrent: Parallel: Logger: Timer: ContextShift
   }
 
   val routes: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(tileEndpoints.itemRasterTileEndpoint)(getItemRasterTile) <+>
-      Http4sServerInterpreter.toRoutes(tileEndpoints.collectionFootprintTileEndpoint)(
+    interpreter.toRoutes(tileEndpoints.itemRasterTileEndpoint)(getItemRasterTile) <+>
+      interpreter.toRoutes(tileEndpoints.collectionFootprintTileEndpoint)(
         getCollectionFootprintTile
-      ) <+> Http4sServerInterpreter.toRoutes(tileEndpoints.collectionFootprintTileJson)(
+      ) <+> interpreter.toRoutes(tileEndpoints.collectionFootprintTileJson)(
       getCollectionFootprintTileJson
-    ) <+> Http4sServerInterpreter.toRoutes(tileEndpoints.collectionMosaicEndpoint)(
+    ) <+> interpreter.toRoutes(tileEndpoints.collectionMosaicEndpoint)(
       getCollectionMosaicTile
     )
 

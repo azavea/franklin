@@ -6,8 +6,8 @@ import cats.effect.Sync
 import cats.syntax.functor._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.syntax._
-import org.http4s.util.CaseInsensitiveString
 import org.http4s.{HttpRoutes, Request}
+import org.typelevel.ci.CIString
 
 import java.time.Instant
 
@@ -21,17 +21,17 @@ class AccessLoggingMiddleware[F[_]: Sync](
     else {
       Kleisli { (request: Request[F]) =>
         val requestStart = Instant.now
-        val headerWhitelist: Set[CaseInsensitiveString] =
+        val headerWhitelist: Set[CIString] =
           Set(
-            CaseInsensitiveString("user-agent"),
-            CaseInsensitiveString("accept-encoding"),
-            CaseInsensitiveString("referer"),
-            CaseInsensitiveString("origin"),
-            CaseInsensitiveString("X-Amzn-Trace-Id")
+            CIString("user-agent"),
+            CIString("accept-encoding"),
+            CIString("referer"),
+            CIString("origin"),
+            CIString("X-Amzn-Trace-Id")
           )
         val headers =
           Map(
-            request.headers.toList.filter(header => headerWhitelist.contains(header.name)) map {
+            request.headers.headers.filter(header => headerWhitelist.contains(header.name)) map {
               header => header.name.toString.toLowerCase -> header.value.asJson
             }: _*
           )
