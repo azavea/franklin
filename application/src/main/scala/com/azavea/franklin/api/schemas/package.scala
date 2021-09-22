@@ -9,6 +9,7 @@ import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
+import com.azavea.stac4s.types._
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
 import io.circe.syntax._
@@ -36,6 +37,8 @@ package object schemas {
 
   implicit val schemaSummaryValue: Schema[SummaryValue] = Schema.derived
 
+  // We can fill in a product schema without any fields as a placeholder, which is
+  // no worse than the schema for circe json that we used to have
   implicit val schemaSummaries: Schema[Map[NonEmptyString, SummaryValue]] = Schema.apply(
     SchemaType.SProduct[Map[NonEmptyString, SummaryValue]](Nil),
     Some(Schema.SName("summaries"))
@@ -56,7 +59,12 @@ package object schemas {
 
   implicit val schemaForBbox: Schema[TwoDimBbox] = Schema.derived
 
-  implicit val schemaForItemDatetime: Schema[ItemDatetime] = Schema.derived
+  // We can fill in a product schema without any fields as a placeholder, which is
+  // no worse than the schema for circe json that we used to have
+  implicit val schemaForItemDatetime: Schema[ItemDatetime] = Schema(
+    SchemaType.SProduct[ItemDatetime](Nil),
+    Some(Schema.SName("datetime"))
+  )
 
   implicit val schemaForItemProperties: Schema[ItemProperties] = Schema.derived
 

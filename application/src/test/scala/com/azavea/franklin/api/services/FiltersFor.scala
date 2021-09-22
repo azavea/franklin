@@ -4,11 +4,13 @@ import cats.data.NonEmptyList
 import cats.syntax.all._
 import cats.{Monoid, Semigroup}
 import com.azavea.franklin.database.SearchFilters
-import com.azavea.stac4s.{ItemDatetime, StacCollection, StacItem, TemporalExtent, TwoDimBbox}
+import com.azavea.stac4s.{StacCollection, StacItem, TemporalExtent, TwoDimBbox}
 import geotrellis.vector.Extent
 import io.circe.syntax._
 
 import java.time.Instant
+import com.azavea.stac4s.TimeRange
+import com.azavea.stac4s.PointInTime
 
 object FiltersFor {
 
@@ -59,22 +61,38 @@ object FiltersFor {
   }
 
   def timeFilterFor(item: StacItem): SearchFilters = {
-    val temporalExtent = item.properties.datetime match {
-      case ItemDatetime.PointInTime(instant) =>
-        TemporalExtent(instant.minusSeconds(60), Some(instant.plusSeconds(60)))
-      case ItemDatetime.TimeRange(start, end) =>
-        val milli = start.toEpochMilli % 3
-        if (milli == 0) {
-          // test start and end with full overlap
-          TemporalExtent(start.minusSeconds(60), Some(end.plusSeconds(60)))
-        } else if (milli == 1) {
-          // test start before the range start with open end
-          TemporalExtent(start.minusSeconds(60), None)
-        } else {
-          // test end after the range end with open start
-          TemporalExtent(None, end.plusSeconds(60))
-        }
-    }
+    val temporalExtent = item.properties.datetime.fold(
+      {
+        case PointInTime(instant) =>
+          TemporalExtent(instant.minusSeconds(60), Some(instant.plusSeconds(60)))
+      }, {
+        case TimeRange(start, end) =>
+          val milli = start.toEpochMilli % 3
+          if (milli == 0) {
+            // test start and end with full overlap
+            TemporalExtent(start.minusSeconds(60), Some(end.plusSeconds(60)))
+          } else if (milli == 1) {
+            // test start before the range start with open end
+            TemporalExtent(start.minusSeconds(60), None)
+          } else {
+            // test end after the range end with open start
+            TemporalExtent(None, end.plusSeconds(60))
+          }
+      }, {
+        case (_, TimeRange(start, end)) =>
+          val milli = start.toEpochMilli % 3
+          if (milli == 0) {
+            // test start and end with full overlap
+            TemporalExtent(start.minusSeconds(60), Some(end.plusSeconds(60)))
+          } else if (milli == 1) {
+            // test start before the range start with open end
+            TemporalExtent(start.minusSeconds(60), None)
+          } else {
+            // test end after the range end with open start
+            TemporalExtent(None, end.plusSeconds(60))
+          }
+      }
+    )
     SearchFilters(
       None,
       Some(temporalExtent),
@@ -139,22 +157,38 @@ object FiltersFor {
   }
 
   def timeFilterExcluding(item: StacItem): SearchFilters = {
-    val temporalExtent = item.properties.datetime match {
-      case ItemDatetime.PointInTime(instant) =>
-        TemporalExtent(instant.minusSeconds(60), Some(instant.minusSeconds(30)))
-      case ItemDatetime.TimeRange(start, end) =>
-        val milli = start.toEpochMilli % 3
-        if (milli == 0) {
-          // test no intersection with range
-          TemporalExtent(start.minusSeconds(60), Some(start.minusSeconds(30)))
-        } else if (milli == 1) {
-          // test start after the range end with open end
-          TemporalExtent(end.plusSeconds(60), None)
-        } else {
-          // test end before the range start with open start
-          TemporalExtent(None, start.minusSeconds(60))
-        }
-    }
+    val temporalExtent = item.properties.datetime.fold(
+      {
+        case PointInTime(instant) =>
+          TemporalExtent(instant.minusSeconds(60), Some(instant.minusSeconds(30)))
+      }, {
+        case TimeRange(start, end) =>
+          val milli = start.toEpochMilli % 3
+          if (milli == 0) {
+            // test no intersection with range
+            TemporalExtent(start.minusSeconds(60), Some(start.minusSeconds(30)))
+          } else if (milli == 1) {
+            // test start after the range end with open end
+            TemporalExtent(end.plusSeconds(60), None)
+          } else {
+            // test end before the range start with open start
+            TemporalExtent(None, start.minusSeconds(60))
+          }
+      }, {
+        case (_, TimeRange(start, end)) =>
+          val milli = start.toEpochMilli % 3
+          if (milli == 0) {
+            // test no intersection with range
+            TemporalExtent(start.minusSeconds(60), Some(start.minusSeconds(30)))
+          } else if (milli == 1) {
+            // test start after the range end with open end
+            TemporalExtent(end.plusSeconds(60), None)
+          } else {
+            // test end before the range start with open start
+            TemporalExtent(None, start.minusSeconds(60))
+          }
+      }
+    )
     SearchFilters(
       None,
       Some(temporalExtent),
