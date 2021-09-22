@@ -4,13 +4,18 @@ import cats.data.NonEmptyList
 import cats.syntax.all._
 import cats.{Monoid, Semigroup}
 import com.azavea.franklin.database.SearchFilters
-import com.azavea.stac4s.{StacCollection, StacItem, TemporalExtent, TwoDimBbox}
+import com.azavea.stac4s.{
+  PointInTime,
+  StacCollection,
+  StacItem,
+  TemporalExtent,
+  TimeRange,
+  TwoDimBbox
+}
 import geotrellis.vector.Extent
 import io.circe.syntax._
 
 import java.time.Instant
-import com.azavea.stac4s.TimeRange
-import com.azavea.stac4s.PointInTime
 
 object FiltersFor {
 
