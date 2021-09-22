@@ -11,8 +11,8 @@ import io.circe.syntax._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.implicits._
-import org.http4s.util.CaseInsensitiveString
 import org.http4s.{Method, Request, Uri}
+import org.typelevel.ci.CIString
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -59,8 +59,8 @@ class TestClient[F[_]: Sync](
         ).withEntity(item.copy(collection = None))
       )
       item <- resp.as[StacItem]
-      etag <- resp.headers
-        .find(h => h.name == CaseInsensitiveString("etag"))
+      etag <- resp.headers.headers
+        .find(h => h.name == CIString("etag"))
         .map(h => h.value.pure[F]) getOrElse {
         MonadError[F, Throwable].raiseError(new Exception("No etag in response!"))
       }

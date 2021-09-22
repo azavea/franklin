@@ -79,13 +79,14 @@ lazy val applicationSettings = commonSettings ++ Seq(
 )
 
 lazy val applicationDependencies = Seq(
-  "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version,
+  "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
-  "co.fs2"                       %% "fs2-core"                       % Versions.Fs2Version,
   "com.azavea.stac4s"            %% "core"                           % Versions.Stac4SVersion,
   "com.azavea.stac4s"            %% "testing"                        % Versions.Stac4SVersion % Test,
+  "com.beachape"                 %% "enumeratum"                     % Versions.Enumeratum,
   "com.chuusai"                  %% "shapeless"                      % Versions.ShapelessVersion,
+  "com.comcast"                  %% "ip4s-core"                      % Versions.Ip4s,
   "com.github.cb372"             %% "scalacache-caffeine"            % Versions.ScalacacheVersion,
   "com.github.cb372"             %% "scalacache-cats-effect"         % Versions.ScalacacheVersion,
   "com.github.cb372"             %% "scalacache-core"                % Versions.ScalacacheVersion,
@@ -96,15 +97,16 @@ lazy val applicationDependencies = Seq(
   "com.monovore"                 %% "decline-refined"                % Versions.DeclineVersion,
   "com.monovore"                 %% "decline"                        % Versions.DeclineVersion,
   "com.propensive"               %% "magnolia"                       % Versions.MagnoliaVersion,
-  "com.softwaremill.sttp.client" %% "async-http-client-backend"      % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % Versions.SttpClientVersion,
+  "com.softwaremill.sttp.client" %% "async-http-client-backend"      % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "circe"                          % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "core"                           % Versions.SttpClientVersion,
   "com.softwaremill.sttp.client" %% "json-common"                    % Versions.SttpClientVersion,
+  "com.softwaremill.sttp.model"  %% "core"                           % Versions.SttpModelVersion,
   "com.softwaremill.sttp.shared" %% "core"                           % Versions.SttpShared,
   "com.softwaremill.sttp.shared" %% "fs2-ce2"                        % Versions.SttpShared,
-  "com.softwaremill.sttp.model"  %% "core"                           % Versions.SttpModelVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-core"                     % Versions.TapirVersion,
+  "com.softwaremill.sttp.tapir"  %% "tapir-enumeratum"               % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-http4s-server"            % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-json-circe"               % Versions.TapirVersion,
   "com.softwaremill.sttp.tapir"  %% "tapir-openapi-circe-yaml"       % Versions.TapirOpenAPIVersion,
@@ -158,11 +160,13 @@ lazy val applicationDependencies = Seq(
   "org.tpolecat"                 %% "doobie-scalatest"               % Versions.DoobieVersion % Test,
   "org.tpolecat"                 %% "doobie-specs2"                  % Versions.DoobieVersion % Test,
   "org.tpolecat"                 %% "typename"                       % Versions.TypenameVersion,
+  "org.typelevel"                %% "case-insensitive"               % Versions.CaseInsensitive,
   "org.typelevel"                %% "cats-core"                      % Versions.CatsVersion,
   "org.typelevel"                %% "cats-effect"                    % Versions.CatsEffectVersion,
   "org.typelevel"                %% "cats-free"                      % Versions.CatsVersion,
   "org.typelevel"                %% "cats-kernel"                    % Versions.CatsVersion,
-  "org.typelevel"                %% "discipline-scalatest"           % Versions.DisciplineScalatest % Test
+  "org.typelevel"                %% "discipline-scalatest"           % Versions.DisciplineScalatest % Test,
+  "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version
 )
 
 lazy val application = (project in file("application"))

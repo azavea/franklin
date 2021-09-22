@@ -154,8 +154,8 @@ class CollectionItemsServiceSpec
               val request = Request[IO](
                 method = Method.PUT,
                 Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
-                headers = Headers.of(Header("If-Match", (if (mode == IfMatchMode.YOLO) { "*" }
-                                                         else { s"$etag" })))
+                headers = Headers("If-Match" -> (if (mode == IfMatchMode.YOLO) { "*" }
+                                                 else { s"$etag" }))
               ).withEntity(toUpdate)
               (for {
                 response <- collectionItemsService.routes.run(request)
@@ -196,8 +196,8 @@ class CollectionItemsServiceSpec
               val request = Request[IO](
                 method = Method.PATCH,
                 Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
-                headers = Headers.of(Header("If-Match", (if (mode == IfMatchMode.YOLO) { "*" }
-                                                         else { s"$etag" })))
+                headers = Headers("If-Match" -> (if (mode == IfMatchMode.YOLO) { "*" }
+                                                 else { s"$etag" }))
               ).withEntity(patch)
 
               (for {

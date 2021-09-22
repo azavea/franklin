@@ -150,12 +150,14 @@ $$$$
           interpreter
         ).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig, interpreter).routes
-        router = CORS(
-          new AccessLoggingMiddleware(
-            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes,
-            logger
-          ).withLogging(true)
-        ).orNotFound
+        router = CORS.policy
+          .withAllowOriginAll(
+            new AccessLoggingMiddleware(
+              collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes,
+              logger
+            ).withLogging(true)
+          )
+          .orNotFound
         serverBuilderBlocker <- Blocker[IO]
         server <- {
           BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)
