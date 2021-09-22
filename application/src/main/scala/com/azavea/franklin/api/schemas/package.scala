@@ -25,17 +25,17 @@ import scala.util.Try
 
 package object schemas {
 
-  implicit val schemaStacLicense: Schema[StacLicense] = Schema.derived
+  implicit lazy val schemaStacLicense: Schema[StacLicense] = Schema.derived
 
-  implicit val schemaSpatialExtent: Schema[SpatialExtent] = Schema.derived
+  implicit lazy val schemaSpatialExtent: Schema[SpatialExtent] = Schema.derived
 
-  implicit val schemaTemporalExtent: Schema[List[TemporalExtent]] = Schema.derived
+  implicit lazy val schemaTemporalExtent: Schema[List[TemporalExtent]] = Schema.derived
 
-  implicit val schemaInterval: Schema[Interval] = Schema.derived
+  implicit lazy val schemaInterval: Schema[Interval] = Schema.derived
 
-  implicit val schemaStacExtent: Schema[StacExtent] = Schema.derived
+  implicit lazy val schemaStacExtent: Schema[StacExtent] = Schema.derived
 
-  implicit val schemaSummaryValue: Schema[SummaryValue] = Schema.derived
+  implicit lazy val schemaSummaryValue: Schema[SummaryValue] = Schema.derived
 
   // We can fill in a product schema without any fields as a placeholder, which is
   // no worse than the schema for circe json that we used to have
@@ -44,11 +44,11 @@ package object schemas {
     Some(Schema.SName("summaries"))
   )
 
-  implicit val schemaForStacLink: Schema[StacLinkType] = Schema.derived
+  implicit lazy val schemaForStacLink: Schema[StacLinkType] = Schema.derived
 
-  implicit val schemaStacCollection: Schema[StacCollection] = Schema.derived
+  implicit lazy val schemaStacCollection: Schema[StacCollection] = Schema.derived
 
-  implicit val schemaForTemporalExtent: Schema[TemporalExtent] = Schema.derived
+  implicit lazy val schemaForTemporalExtent: Schema[TemporalExtent] = Schema.derived
 
   // We can fill in a product schema without any fields as a placeholder, which is
   // no worse than the schema for circe json that we used to have
@@ -57,7 +57,7 @@ package object schemas {
     Some(Schema.SName("geometry"))
   )
 
-  implicit val schemaForBbox: Schema[TwoDimBbox] = Schema.derived
+  implicit lazy val schemaForBbox: Schema[TwoDimBbox] = Schema.derived
 
   // We can fill in a product schema without any fields as a placeholder, which is
   // no worse than the schema for circe json that we used to have
@@ -66,10 +66,10 @@ package object schemas {
     Some(Schema.SName("datetime"))
   )
 
-  implicit val schemaForItemProperties: Schema[ItemProperties] = Schema.derived
+  implicit lazy val schemaForItemProperties: Schema[ItemProperties] = Schema.derived
 
-  implicit val schemaForStacItem: Schema[StacItem]         = Schema.derived
-  implicit val schemaForInvalidPatch: Schema[InvalidPatch] = Schema.derived
+  implicit lazy val schemaForStacItem: Schema[StacItem]         = Schema.derived
+  implicit lazy val schemaForInvalidPatch: Schema[InvalidPatch] = Schema.derived
 
   def decode(s: String): DecodeResult[TemporalExtent] = {
     temporalExtentFromString(s) match {
