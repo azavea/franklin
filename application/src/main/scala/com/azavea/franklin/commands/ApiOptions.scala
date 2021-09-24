@@ -68,34 +68,34 @@ trait ApiOptions {
     "Whether to respond to transaction requests, like adding or updating items. Default: 'false'."
 
   private val enableTransactions = Opts
-    .flag(
-      "with-transactions",
-      help = enableTransactionsHelp
-    )
-    .orFalse orElse Opts
     .env[String]("API_WITH_TRANSACTIONS", help = enableTransactionsHelp, metavar = "true||false")
     .mapValidated { s =>
       Validated
         .fromTry(Try(s.toBoolean))
         .leftMap(_ => s"Expected to find a value that can convert to a Boolean, but got $s")
         .toValidatedNel
-    } withDefault (false)
+    } orElse Opts
+    .flag(
+      "with-transactions",
+      help = enableTransactionsHelp
+    )
+    .orFalse
 
   private val enableTilesHelp = "Whether to include tile endpoints. Default: 'false'."
 
   private val enableTiles = Opts
-    .flag(
-      "with-tiles",
-      help = enableTilesHelp
-    )
-    .orFalse orElse Opts
     .env[String]("API_WITH_TILES", help = enableTilesHelp, metavar = "true||false")
     .mapValidated { s =>
       Validated
         .fromTry(Try(s.toBoolean))
         .leftMap(_ => s"Expected to find a value that can convert to a Boolean, but got $s")
         .toValidatedNel
-    } withDefault (false)
+    } orElse Opts
+    .flag(
+      "with-tiles",
+      help = enableTilesHelp
+    )
+    .orFalse
 
   private val runMigrations =
     Opts.flag("run-migrations", "Run migrations before the API server starts").orFalse
@@ -110,5 +110,5 @@ trait ApiOptions {
     enableTransactions,
     enableTiles,
     runMigrations
-  ) mapN ApiConfig
+  ) mapN ApiConfig.apply
 }
