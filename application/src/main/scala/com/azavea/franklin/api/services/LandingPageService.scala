@@ -21,10 +21,9 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
-class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
-    implicit contextShift: ContextShift[F],
-    timer: Timer[F],
-    serverOptions: Http4sServerOptions[F]
+class LandingPageService[F[_]: Concurrent](
+    apiConfig: ApiConfig,
+    interpreter: Http4sServerInterpreter[F]
 ) extends Http4sDsl[F] {
 
   val links = List(
@@ -101,8 +100,8 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
   val endpoints = new LandingPageEndpoints[F](apiConfig.path)
 
   val routesList = List(
-    Http4sServerInterpreter.toRoutes(endpoints.conformanceEndpoint)(_ => conformancePage),
-    Http4sServerInterpreter.toRoutes(endpoints.landingPageEndpoint)(_ => landingPage)
+    interpreter.toRoutes(endpoints.conformanceEndpoint)(_ => conformancePage),
+    interpreter.toRoutes(endpoints.landingPageEndpoint)(_ => landingPage)
   )
 
   val routes: HttpRoutes[F] = routesList.foldK

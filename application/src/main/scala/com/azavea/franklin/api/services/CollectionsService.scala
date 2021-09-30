@@ -34,12 +34,10 @@ import java.util.UUID
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
-    collectionExtensionsRef: ExtensionRef[F, StacCollection]
+    collectionExtensionsRef: ExtensionRef[F, StacCollection],
+    interpreter: Http4sServerInterpreter[F]
 )(
-    implicit contextShift: ContextShift[F],
-    timer: Timer[F],
-    serverOptions: Http4sServerOptions[F],
-    backend: SttpBackend[F, Nothing, NothingT],
+    implicit backend: SttpBackend[F, Nothing, NothingT],
     logger: Logger[F]
 ) extends Http4sDsl[F] {
 
@@ -229,29 +227,30 @@ class CollectionsService[F[_]: Concurrent](
     new CollectionEndpoints[F](enableTransactions, enableTiles, apiConfig.path)
 
   val routesList = List(
-    Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionsList)(_ => listCollections()),
-    Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionUnique)({
+    interpreter.toRoutes(collectionEndpoints.collectionsList)(_ => listCollections()),
+    interpreter.toRoutes(collectionEndpoints.collectionUnique)({
       case collectionId => getCollectionUnique(collectionId)
     })
   ) ++
     (if (enableTiles) {
        List(
-         Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionTiles)(getCollectionTiles),
-         Http4sServerInterpreter
+         interpreter
+           .toRoutes(collectionEndpoints.collectionTiles)(getCollectionTiles),
+         interpreter
            .toRoutes(collectionEndpoints.createMosaic)(Function.tupled(createMosaic)),
-         Http4sServerInterpreter
+         interpreter
            .toRoutes(collectionEndpoints.getMosaic)(Function.tupled(getMosaic)),
-         Http4sServerInterpreter
+         interpreter
            .toRoutes(collectionEndpoints.deleteMosaic)(Function.tupled(deleteMosaic)),
-         Http4sServerInterpreter.toRoutes(collectionEndpoints.listMosaics)(listMosaics)
+         interpreter.toRoutes(collectionEndpoints.listMosaics)(listMosaics)
        )
      } else Nil) ++
     (if (enableTransactions) {
        List(
-         Http4sServerInterpreter.toRoutes(collectionEndpoints.createCollection)(collection =>
+         interpreter.toRoutes(collectionEndpoints.createCollection)(collection =>
            createCollection(collection)
          ),
-         Http4sServerInterpreter.toRoutes(collectionEndpoints.deleteCollection)(rawCollectionId =>
+         interpreter.toRoutes(collectionEndpoints.deleteCollection)(rawCollectionId =>
            deleteCollection(rawCollectionId)
          )
        )

@@ -11,6 +11,7 @@ import doobie.Transactor
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 class TestServices[F[_]: Concurrent](xa: Transactor[F])(
     implicit cs: ContextShift[F],
@@ -37,14 +38,17 @@ class TestServices[F[_]: Concurrent](xa: Transactor[F])(
       false
     )
 
+  val interpreter = Http4sServerInterpreter[F]
+
   val searchService: SearchService[F] =
-    new SearchService[F](apiConfig, NonNegInt(30), apiConfig.enableTiles, xa, rootLink)
+    new SearchService[F](apiConfig, NonNegInt(30), apiConfig.enableTiles, xa, rootLink, interpreter)
 
   val collectionsService: F[CollectionsService[F]] = collectionExtensionsRef[F] map { ref =>
     new CollectionsService[F](
       xa,
       apiConfig,
-      ref
+      ref,
+      interpreter
     )
   }
 
@@ -53,7 +57,8 @@ class TestServices[F[_]: Concurrent](xa: Transactor[F])(
       xa,
       apiConfig,
       ref,
-      rootLink
+      rootLink,
+      interpreter
     )
   }
 

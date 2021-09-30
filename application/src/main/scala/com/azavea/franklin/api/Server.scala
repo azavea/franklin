@@ -22,14 +22,16 @@ import io.chrisdavenport.log4cats
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s._
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
-import org.http4s.server.blaze._
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server => HTTP4sServer}
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
+import sttp.tapir.docs.openapi.OpenAPIDocsOptions
 import sttp.tapir.openapi.circe.yaml._
+import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
 import scala.concurrent.ExecutionContext
@@ -70,12 +72,11 @@ $$$$$         $$/    $$/       $$$$$$$/ $$/   $$/ $$/   $$/ $$/ $$/ $$/   $$/
 $$$$
 """.split("\n").toList
 
-  implicit val serverOptions = ServerOptions.defaultServerOptions[IO]
-
   private def createServer(
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
   ) = {
+    val interpreter = Http4sServerInterpreter[IO]
     val rootLink = StacLink(
       apiConfig.apiHost,
       StacLinkType.StacRoot,
@@ -115,38 +116,48 @@ $$$$
           apiConfig.enableTiles,
           apiConfig.path
         ).endpoints ++ landingPage.endpoints
-        docs      = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
-        docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
+        docs      = OpenAPIDocsInterpreter().toOpenAPI(allEndpoints, "Franklin", "0.0.1")
+        docRoutes = new SwaggerHttp4s(docs.toYaml, List("open-api", "spec.yaml")).routes[IO]
         searchRoutes = new SearchService[IO](
           apiConfig,
           apiConfig.defaultLimit,
           apiConfig.enableTiles,
           xa,
-          rootLink
+          rootLink,
+          interpreter
         ).routes
         tileRoutes = new TileService[IO](
           apiConfig.apiHost,
           apiConfig.enableTiles,
           apiConfig.path,
-          xa
+          xa,
+          interpreter
         ).routes
         itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
         collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
-        collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
+        collectionRoutes = new CollectionsService[IO](
+          xa,
+          apiConfig,
+          collectionExtensions,
+          interpreter
+        ).routes <+> new CollectionItemsService[
           IO
         ](
           xa,
           apiConfig,
           itemExtensions,
-          rootLink
+          rootLink,
+          interpreter
         ).routes
-        landingPageRoutes = new LandingPageService[IO](apiConfig).routes
-        router = CORS(
-          new AccessLoggingMiddleware(
-            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes,
-            logger
-          ).withLogging(true)
-        ).orNotFound
+        landingPageRoutes = new LandingPageService[IO](apiConfig, interpreter).routes
+        router = CORS.policy
+          .withAllowOriginAll(
+            new AccessLoggingMiddleware(
+              collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes,
+              logger
+            ).withLogging(true)
+          )
+          .orNotFound
         serverBuilderBlocker <- Blocker[IO]
         server <- {
           BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)

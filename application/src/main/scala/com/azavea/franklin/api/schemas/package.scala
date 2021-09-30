@@ -9,28 +9,67 @@ import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
+import com.azavea.stac4s.types._
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import sttp.tapir.Codec.PlainCodec
+import sttp.tapir.codec.enumeratum._
+import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
-import sttp.tapir.{Codec, DecodeResult, Schema}
+import sttp.tapir.{Codec, DecodeResult, Schema, SchemaType}
 
 import scala.util.Try
 
 package object schemas {
 
-  implicit val schemaStacCollection: Schema[StacCollection] = Schema(schemaForCirceJson.schemaType)
+  implicit lazy val schemaStacLicense: Schema[StacLicense] = Schema.derived
 
-  implicit val schemaForTemporalExtent: Schema[TemporalExtent] = Schema(
-    schemaForCirceJson.schemaType
+  implicit lazy val schemaSpatialExtent: Schema[SpatialExtent] = Schema.derived
+
+  implicit lazy val schemaTemporalExtent: Schema[List[TemporalExtent]] = Schema.derived
+
+  implicit lazy val schemaInterval: Schema[Interval] = Schema.derived
+
+  implicit lazy val schemaStacExtent: Schema[StacExtent] = Schema.derived
+
+  implicit lazy val schemaSummaryValue: Schema[SummaryValue] = Schema.derived
+
+  // We can fill in a product schema without any fields as a placeholder, which is
+  // no worse than the schema for circe json that we used to have
+  implicit val schemaSummaries: Schema[Map[NonEmptyString, SummaryValue]] = Schema.apply(
+    SchemaType.SProduct[Map[NonEmptyString, SummaryValue]](Nil),
+    Some(Schema.SName("summaries"))
   )
-  implicit val schemaForGeometry: Schema[Geometry] = Schema(schemaForCirceJson.schemaType)
 
-  implicit val schemaForStacItem: Schema[StacItem]         = Schema(schemaForCirceJson.schemaType)
-  implicit val schemaForInvalidPatch: Schema[InvalidPatch] = Schema(schemaForCirceJson.schemaType)
+  implicit lazy val schemaForStacLink: Schema[StacLinkType] = Schema.derived
+
+  implicit lazy val schemaStacCollection: Schema[StacCollection] = Schema.derived
+
+  implicit lazy val schemaForTemporalExtent: Schema[TemporalExtent] = Schema.derived
+
+  // We can fill in a product schema without any fields as a placeholder, which is
+  // no worse than the schema for circe json that we used to have
+  implicit val schemaForGeometry: Schema[Geometry] = Schema(
+    SchemaType.SProduct[Geometry](Nil),
+    Some(Schema.SName("geometry"))
+  )
+
+  implicit lazy val schemaForBbox: Schema[TwoDimBbox] = Schema.derived
+
+  // We can fill in a product schema without any fields as a placeholder, which is
+  // no worse than the schema for circe json that we used to have
+  implicit val schemaForItemDatetime: Schema[ItemDatetime] = Schema(
+    SchemaType.SProduct[ItemDatetime](Nil),
+    Some(Schema.SName("datetime"))
+  )
+
+  implicit lazy val schemaForItemProperties: Schema[ItemProperties] = Schema.derived
+
+  implicit lazy val schemaForStacItem: Schema[StacItem]         = Schema.derived
+  implicit lazy val schemaForInvalidPatch: Schema[InvalidPatch] = Schema.derived
 
   def decode(s: String): DecodeResult[TemporalExtent] = {
     temporalExtentFromString(s) match {
@@ -88,9 +127,6 @@ package object schemas {
 
   implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
     Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
-
-  implicit val schemaForStacLink: Schema[StacLinkType] =
-    Schema.schemaForString.map(s => s.asJson.as[StacLinkType].toOption)(_.repr)
 
   implicit val codecIfMatchMode: Codec.PlainCodec[IfMatchMode] =
     Codec.string.mapDecode(s => DecodeResult.Value(IfMatchMode.fromString(s)))(_.toString)

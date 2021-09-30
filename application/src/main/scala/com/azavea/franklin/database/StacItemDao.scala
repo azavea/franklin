@@ -143,11 +143,11 @@ object StacItemDao extends Dao[StacItem] {
   }
 
   private def getTimeData(item: StacItem): (Option[Instant], Option[Instant], Option[Instant]) = {
-    val timeRangeO = StacItem.timeRangePrism.getOption(item)
-    val startO     = timeRangeO map { _.start }
-    val endO       = timeRangeO map { _.end }
-    val datetimeO  = StacItem.datetimePrism.getOption(item) map { _.when }
-    (startO, endO, datetimeO)
+    item.properties.datetime.fold(
+      { case PointInTime(dt)                          => (Some(dt), None, None) },
+      { case TimeRange(start, end)                    => (None, Some(start), Some(end)) },
+      { case (PointInTime(dt), TimeRange(start, end)) => (Some(dt), Some(start), Some(end)) }
+    )
   }
 
   def getItemCount(): ConnectionIO[Int] = {

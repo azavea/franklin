@@ -24,11 +24,8 @@ class SearchService[F[_]: Concurrent](
     defaultLimit: NonNegInt,
     enableTiles: Boolean,
     xa: Transactor[F],
-    rootLink: StacLink
-)(
-    implicit contextShift: ContextShift[F],
-    timerF: Timer[F],
-    serverOptions: Http4sServerOptions[F]
+    rootLink: StacLink,
+    interpreter: Http4sServerInterpreter[F]
 ) extends Http4sDsl[F] {
 
   val searchEndpoints = new SearchEndpoints[F](apiConfig.path)
@@ -67,9 +64,9 @@ class SearchService[F[_]: Concurrent](
   }
 
   val routes: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)(searchFilters =>
+    interpreter.toRoutes(searchEndpoints.searchGet)(searchFilters =>
       search(searchFilters, SearchMethod.Get)
-    ) <+> Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({
+    ) <+> interpreter.toRoutes(searchEndpoints.searchPost)({
       case searchFilters => search(searchFilters, SearchMethod.Post)
     })
 }
