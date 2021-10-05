@@ -2,7 +2,7 @@
 object Versions {
   val AsyncHttpClientVersion = "2.12.3"
   val AWSVersion             = "1.11.751"
-  val AWSSdk2Version         = "2.17.50"
+  val AWSSdk2Version         = "2.17.52"
   val CatsEffectVersion      = "2.5.4"
   val CatsScalacheckVersion  = "0.3.1"
   val CatsVersion            = "2.6.1"
@@ -36,9 +36,9 @@ object Versions {
   val Stac4SVersion          = "0.6.2"
   val SttpClientVersion      = "2.2.10"
   val SttpShared             = "1.2.6"
-  val SttpModelVersion       = "1.4.13"
-  val TapirVersion           = "0.18.3"
-  val TapirOpenAPIVersion    = "0.18.3"
+  val SttpModelVersion       = "1.4.14"
+  val TapirVersion           = "0.17.20"
+  val TapirOpenAPIVersion    = "0.17.20"
   val ThreeTenExtra          = "1.7.0"
   val TypenameVersion        = "1.0.0"
 }
