@@ -1,0 +1,24 @@
+{
+  "Parameters" : { 
+    "AppName": "franklin",
+    "EnvName": "prod",
+    "WorkloadName": "franklin-api",
+    "ContainerImage": "615874746523.dkr.ecr.us-east-1.amazonaws.com/franklin/franklin-api:latest",
+    "AddonsTemplateURL": "",
+    "TaskCPU": "256",
+    "TaskMemory": "512",
+    "TaskCount": "1",
+    "LogRetention": "30",
+    "ContainerPort": "9090",
+    "RulePath": "/",
+    "HTTPSEnabled": "false",
+    "TargetContainer": "franklin-api",
+    "TargetPort": "9090",
+    "Stickiness": "false"
+  },
+  "Tags": { 
+    "copilot-application": "franklin",
+    "copilot-environment": "prod",
+    "copilot-service": "franklin-api"
+  }
+}
