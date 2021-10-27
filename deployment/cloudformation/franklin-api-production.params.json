@@ -1,9 +1,9 @@
 {
   "Parameters" : { 
     "AppName": "franklin",
-    "EnvName": "prod",
+    "EnvName": "production",
     "WorkloadName": "franklin-api",
-    "ContainerImage": "615874746523.dkr.ecr.us-east-1.amazonaws.com/franklin/franklin-api:latest",
+    "ContainerImage": "quay.io/azavea/franklin:latest",
     "AddonsTemplateURL": "",
     "TaskCPU": "256",
     "TaskMemory": "512",
@@ -18,7 +18,7 @@
   },
   "Tags": { 
     "copilot-application": "franklin",
-    "copilot-environment": "prod",
+    "copilot-environment": "production",
     "copilot-service": "franklin-api"
   }
 }
