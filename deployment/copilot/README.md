@@ -4,8 +4,8 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
 
 ## Prerequisites
 - [AWS Copilot CLI](https://aws.github.io/copilot-cli/docs/overview/)
-- AWS CLI
-- A name profile configured (`aws configure --profile <your profile name>`) to specify which AWS account and region to deploy your service
+- [AWS CLI](https://aws.amazon.com/cli/)
+- A named profile configured (`aws configure --profile <your profile name>`) to specify which AWS account and region to deploy your service
 
 ## Instructions
 1. `copilot init`
