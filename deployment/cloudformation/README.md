@@ -34,9 +34,17 @@ Deployment using [AWS CloudFormation CLI](https://docs.aws.amazon.com/cli/latest
     Default environment configuration? Yes, use default.
     ```
 
-3. Deploy the Franklin Production API Stack with CloudFormation
+3. Upload Aurora Serverless Config Template to S3
 
-    Configure the parameters in `--parameter-overrides` as you like
+    ```
+    aws s3 cp ./franklin-api.addons.stack.yml s3://path/to/your/s3/franklin-api.addons.stack.yml
+    ```
+
+4. Deploy the Franklin Production API Stack with CloudFormation
+
+    Configure the parameters in `--parameter-overrides` as you like.
+
+    Note that the `S3 URL to the Aurora Serverless Template` in the following command should be the "Object URL", e.g.: `https://franklin-aurora-serverless-addson-stack.s3.amazonaws.com/franklin-api.addons.stack.yml`
 
     ```
     $ aws cloudformation deploy \
@@ -48,7 +56,7 @@ Deployment using [AWS CloudFormation CLI](https://docs.aws.amazon.com/cli/latest
             EnvName=production \
             WorkloadName=franklin-api \
             ContainerImage=quay.io/azavea/franklin:latest \
-            AddonsTemplateURL="https://franklin-aurora-serverless-addson-stack.s3.amazonaws.com/franklin-api.addons.stack.yml" \
+            AddonsTemplateURL="<>" \
             TaskCPU=256 \
             TaskMemory=512 \
             TaskCount=1 \
