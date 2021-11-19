@@ -25,7 +25,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
 
 2. Update manifest
 
-    Add the following line to the `/copilot/franklin-api/manifest.yml` file, which is the command to run in the image using the `entrypoint` provided by the image.
+    Add the following line to the `/copilot/franklin-api/manifest.yml` file, which is the command to run in the image using the `entrypoint` provided by the image. Please make sure that this config is a top-level configuration in `/copilot/franklin-api/manifest.yml`, e.g. a good spot to add this line should be after line `exec: true` in the manifest file.
 
     ```
     command: ["serve", "--with-transactions", "--with-tiles", "--run-migrations"]
