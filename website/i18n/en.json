@@ -17,6 +17,9 @@
       "0004-make-authentication-configurable-at-server-startup": {
         "title": "4 - Configurable Authentication at Server Startup"
       },
+      "0005-release-versioning": {
+        "title": "0005-release-versioning"
+      },
       "configuration": {
         "title": "Configuration"
       },
