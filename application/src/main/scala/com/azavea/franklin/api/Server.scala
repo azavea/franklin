@@ -87,11 +87,8 @@ $$$$
       for {
         connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
         transactionEc <- ExecutionContexts.cachedThreadPool[IO]
-        xa <- HikariTransactor.newHikariTransactor[IO](
-          "org.postgresql.Driver",
-          dbConfig.jdbcUrl,
-          dbConfig.dbUser,
-          dbConfig.dbPass,
+        xa <- HikariTransactor.fromHikariConfig[IO](
+          dbConfig.toHikariConfig,
           connectionEc,
           Blocker.liftExecutionContext(transactionEc)
         )
