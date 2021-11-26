@@ -71,7 +71,11 @@ trait DatabaseOptions {
         }
         select.toEither match {
           case Right(_) => true
-          case Left(_)  => false
+          case Left(e)  => 
+            println(s"Connection failure: ${e}")
+            println(s"Failure details:\n${e.getMessage}")
+            println(s"Stack trace:]n${e.getStackTrace}")
+            false
         }
       }
 }
