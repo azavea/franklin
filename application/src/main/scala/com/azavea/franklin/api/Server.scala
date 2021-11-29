@@ -23,10 +23,11 @@ import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.implicits._
+import org.http4s.implicits.{http4sLiteralsSyntax => _, _}
 import org.http4s.server.blaze._
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server => HTTP4sServer}
+import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.openapi.circe.yaml._
@@ -36,6 +37,7 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import sttp.client.SttpBackend
 
 object Server extends IOApp.WithContext {
 
@@ -77,6 +79,13 @@ $$$$
     case null                       => Array()
     case u: java.net.URLClassLoader => u.getURLs() ++ classUrls(cl.getParent)
     case _                          => classUrls(cl.getParent)
+  }
+
+  private def makeHttpRequest = AsyncHttpClientCatsBackend.resource[IO]() use { implicit backend =>
+    basicRequest.get(uri"https://google.com").response(asString).send[IO] map {
+      case resp if resp.code.code == 200 => println("Internet is accessible!")
+      case resp                          => print(resp.body)
+    }
   }
 
   private def createServer(
@@ -175,11 +184,11 @@ $$$$
 
     applicationCommand.parse(args, env = sys.env) map {
       case RunServer(apiConfig, dbConfig) if !apiConfig.runMigrations =>
-        createServer(apiConfig, dbConfig)
+        makeHttpRequest *> createServer(apiConfig, dbConfig)
           .use(_ => IO.never)
           .as(ExitCode.Success)
       case RunServer(apiConfig, dbConfig) =>
-        runMigrations(dbConfig) *>
+        makeHttpRequest *> runMigrations(dbConfig) *>
           createServer(apiConfig, dbConfig).use(_ => IO.never).as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
       case RunCatalogImport(catalogRoot, dbConfig, dryRun) =>
