@@ -82,6 +82,7 @@ $$$$
   }
 
   private def makeHttpRequest = AsyncHttpClientCatsBackend.resource[IO]() use { implicit backend =>
+    println("MAKING HTTP REQUEST")
     basicRequest.get(uri"https://google.com").response(asString).send[IO] map {
       case resp if resp.code.code == 200 => println("Internet is accessible!")
       case resp                          => println(s"Response body was: ${resp.body}")
