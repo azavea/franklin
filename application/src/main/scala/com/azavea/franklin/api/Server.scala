@@ -72,6 +72,13 @@ $$$$
 
   implicit val serverOptions = ServerOptions.defaultServerOptions[IO]
 
+  // https://gist.github.com/dirkgr/20a00d30522c1381f0e2
+  private def classUrls(cl: ClassLoader): Array[java.net.URL] = cl match {
+    case null                       => Array()
+    case u: java.net.URLClassLoader => u.getURLs() ++ classUrls(cl.getParent)
+    case _                          => classUrls(cl.getParent)
+  }
+
   private def createServer(
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
@@ -161,6 +168,10 @@ $$$$
 
   override def run(args: List[String]): IO[ExitCode] = {
     import Commands._
+
+    val urls = classUrls(this.getClass.getClassLoader)
+    println("Full classpath urls:")
+    println(urls.mkString("\n"))
 
     applicationCommand.parse(args, env = sys.env) map {
       case RunServer(apiConfig, dbConfig) if !apiConfig.runMigrations =>
