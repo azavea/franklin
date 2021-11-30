@@ -25,10 +25,9 @@ Deployment using [AWS CloudFormation CLI](https://docs.aws.amazon.com/cli/latest
     
     ```
     $ copilot init
-    Use existing application: No
-    Application name: franklin
+    Use existing application: Yes // and choose franklin here
     Workload type: Load Balanced Web Service
-    Service name: franklin-api
+    Service name: api
     Dockerfile: Use an existing image instead
     Image: quay.io/azavea/franklin:latest
     Port: 9090

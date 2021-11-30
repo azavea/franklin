@@ -46,9 +46,9 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
 
     ```
     $ copilot storage init
-    Only found one workload, defaulting to: franklin-api
+    Only found one workload, defaulting to: api
     Storage type: Aurora Serverless
-    Storage resource name: franklin-api-cluster
+    Storage resource name: api-cluster
     Database engine: PostgreSQL
     Initial database name: franklin
     ```
