@@ -81,14 +81,6 @@ $$$$
     case _                          => classUrls(cl.getParent)
   }
 
-  private def makeHttpRequest = AsyncHttpClientCatsBackend.resource[IO]() use { implicit backend =>
-    println("MAKING HTTP REQUEST")
-    basicRequest.get(uri"https://google.com").response(asString).send[IO] map {
-      case resp if resp.code.code == 200 => println("Internet is accessible!")
-      case resp                          => println(s"Response body was: ${resp.body}")
-    }
-  }
-
   private def createServer(
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
@@ -179,17 +171,13 @@ $$$$
   override def run(args: List[String]): IO[ExitCode] = {
     import Commands._
 
-    val urls = classUrls(this.getClass.getClassLoader)
-    println("Full classpath urls:")
-    println(urls.mkString("\n"))
-
     applicationCommand.parse(args, env = sys.env) map {
       case RunServer(apiConfig, dbConfig) if !apiConfig.runMigrations =>
-        makeHttpRequest *> createServer(apiConfig, dbConfig)
+        createServer(apiConfig, dbConfig)
           .use(_ => IO.never)
           .as(ExitCode.Success)
       case RunServer(apiConfig, dbConfig) =>
-        makeHttpRequest *> runMigrations(dbConfig) *>
+        runMigrations(dbConfig) *>
           createServer(apiConfig, dbConfig).use(_ => IO.never).as(ExitCode.Success)
       case RunMigrations(config) => runMigrations(config)
       case RunCatalogImport(catalogRoot, dbConfig, dryRun) =>
