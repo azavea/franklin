@@ -61,21 +61,21 @@ trait DatabaseOptions {
       databasePort,
       databaseName
     ).mapN { DatabaseConfig.FromComponents })
-      .validate(
-        e":boom: Unable to connect to database - please ensure database is configured and listening at entered port"
-      ) { config =>
-        val xa =
-          config.getTransactor(true)
-        val select = Try {
-          fr"SELECT 1".query[Int].unique.transact(xa).unsafeRunSync()
-        }
-        select.toEither match {
-          case Right(_) => true
-          case Left(e) =>
-            println(s"Connection failure: ${e}")
-            println(s"Failure details:\n${e.getMessage()}")
-            e.printStackTrace()
-            false
-        }
-      }
+  // .validate(
+  //   e":boom: Unable to connect to database - please ensure database is configured and listening at entered port"
+  // ) { config =>
+  //   val xa =
+  //     config.getTransactor(true)
+  //   val select = Try {
+  //     fr"SELECT 1".query[Int].unique.transact(xa).unsafeRunSync()
+  //   }
+  //   select.toEither match {
+  //     case Right(_) => true
+  //     case Left(e) =>
+  //       println(s"Connection failure: ${e}")
+  //       println(s"Failure details:\n${e.getMessage()}")
+  //       e.printStackTrace()
+  //       false
+  //   }
+  // }
 }
