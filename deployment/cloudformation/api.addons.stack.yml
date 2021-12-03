@@ -9,41 +9,41 @@ Parameters:
         Type: String
         Description: The name of the service, job, or workflow being deployed.
     # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
-    franklinapiclusterDBName:
+    apiclusterDBName:
         Type: String
         Description: The name of the initial database to be created in the DB cluster.
         Default: franklin
         # Cannot have special characters
         # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
-    franklinapiclusterDBAutoPauseSeconds:
+    apiclusterDBAutoPauseSeconds:
         Type: Number
         Description: The duration in seconds before the cluster pauses.
         Default: 1000
 Mappings:
-    franklinapiclusterEnvScalingConfigurationMap:
+    apiclusterEnvScalingConfigurationMap:
         All:
             "DBMinCapacity": 2 # AllowedValues: [2, 4, 8, 16, 32, 64, 192, 384]
             "DBMaxCapacity": 8 # AllowedValues: [2, 4, 8, 16, 32, 64, 192, 384]
 Resources:
-    franklinapiclusterDBSubnetGroup:
+    apiclusterDBSubnetGroup:
         Type: 'AWS::RDS::DBSubnetGroup'
         Properties:
             DBSubnetGroupDescription: Group of Copilot private subnets for Aurora cluster.
             SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets'}]
-    franklinapiclusterSecurityGroup:
+    apiclusterSecurityGroup:
         Metadata:
-            'aws:copilot:description': 'A security group for your workload to access the DB cluster franklinapicluster'
+            'aws:copilot:description': 'A security group for your workload to access the DB cluster apicluster'
         Type: 'AWS::EC2::SecurityGroup'
         Properties:
-            GroupDescription: !Sub 'The Security Group for ${Name} to access DB cluster franklinapicluster.'
+            GroupDescription: !Sub 'The Security Group for ${Name} to access DB cluster apicluster.'
             VpcId:
                 Fn::ImportValue: !Sub '${App}-${Env}-VpcId'
             Tags:
                 - Key: Name
                   Value: !Sub 'copilot-${App}-${Env}-${Name}-Aurora'
-    franklinapiclusterDBClusterSecurityGroup:
+    apiclusterDBClusterSecurityGroup:
         Metadata:
-            'aws:copilot:description': 'A security group for your DB cluster franklinapicluster'
+            'aws:copilot:description': 'A security group for your DB cluster apicluster'
         Type: AWS::EC2::SecurityGroup
         Properties:
             GroupDescription: The Security Group for the database cluster.
@@ -52,10 +52,10 @@ Resources:
                   FromPort: 5432
                   IpProtocol: tcp
                   Description: !Sub 'From the Aurora Security Group of the workload ${Name}.'
-                  SourceSecurityGroupId: !Ref franklinapiclusterSecurityGroup
+                  SourceSecurityGroupId: !Ref apiclusterSecurityGroup
             VpcId:
                 Fn::ImportValue: !Sub '${App}-${Env}-VpcId'
-    franklinapiclusterAuroraSecret:
+    apiclusterAuroraSecret:
         Metadata:
             'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
         Type: AWS::SecretsManager::Secret
@@ -67,7 +67,7 @@ Resources:
                 ExcludePunctuation: true
                 IncludeSpace: false
                 PasswordLength: 16
-    franklinapiclusterDBClusterParameterGroup:
+    apiclusterDBClusterParameterGroup:
         Metadata:
             'aws:copilot:description': 'A DB parameter group for engine configuration values'
         Type: 'AWS::RDS::DBClusterParameterGroup'
@@ -76,49 +76,49 @@ Resources:
             Family: 'aurora-postgresql10'
             Parameters:
                 client_encoding: 'UTF8'
-    franklinapiclusterDBCluster:
+    apiclusterDBCluster:
         Metadata:
-            'aws:copilot:description': 'The franklinapicluster Aurora Serverless database cluster'
+            'aws:copilot:description': 'The apicluster Aurora Serverless database cluster'
         Type: 'AWS::RDS::DBCluster'
         Properties:
-            MasterUsername: !Join ["", ['{{resolve:secretsmanager:', !Ref franklinapiclusterAuroraSecret, ":SecretString:username}}"]]
-            MasterUserPassword: !Join ["", ['{{resolve:secretsmanager:', !Ref franklinapiclusterAuroraSecret, ":SecretString:password}}"]]
-            DatabaseName: !Ref franklinapiclusterDBName
+            MasterUsername: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:username}}"]]
+            MasterUserPassword: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:password}}"]]
+            DatabaseName: !Ref apiclusterDBName
             Engine: 'aurora-postgresql'
             EngineVersion: '10.12'
             EngineMode: serverless
-            DBClusterParameterGroupName: !Ref franklinapiclusterDBClusterParameterGroup
-            DBSubnetGroupName: !Ref franklinapiclusterDBSubnetGroup
+            DBClusterParameterGroupName: !Ref apiclusterDBClusterParameterGroup
+            DBSubnetGroupName: !Ref apiclusterDBSubnetGroup
             VpcSecurityGroupIds:
-                - !Ref franklinapiclusterDBClusterSecurityGroup
+                - !Ref apiclusterDBClusterSecurityGroup
             ScalingConfiguration:
                 AutoPause: true
                 # Replace "All" below with "!Ref Env" to set different autoscaling limits per environment.
-                MinCapacity: !FindInMap [franklinapiclusterEnvScalingConfigurationMap, All, DBMinCapacity]
-                MaxCapacity: !FindInMap [franklinapiclusterEnvScalingConfigurationMap, All, DBMaxCapacity]
-                SecondsUntilAutoPause: !Ref franklinapiclusterDBAutoPauseSeconds
-    franklinapiclusterSecretAuroraClusterAttachment:
+                MinCapacity: !FindInMap [apiclusterEnvScalingConfigurationMap, All, DBMinCapacity]
+                MaxCapacity: !FindInMap [apiclusterEnvScalingConfigurationMap, All, DBMaxCapacity]
+                SecondsUntilAutoPause: !Ref apiclusterDBAutoPauseSeconds
+    apiclusterSecretAuroraClusterAttachment:
         Type: AWS::SecretsManager::SecretTargetAttachment
         Properties:
-            SecretId: !Ref franklinapiclusterAuroraSecret
-            TargetId: !Ref franklinapiclusterDBCluster
+            SecretId: !Ref apiclusterAuroraSecret
+            TargetId: !Ref apiclusterDBCluster
             TargetType: AWS::RDS::DBCluster
 Outputs:
-    franklinapiclusterSecret: # injected as FRANKLINAPICLUSTER_SECRET environment variable by Copilot.
+    apiclusterSecret: # injected as APICLUSTER_SECRET environment variable by Copilot.
         Description: "The JSON secret that holds the database username and password. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
-        Value: !Ref franklinapiclusterAuroraSecret
-    franklinapiclusterSecurityGroup:
+        Value: !Ref apiclusterAuroraSecret
+    apiclusterSecurityGroup:
         Description: "The security group to attach to the workload."
-        Value: !Ref franklinapiclusterSecurityGroup
+        Value: !Ref apiclusterSecurityGroup
     dbName:
         Description: "The DB_NAME exported as env var for the API container"
-        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref franklinapiclusterAuroraSecret, ":SecretString:dbname}}"]]
+        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:dbname}}"]]
     dbHost:
         Description: "The DB_HOST exported as env var for the API container"
-        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref franklinapiclusterAuroraSecret, ":SecretString:host}}"]]
+        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:host}}"]]
     dbUser:
         Description: "The DB_USER exported as env var for the API container"
-        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref franklinapiclusterAuroraSecret, ":SecretString:username}}"]]
+        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:username}}"]]
     dbPassword:
         Description: "The DB_PASSWORD exported as env var for the API container"
-        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref franklinapiclusterAuroraSecret, ":SecretString:password}}"]]
+        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:password}}"]]

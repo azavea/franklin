@@ -2,7 +2,7 @@
   "Parameters" : { 
     "AppName": "franklin",
     "EnvName": "production",
-    "WorkloadName": "franklin-api",
+    "WorkloadName": "api",
     "ContainerImage": "quay.io/azavea/franklin:latest",
     "AddonsTemplateURL": "",
     "TaskCPU": "256",
@@ -11,14 +11,14 @@
     "LogRetention": "30",
     "ContainerPort": "9090",
     "RulePath": "/",
-    "HTTPSEnabled": "false",
-    "TargetContainer": "franklin-api",
+    "HTTPSEnabled": "true",
+    "TargetContainer": "api",
     "TargetPort": "9090",
     "Stickiness": "false"
   },
   "Tags": { 
     "copilot-application": "franklin",
     "copilot-environment": "production",
-    "copilot-service": "franklin-api"
+    "copilot-service": "api"
   }
 }

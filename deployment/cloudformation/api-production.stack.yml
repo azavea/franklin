@@ -37,6 +37,9 @@ Parameters:
   Stickiness:
     Type: String
     Default: false
+  DomainName:
+    Description: 'Registered custom domain name on Route53.'
+    Type: String
 Conditions:
   HTTPLoadBalancer: !Not
     - !Condition HTTPSLoadBalancer
@@ -69,9 +72,9 @@ Resources: # If a bucket URL is specified, that means the template exists.
         - Name: !Ref WorkloadName
           Image: !Ref ContainerImage
           Secrets:
-            - Name: FRANKLINAPICLUSTER_SECRET
+            - Name: APICLUSTER_SECRET
               ValueFrom:
-                Fn::GetAtt: [AddonsStack, Outputs.franklinapiclusterSecret]
+                Fn::GetAtt: [AddonsStack, Outputs.apiclusterSecret]
           # We pipe certain environment variables directly into the task definition.
           # This lets customers have access to, for example, their LB endpoint - which they'd
           # have no way of otherwise determining.
@@ -84,9 +87,9 @@ Resources: # If a bucket URL is specified, that means the template exists.
               Value: !Sub '${EnvName}'
             - Name: COPILOT_SERVICE_NAME
               Value: !Sub '${WorkloadName}'
-            - Name: FRANKLINAPICLUSTER_SECURITY_GROUP
+            - Name: APICLUSTER_SECURITY_GROUP
               Value:
-                Fn::GetAtt: [AddonsStack, Outputs.franklinapiclusterSecurityGroup]
+                Fn::GetAtt: [AddonsStack, Outputs.apiclusterSecurityGroup]
             - Name: DB_NAME
               Value:
                 Fn::GetAtt: [AddonsStack, Outputs.dbName]
@@ -112,6 +115,12 @@ Resources: # If a bucket URL is specified, that means the template exists.
             - --with-transactions
             - --with-tiles
             - --run-migrations
+            - --external-port
+            - 443
+            - --api-scheme
+            - https
+            - --api-host
+            - !Sub 'api.production.franklin.${DomainName}'
           PortMappings:
             - ContainerPort: !Ref ContainerPort
   ExecutionRole:
@@ -299,7 +308,7 @@ Resources: # If a bucket URL is specified, that means the template exists.
               - Fn::ImportValue: !Sub '${AppName}-${EnvName}-PublicSubnets'
           SecurityGroups:
             - Fn::ImportValue: !Sub '${AppName}-${EnvName}-EnvironmentSecurityGroup'
-            - Fn::GetAtt: [AddonsStack, Outputs.franklinapiclusterSecurityGroup]
+            - Fn::GetAtt: [AddonsStack, Outputs.apiclusterSecurityGroup]
       # This may need to be adjusted if the container takes a while to start up
       HealthCheckGracePeriodSeconds: 60
       LoadBalancers:
