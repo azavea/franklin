@@ -23,62 +23,62 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
     This command will ask you questions about your preferences for the application. After answering, it will initialize the infra to manage the containerized services, set up an ECR repository for the image to be uploaded, and will create a `/copilot/franklin-api/manifest.yml` file that we will configure further. Use the following answers to get started. At the end, when it asks if to deploy to a test environment, answer `No`.
     
     ```
-    $ copilot init
-    Use existing application: Yes // and choose franklin here
-    Workload type: Load Balanced Web Service
-    Service name: api
-    Dockerfile: Use an existing image instead
-    Image: quay.io/azavea/franklin:latest
-    Port: 9090
+    $ copilot init -a franklin -d ./Dockerfile --name api --port 9090 -t "Load Balanced Web Service"
     ```
 
-3. Update manifest
+3. Override the template
 
-    Add the following line to the `/copilot/franklin-api/manifest.yml` file, which is the command to run in the container using the `entrypoint` provided by the image. Please make sure that this config is a top-level configuration in `/copilot/franklin-api/manifest.yml`, e.g. a good spot to add this line should be in a new line after line `exec: true` in the manifest file. Please also replace the `<your DomainName here>` part, e.g. for this example tutorial, `rasterfoundry.com` domain name is available under my AWS account.
-
-    ```
-    command: ["serve", "--with-transactions", "--with-tiles", "--run-migrations", "--external-port", "443", "--api-scheme", "https", "--api-host", "api.production.franklin.<your DomainName here>"]
-    ```
-
-3. `copilot storage init`
-
-    This command creates a new storage resource (Aurora Serverless in this case) attached to the `franklin-api` service. This will be accessible from inside the `franklin-api` service container through some environment variables. The command will ask you a set of questions. Use the following answers to get started. After running this command, the CLI will create an `/addons` subdirectory, which includes `CloudFormation` template for creating resources with outputs of Aurora Serverless DB with PostgreSQL engine.
+    In this step, we will override the auto generate `manifest.yml` template so that we will configure the infra further. Run the following command.
 
     ```
-    $ copilot storage init
-    Only found one workload, defaulting to: api
-    Storage type: Aurora Serverless
-    Storage resource name: api-cluster
-    Database engine: PostgreSQL
-    Initial database name: franklin
+    rm ./api/manifest.yml
+    cp manifest.yml ./api/manifest.yml
     ```
 
-4. Update addon template
+    Here are what changed under the hood:
 
-    Add the following to the `Outputs:` section at the end of `/addons/franklin-api-cluster.yml`, since these will be exported and used as environment variables for the `franklin-api` service image to communicate with the Aurora Serverless DB attached.
+    - Use an alias for the web service URL:
+
+        Under the `http` section in `/copilot/franklin-api/manifest.yml`, add the following line. For example, we are going to use `api.franklin` in this example to replace `<your alias>`.
+
+        ```
+        alias: "<your alias>.<your domain>"
+        ```
+    - Add the container start up command:
+
+        Add the following line to the `/copilot/franklin-api/manifest.yml` file, which is the command to run in the container using the `entrypoint` provided by the image. Please make sure that this config is a top-level configuration in `/copilot/franklin-api/manifest.yml`, e.g. a good spot to add this line should be in a new line after line `exec: true` in the manifest file. Please also replace the `<your DomainName here>` part, e.g. for this example tutorial, `rasterfoundry.com` domain name is available in Route53 under my AWS account.
+
+        ```
+        command: ["serve", "--with-transactions", "--with-tiles", "--run-migrations", "--external-port", "443", "--api-scheme", "https", "--api-host", "api.franklin.<your DomainName here>"]
+        ```
+    
+    - Auto scaling:
+
+        ```
+        count:
+            range: 1-10
+            cpu_percentage: 70
+            memory_percentage: 80
+            requests: 10000
+            response_time: 2s
+        ```
+
+4. Attach a provisioned RDS Postgres 12.7 instance and give ECS task access to S3
+
+    The provisioned RDS instance we will use is of Postgres engine 12.7, which supports the PostGIS version 3.X since the tile rendering endpoints needs methods from this version of PostGIS. Additionally, the ECS task role needs some additional policies attached so that it has S3 access.
 
     ```
-    dbName:
-        Description: "The DB_NAME exported as env var for the API container"
-        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:dbname}}"]]
-    dbHost:
-        Description: "The DB_HOST exported as env var for the API container"
-        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:host}}"]]
-    dbUser:
-        Description: "The DB_USER exported as env var for the API container"
-        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:username}}"]]
-    dbPassword:
-        Description: "The DB_PASSWORD exported as env var for the API container"
-        Value: !Join ["", ['{{resolve:secretsmanager:', !Ref apiclusterAuroraSecret, ":SecretString:password}}"]]
+    mkdir api/addons
+    cp db.yml api/addons/db.yml
+    cp iam.yml api/addons/iam.yml
     ```
 
-5. `copilot env init`
+5. `copilot env init -n production`
 
     This will create a new environment where the serivces will live. After answering the questions as below, it will link your named profile to the application to be deployed, create the common infrastructure that's shared between the services such as a VPC, an Application Load Balancer, and an ECS Cluster etc. Under the hood, on CloudFormation, it wil create a stack for cross-regional resources to support the CodePipeline for this workspace, and a stack for the environment template for infrastructure shared among Copilot workloads.
 
     ```
-    $ copilot env init
-    Environment name: production
+    $ copilot env init -n production
     Credential source: [profile default]
     Default environment configuration? Yes, use default.
     ```
@@ -118,7 +118,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
         You can access your service at <URL> over the internet.
     ```
 
-7. Some commands to check the service
+7.  Some commands to check the service
     - `copilot svc show`: This command shows info about the deployed services, including the endpoints, capacity and related resources per environment.
     - `copilot svc status`: This command shows the health statuses, e.g. service status, task status, and related CloudWatch alarms etc.
     - `copilot svc logs`: This command shows the the logs of the deployed service.
