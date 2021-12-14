@@ -45,25 +45,37 @@ trait DatabaseOptions {
   private val databaseUser = Opts.option[String]("db-user", help = databaseUserHelp) orElse Opts
     .env[String]("DB_USER", help = databaseUserHelp) withDefault (databaseOptionDefault)
 
-  def databaseConfig: Opts[DatabaseConfig] =
-    ((
+  private val databaseConnectionStringHelp =
+    "Complete JDBC connection string to use to connect to database"
+
+  private val connectionString = Opts.option[String](
+    "db-connection-string",
+    help = databaseConnectionStringHelp
+  ) orElse Opts.env[String]("DB_CONNECTION_STRING", help = databaseConnectionStringHelp)
+
+  def databaseConfig(implicit contextShift: ContextShift[IO]): Opts[DatabaseConfig] =
+    ((connectionString map { DatabaseConfig.FromConnectionString }) orElse (
       databaseUser,
       databasePassword,
       databaseHost,
       databasePort,
       databaseName
-    ) mapN DatabaseConfig).validate(
-      e":boom: Unable to connect to database - please ensure database is configured and listening at entered port"
-    ) { config =>
-      val xa =
-        Transactor
-          .fromDriverManager[IO](config.driver, config.jdbcUrl, config.dbUser, config.dbPass)
-      val select = Try {
-        fr"SELECT 1".query[Int].unique.transact(xa).unsafeRunSync()
+    ).mapN { DatabaseConfig.FromComponents })
+      .validate(
+        e":boom: Unable to connect to database - please ensure database is configured and listening at entered port"
+      ) { config =>
+        val xa =
+          config.getTransactor(true)
+        val select = Try {
+          fr"SELECT 1".query[Int].unique.transact(xa).unsafeRunSync()
+        }
+        select.toEither match {
+          case Right(_) => true
+          case Left(e) =>
+            println(s"Connection failure: ${e}")
+            println(s"Failure details:\n${e.getMessage()}")
+            e.printStackTrace()
+            false
+        }
       }
-      select.toEither match {
-        case Right(_) => true
-        case Left(_)  => false
-      }
-    }
 }

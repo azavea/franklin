@@ -23,10 +23,12 @@ import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.implicits._
+import org.http4s.implicits.{http4sLiteralsSyntax => _, _}
 import org.http4s.server.blaze._
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server => HTTP4sServer}
+import sttp.client.SttpBackend
+import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.openapi.circe.yaml._
@@ -73,6 +75,13 @@ $$$$
 
   implicit val serverOptions = ServerOptions.defaultServerOptions[IO]
 
+  // https://gist.github.com/dirkgr/20a00d30522c1381f0e2
+  private def classUrls(cl: ClassLoader): Array[java.net.URL] = cl match {
+    case null                       => Array()
+    case u: java.net.URLClassLoader => u.getURLs() ++ classUrls(cl.getParent)
+    case _                          => classUrls(cl.getParent)
+  }
+
   private def createServer(
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
@@ -88,11 +97,8 @@ $$$$
       for {
         connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)
         transactionEc <- ExecutionContexts.cachedThreadPool[IO]
-        xa <- HikariTransactor.newHikariTransactor[IO](
-          "org.postgresql.Driver",
-          dbConfig.jdbcUrl,
-          dbConfig.dbUser,
-          dbConfig.dbPass,
+        xa <- HikariTransactor.fromHikariConfig[IO](
+          dbConfig.toHikariConfig,
           connectionEc,
           Blocker.liftExecutionContext(transactionEc)
         )
