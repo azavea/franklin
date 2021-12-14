@@ -7,6 +7,7 @@ import cats.syntax.all._
 import com.azavea.franklin.crawler.CatalogStacImport
 import com.azavea.franklin.crawler.StacItemImporter
 import com.monovore.decline._
+import com.zaxxer.hikari.HikariDataSource
 import doobie.Transactor
 import doobie.free.connection.{rollback, setAutoCommit, unit}
 import doobie.util.transactor.Strategy
@@ -64,9 +65,7 @@ object Commands {
     Flyway
       .configure()
       .dataSource(
-        s"${dbConfig.jdbcUrl}",
-        dbConfig.dbUser,
-        dbConfig.dbPass
+        new HikariDataSource(dbConfig.toHikariConfig)
       )
       .locations("classpath:migrations/")
       .load()
