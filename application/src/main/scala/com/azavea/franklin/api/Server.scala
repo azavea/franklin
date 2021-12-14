@@ -27,6 +27,7 @@ import org.http4s.implicits.{http4sLiteralsSyntax => _, _}
 import org.http4s.server.blaze._
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server => HTTP4sServer}
+import sttp.client.SttpBackend
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
@@ -37,7 +38,6 @@ import scala.concurrent.ExecutionContext
 
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import sttp.client.SttpBackend
 
 object Server extends IOApp.WithContext {
 
