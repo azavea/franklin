@@ -11,6 +11,37 @@ from the STAC API specification will be available. However, there are two additi
 enable for additional functionality. In both cases, the additional endpoints will be included in
 the server's OpenAPI specification at `<host>/open-api/spec.yaml`
 
+## Configuring your database connection
+
+You have two options for configuring the database. The first option is what's
+shown in the example  [startup command](./introduction#running-the-service). In
+that case, you specify a user, host, port, and password as separate arguments.
+
+Alternatively, you can specify a complete connection string. That connection
+string will look something like:
+
+```
+jdbc:postgresql://<host>/<database-name>?user=<user>&password=<password>
+```
+
+In general, it is safer to configure your database connection one component at a
+time. That allows you to ensure that each value is individually correct and
+leave assembling them into a strange looking string to Franklin. However,
+there's one circumstance in which you should use the JDBC URL option instead. If
+your cloud provider or internal IT systems have resulted in a database that
+requires an SSL connection, you should use the JDBC URL configuration. You can
+start the server in that case like:
+
+```
+application/run serve \
+  --db-connection-string \
+  jdbc:postgresql://localhost/franklin?user=franklin&password=franklin&ssl=true
+```
+
+This constraint was [originally
+discovered](https://github.com/azavea/franklin/issues/669) in a Google Cloud
+Platform environment but appears to be relevant in Azure settings as well.
+
 ## `--with-tiles`
 
 Enabling the `--with-tiles` flag will add a few different sorts of tile rendering.
