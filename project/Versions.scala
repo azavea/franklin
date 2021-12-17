@@ -2,7 +2,11 @@
 object Versions {
   val AsyncHttpClientVersion = "2.12.3"
   val AWSVersion             = "1.11.751"
-  val AWSSdk2Version         = "2.17.100"
+// There were issues with accessing S3 from the Fargate ECS instance
+// The easiest fix for now is to rollback dep to the last and the most tested version,
+// which is the same as that in the GeoTrellis
+// https://github.com/locationtech/geotrellis/blob/v3.6.0/project/Dependencies.scala#L86
+  val AWSSdk2Version         = "2.16.13"
   val CatsEffectVersion      = "2.5.4"
   val CatsScalacheckVersion  = "0.3.1"
   val CatsVersion            = "2.7.0"
