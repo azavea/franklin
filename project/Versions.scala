@@ -2,8 +2,12 @@
 object Versions {
   val AsyncHttpClientVersion = "2.12.3"
   val AWSVersion             = "1.11.751"
-  val AWSSdk2Version         = "2.17.100"
-  val CatsEffectVersion      = "3.3.0"
+// There were issues with accessing S3 from the Fargate ECS instance
+// The easiest fix for now is to rollback dep to the last and the most tested version,
+// which is the same as that in the GeoTrellis
+// https://github.com/locationtech/geotrellis/blob/v3.6.0/project/Dependencies.scala#L86
+  val AWSSdk2Version         = "2.16.13"
+  val CatsEffectVersion      = "2.5.4"
   val CatsScalacheckVersion  = "0.3.1"
   val CatsVersion            = "2.7.0"
   val CirceFs2Version        = "0.14.1"
@@ -13,7 +17,7 @@ object Versions {
   val DisciplineScalatest    = "2.1.5"
   val DoobieVersion          = "0.13.4"
   val EmojiVersion           = "1.2.3"
-  val Flyway                 = "8.2.1"
+  val Flyway                 = "8.2.2"
   val Fs2Version             = "2.5.10"
   val GeoTrellisVersion      = "3.6.0"
   val GuavaVersion           = "31.0.1-jre"
@@ -35,7 +39,7 @@ object Versions {
   val Specs2Version          = "4.13.1"
   val Stac4SVersion          = "0.6.2"
   val SttpClientVersion      = "2.2.10"
-  val SttpShared             = "1.2.7"
+  val SttpShared             = "1.3.0"
   val SttpModelVersion       = "1.4.18"
   val TapirVersion           = "0.17.20"
   val TapirOpenAPIVersion    = "0.17.20"
