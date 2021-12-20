@@ -1,0 +1,125 @@
+Parameters:
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: The name of the service, job, or workflow being deployed.
+  CertArn:
+    Type: String
+    Description: The arn of the certificate created for your DNS
+  LoggingBucket:
+    Type: String
+    Description: The bucket for the CDN logs
+
+Resources:
+  franklinCDNDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Aliases:
+        - !Join
+          - ''
+          - - 'tiles-cdn.'
+            - Fn::ImportValue:
+                !Sub "${App}-${Env}-SubDomain"
+        Origins:
+        - DomainName:
+            !Join
+            - ''
+            - - !Sub "${Name}."
+              - Fn::ImportValue:
+                  !Sub "${App}-${Env}-SubDomain"
+          Id: franklinOriginAlb          
+          CustomOriginConfig:
+            HTTPPort: 80
+            HTTPSPort: 443
+            OriginReadTimeout: 15
+            OriginProtocolPolicy: https-only
+        Enabled: true
+        Comment: !Sub "${App}-${Env}-${Name} CDN"
+        PriceClass: "PriceClass_100"
+        HttpVersion: "http2"
+        DefaultCacheBehavior:
+          TargetOriginId: franklinOriginAlb
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+          ForwardedValues:
+            Cookies: 
+              Forward: none
+            QueryString: true
+          MinTTL: 0.0
+          DefaultTTL: 0.0
+          MaxTTL: 0.0
+          ViewerProtocolPolicy: redirect-to-https
+        CacheBehaviors:
+          - AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            MinTTL: 800.0
+            DefaultTTL: 1800.0
+            MaxTTL: 3600.0
+            PathPattern: /tiles/*
+            TargetOriginId: franklinOriginAlb
+            ViewerProtocolPolicy: 'redirect-to-https'
+            ForwardedValues:
+              Cookies: 
+                Forward: none
+              QueryString: true
+              QueryStringCacheKeys:
+                - lowerQuantile
+                - upperQuantile
+                - redBand
+                - greenBand
+                - blueBand
+                - singleBand
+        ViewerCertificate:
+          MinimumProtocolVersion: TLSv1.2_2019
+          SslSupportMethod: sni-only
+          AcmCertificateArn: !Ref CertArn
+        Logging:
+          Bucket: !Ref LoggingBucket
+          IncludeCookies: false
+          Prefix: franklin-cdn
+      Tags: 
+        - Key: Name
+          Value: !Sub 'copilot-${App}-${Env}'
+     
+  tileAliasRecord:
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        DNSName: !GetAtt franklinCDNDistribution.DomainName
+        EvaluateTargetHealth: false
+        HostedZoneId: Z2FDTNDATAQYW2 #. This is always the hosted zone ID when you create an alias record that routes traffic to a CloudFront distribution
+      Comment: "An A record for the tile CDN"
+      Type: "A"
+      HostedZoneId: 
+        Fn::ImportValue:
+          !Sub "${App}-${Env}-HostedZone"
+      Name:
+        Fn::Join:
+          - ''
+          - - 'tiles-cdn.'
+            - Fn::ImportValue: !Sub "${App}-${Env}-SubDomain"
+Outputs:
+  franklinCDNDistribution:
+    Description: "A CloudFront distribution for Franklin"
+    Value: !Ref franklinCDNDistribution
+  tileAliasRecord:
+    Description: "An A record for the tile CDN"
+    Value: !Ref tileAliasRecord

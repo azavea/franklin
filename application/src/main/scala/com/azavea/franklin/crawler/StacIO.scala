@@ -12,7 +12,6 @@ import io.circe.{CursorOp, Decoder, DecodingFailure, Error => CirceError, Parsin
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client.circe._
-import sttp.model.{Uri => SttpUri}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets

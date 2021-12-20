@@ -140,3 +140,8 @@ npm-debug.log
 debug.log
 main.bundle.js.map
 data/*
+
+# copilot related artifacts
+deployment/copilot/api
+deployment/copilot/infra
+deployment/copilot/.workspace
