@@ -9,7 +9,7 @@ import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemE
 import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
 import doobie.Transactor
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
 class TestServices[F[_]: Concurrent](xa: Transactor[F])(
