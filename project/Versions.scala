@@ -36,7 +36,7 @@ object Versions {
   val ScapegoatVersion       = "1.4.11"
   val ShapelessVersion       = "2.3.7"
   val Slf4jVersion           = "1.7.32"
-  val Specs2Version          = "4.13.1"
+  val Specs2Version          = "4.13.2"
   val Stac4SVersion          = "0.6.2"
   val SttpClientVersion      = "2.3.0"
   val SttpShared             = "1.3.1"
