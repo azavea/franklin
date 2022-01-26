@@ -47,13 +47,13 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.31" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.33" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
 ThisBuild / scalafixDependencies +=
-  "com.nequissimus" %% "sort-imports" % "0.5.5"
+  "com.nequissimus" %% "sort-imports" % "0.6.1"
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
