@@ -5,7 +5,7 @@ http:
   path: '/'
 
 image:
-  build: copilot/Dockerfile
+  build: Dockerfile
   port: 9090
 
 cpu: 4096
