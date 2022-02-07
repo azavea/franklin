@@ -87,7 +87,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
     cp iam.yml ./copilot/api/addons/iam.yml
     ```
 
-5. `copilot env init -n production`
+5. `copilot env init -n production -a franklin`
 
     - This command will create a new environment `production` where the serivces will live.
     - After answering the questions as below, it will:
@@ -98,7 +98,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
       - etc
      - Under the hood, on CloudFormation, it wil create a stack for cross-regional resources to support the CodePipeline for this workspace, and a stack for the environment template for infrastructure shared among Copilot workloads for this application.
     ```
-    $ copilot env init -n production
+    $ copilot env init -n production -a franklin
     Credential source: [profile default]
     Default environment configuration? Yes, use default.
     ```
@@ -160,7 +160,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
         Default: <the S3 bucket URL for the CDN logs, e.g. rasterfoundry-production-logs-us-east-1.s3.amazonaws.com>
     ```
 
-7. `copilot deploy`
+7. `copilot deploy -a franklin -e production -n api`
 
     - This command will package the `manifest.yml` file and addons into `CloudFormation`, and create and/or update the ECS task definition and attached service.
     - Under the hood, this will create a stack that manages the franklin production API service, and the nested stack attached to the API service for DB and IAM role policy for the ECS task.
@@ -193,9 +193,9 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
     ```
 
 8.  Some commands to check the service
-    - `copilot svc show`: This command shows info about the deployed services, including the endpoints, capacity and related resources per environment.
-    - `copilot svc status`: This command shows the health statuses, e.g. service status, task status, and related CloudWatch alarms etc.
-    - `copilot svc logs`: This command shows the the logs of the deployed service.
+    - `copilot svc show -a franklin -n api`: This command shows info about the deployed services, including the endpoints, capacity and related resources per environment.
+    - `copilot svc status -a franklin -n api -e production`: This command shows the health statuses, e.g. service status, task status, and related CloudWatch alarms etc.
+    - `copilot svc logs -a franklin -n api -e production`: This command shows the the logs of the deployed service.
 
 ## How to take down the deployed Franklin API server?
 
