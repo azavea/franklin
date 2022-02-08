@@ -1,6 +1,8 @@
 # Use AWS Copilot CLI for Deployment
 
-Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quick and straightforward way to deploy Franklin API attached by an RDS instance of the PostgreSQL DB to your AWS infrastructure. This document shows you steps of how to use this CLI to deploy your own Franklin APIs as a load-balanced web service, with some suggested configurations added in addition to the default settings. In the end, it will provision an Application Load Balancer, security groups, an ECS service on Fargate to run `api` service, and attach a provisioned PostgreSQL RDS instance. It will add a CDN in front of the tile request endpoints as well.
+Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quick and straightforward way to deploy Franklin API attached by an RDS instance of the PostgreSQL DB to your AWS infrastructure. This document provides you with two possible options that would help you achieve this goal - one through a `deploy` script, another through a series of step-by-step instructions. 
+
+Both options use this CLI to deploy your own Franklin APIs as a load-balanced web service, with some suggested configurations added in addition to the default settings. In the end, it will provision an Application Load Balancer, security groups, an ECS service on Fargate to run `api` service, and attach a provisioned PostgreSQL RDS instance. It will add a CDN in front of the tile request endpoints as well.
 
 ## Prerequisites
 - [AWS Copilot CLI](https://aws.github.io/copilot-cli/docs/overview/)
@@ -8,8 +10,90 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
 - [Docker](https://www.docker.com/products/docker-desktop)
 - A named profile configured (`aws configure --profile <your profile name>`) to specify which AWS account and region to deploy your service. For docs, see more [here](https://docs.aws.amazon.com/cli/latest/reference/configure/)
 - A domain name registered with Amazon Route 53 in your account. If you do not have one, please follow steps [in the official docs](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html).
+- An S3 bucket in your AWS account to store CDN logs.
+- If you go with the `deploy` script option, make sure to install [jq](https://stedolan.github.io/jq/download/) in advance. This is a dependency of this script that is used for parsing JSON returned from `aws acm list-certificates`.
 
-## Instructions
+## Before you start
+
+At the root of this directory, if you want to take down the previously deployed Franklin API and DB to start a clean deploy:
+1. Run `copilot app delete franklin`.
+2. Answer `Y` if it asks you to confirm the deletion.
+3. After the command is finished, delete the `./copilot` directory.
+
+## If you make changes to configurations in the addons or the manifest after first deploy
+
+If you make changes:
+   - in `copilot/api/manifest.yml`
+   - parameters in `copilot/api/addons/**.yml`
+   - or add new addons
+
+Run the following command and the CLI should pick up the changes and deploy the infra of the Franklin APIs incrementally.
+
+```
+copilot deploy -a franklin -e production -n api
+```
+
+For example, if you wish to change the running API task from 1 to 0, you may remove the following block from `copilot/api/manifest.yml`:
+
+```
+count:
+  range: 1-10
+  cpu_percentage: 70
+  memory_percentage: 80
+  requests: 10000
+  response_time: 2s
+```
+
+And then change it to something as below.
+
+```
+count:0
+```
+
+Find out more information here: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+
+
+## Use the deploy script for deployment
+
+1. Make sure to check all the boxes in the prerequisites section, and run `./scripts/deploy`. Then follow the interactive prompts.
+
+2. It will first ask you to provide some basic parameters. Please make sure to provide your own parameters. The following are just my examples. E.g.:
+
+```
+What AWS_PROFILE would you like to use...?
+franklin
+Using franklin IAM profile to deploy your Franklin instance.
+
+Please provide S3 URL to the bucket for tile endpoint CDN logging: e.g. example-logs.s3.amazonaws.com...
+rasterfoundry-production-logs-us-east-1.s3.amazonaws.com
+Using rasterfoundry-production-logs-us-east-1.s3.amazonaws.com for tile endpoint CDN logging.
+
+Please provide a domain registered in Route 53...
+rasterfoundry.com
+Using rasterfoundry.com for your Franklin APIs.
+```
+
+3. When you are asked if to deploy a test environment, answer `N`. E.g.:
+
+```
+Would you like to deploy a test environment? [? for help] (y/N) N
+```
+
+4. When you are asked if to use default environment settings. Choose `Yes, use default`. E.g.:
+
+```
+Would you like to use the default configuration for a new environment?
+  - A new VPC with 2 AZs, 2 public subnets and 2 private subnets
+  - A new ECS Cluster
+  - New IAM Roles to manage services and jobs in your environment
+[Use arrows to move, type to filter]
+> Yes, use default.
+  Yes, but I'd like configure the default resources (CIDR ranges).
+  No, I'd like to import existing resources (VPC, subnets).
+```
+
+
+## Step-by-step Instructions
 1. `copilot app init franklin --domain <your registered DomainName here>`
     
     - It is required that you have a registered domain name in Amazon Route53 before this step.

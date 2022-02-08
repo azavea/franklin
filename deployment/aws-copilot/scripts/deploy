@@ -1,45 +1,45 @@
 #!/bin/bash
 echo -e "What AWS_PROFILE would you like to use...?" 
 read AWS_PROFILE
-echo "Using $AWS_PROFILE IAM profile to deploy your Franklin instance.\n"
+printf "Using $AWS_PROFILE IAM profile to deploy your Franklin instance.\n\n"
 export AWS_PROFILE=$AWS_PROFILE
 
 echo -e "Please provide S3 URL to the bucket for tile endpoint CDN logging: e.g. example-logs.s3.amazonaws.com..."
 read CDN_LOG_BUCKET
-echo "Using $CDN_LOG_BUCKET for tile endpoint CDN logging.\n"
+printf "Using $CDN_LOG_BUCKET for tile endpoint CDN logging.\n\n"
 
-echo -e "Please provide a domain registered in Route 53: e.g. rasterfoundry.com..."
+echo -e "Please provide a domain registered in Route 53..."
 read DOMAIN_NAME
-echo "Using $DOMAIN_NAME for your Franklin APIs.\n"
+printf "Using $DOMAIN_NAME for your Franklin APIs.\n\n"
 
-echo "Initializing Franklin app...\n"
+printf "Initializing Franklin app...\n\n"
 copilot app init franklin --domain $DOMAIN_NAME
 
-echo "Initializing API service...\n"
+printf "Initializing API service...\n\n"
 echo $(copilot init -a franklin --dockerfile ./Dockerfile --name api --port 9090 -t "Load Balanced Web Service")
 
-echo "Overriding default manifest.yml...\n"
+printf "Overriding default manifest.yml...\n\n"
 rm ./copilot/api/manifest.yml
 cp manifest.yml ./copilot/api/manifest.yml
 
 sed -i "" -e "s~domainname.com~$DOMAIN_NAME~g" ./copilot/api/manifest.yml
 
-echo "Attaching addons...\n"
+printf "Attaching addons...\n\n"
 mkdir ./copilot/api/addons
 cp db.yml ./copilot/api/addons/db.yml
 cp iam.yml ./copilot/api/addons/iam.yml
 
-echo "Initializing production env...\n"
+printf "Initializing production env...\n\n"
 echo $(copilot env init -n production -a franklin --profile $AWS_PROFILE)
 
-echo "Getting certificate ARN...\n"
+printf "Getting certificate ARN...\n\n"
 aws acm list-certificates
 CertificateArn=$(aws acm list-certificates | jq -rc '.CertificateSummaryList | map(select( .DomainName | contains("production.franklin"))) | .[0].CertificateArn')
 
-echo "Attaching CDN...\n"
+printf "Attaching CDN...\n\n"
 cp cdn.yml ./copilot/api/addons/cdn.yml
 sed -i "" -e "s~CertArnDefault~$CertificateArn~g" ./copilot/api/addons/cdn.yml
 sed -i "" -e "s~LoggingBucketDefault~$CDN_LOG_BUCKET~g" ./copilot/api/addons/cdn.yml
 
-echo "Deploying Franklin API service with CDN...\n"
+printf "Deploying Franklin API service with CDN...\n\n"
 copilot deploy -a franklin -e production -n api
