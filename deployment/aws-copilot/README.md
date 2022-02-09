@@ -6,6 +6,8 @@ Both options use this CLI to deploy your own Franklin APIs as a load-balanced we
 
 ## Prerequisites
 - [AWS Copilot CLI](https://aws.github.io/copilot-cli/docs/overview/)
+    - MacOS: `brew install aws/tap/copilot-cli`
+    - Linux (x86): `curl -Lo copilot https://github.com/aws/copilot-cli/releases/latest/download/copilot-linux && chmod +x copilot && sudo mv copilot /usr/local/bin/copilot && copilot --help`
 - [AWS CLI](https://aws.amazon.com/cli/)
 - [Docker](https://www.docker.com/products/docker-desktop)
 - A named profile configured (`aws configure --profile <your profile name>`) to specify which AWS account and region to deploy your service. For docs, see more [here](https://docs.aws.amazon.com/cli/latest/reference/configure/)
@@ -16,9 +18,10 @@ Both options use this CLI to deploy your own Franklin APIs as a load-balanced we
 ## Before you start
 
 At the root of this directory, if you want to take down the previously deployed Franklin API and DB to start a clean deploy:
-1. Run `copilot app delete franklin`.
-2. Answer `Y` if it asks you to confirm the deletion.
-3. After the command is finished, delete the `./copilot` directory.
+1. Ensure that `AWS_PROFILE` environment variable is set: i.e. `export AWS_PROFILE=franklin`
+2. Run `copilot app delete franklin`.
+3. Answer `Y` if it asks you to confirm the deletion.
+4. After the command is finished, delete the `./copilot` directory.
 
 ## If you make changes to configurations in the addons or the manifest after first deploy
 

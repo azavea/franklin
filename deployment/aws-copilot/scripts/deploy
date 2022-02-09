@@ -33,7 +33,6 @@ printf "Initializing production env...\n\n"
 echo $(copilot env init -n production -a franklin --profile $AWS_PROFILE)
 
 printf "Getting certificate ARN...\n\n"
-aws acm list-certificates
 CertificateArn=$(aws acm list-certificates | jq -rc '.CertificateSummaryList | map(select( .DomainName | contains("production.franklin"))) | .[0].CertificateArn')
 
 printf "Attaching CDN...\n\n"
