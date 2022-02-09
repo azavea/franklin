@@ -5,7 +5,7 @@ http:
   path: '/'
 
 image:
-  build: copilot/Dockerfile
+  build: Dockerfile
   port: 9090
 
 cpu: 4096
@@ -17,4 +17,4 @@ count:
   requests: 10000
   response_time: 2s
 exec: true
-command: ["serve", "--with-transactions", "--with-tiles", "--run-migrations", "--external-port", "443", "--api-scheme", "https", "--api-host", "api.production.franklin.rasterfoundry.com"]
+command: ["serve", "--with-transactions", "--with-tiles", "--run-migrations", "--external-port", "443", "--api-scheme", "https", "--api-host", "api.production.franklin.domainname.com"]
