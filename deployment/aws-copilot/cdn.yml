@@ -11,9 +11,11 @@ Parameters:
   CertArn:
     Type: String
     Description: The arn of the certificate created for your DNS
+    Default: CertArnDefault
   LoggingBucket:
     Type: String
     Description: The bucket for the CDN logs
+    Default: LoggingBucketDefault
 
 Resources:
   franklinCDNDistribution:
