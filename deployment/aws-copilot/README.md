@@ -1,16 +1,108 @@
 # Use AWS Copilot CLI for Deployment
 
-Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quick and straightforward way to deploy Franklin API attached by an RDS instance of the PostgreSQL DB to your AWS infrastructure. This document shows you steps of how to use this CLI to deploy your own Franklin APIs as a load-balanced web service, with some suggested configurations added in addition to the default settings. In the end, it will provision an Application Load Balancer, security groups, an ECS service on Fargate to run `api` service, and attach a provisioned PostgreSQL RDS instance. It will add a CDN in front of the tile request endpoints as well.
+Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quick and straightforward way to deploy Franklin API attached by an RDS instance of the PostgreSQL DB to your AWS infrastructure. This document provides you with two possible options that would help you achieve this goal - one through a `deploy` script, another through a series of step-by-step instructions. 
+
+Both options use this CLI to deploy your own Franklin APIs as a load-balanced web service, with some suggested configurations added in addition to the default settings. In the end, it will provision an Application Load Balancer, security groups, an ECS service on Fargate to run `api` service, and attach a provisioned PostgreSQL RDS instance. It will add a CDN in front of the tile request endpoints as well.
 
 ## Prerequisites
-- [AWS Copilot CLI](https://aws.github.io/copilot-cli/docs/overview/)
+- [AWS Copilot CLI](https://aws.github.io/copilot-cli/docs/overview/): it is important to install from the official package
+    - MacOS: `brew install aws/tap/copilot-cli`
+    - Linux (x86): `curl -Lo copilot https://github.com/aws/copilot-cli/releases/latest/download/copilot-linux && chmod +x copilot && sudo mv copilot /usr/local/bin/copilot && copilot --help`
 - [AWS CLI](https://aws.amazon.com/cli/)
 - [Docker](https://www.docker.com/products/docker-desktop)
 - A named profile configured (`aws configure --profile <your profile name>`) to specify which AWS account and region to deploy your service. For docs, see more [here](https://docs.aws.amazon.com/cli/latest/reference/configure/)
 - A domain name registered with Amazon Route 53 in your account. If you do not have one, please follow steps [in the official docs](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html).
+- An S3 bucket in your AWS account to store CDN logs.
+- If you go with the `deploy` script option, make sure to install [jq](https://stedolan.github.io/jq/download/) in advance. This is a dependency of this script that is used for parsing JSON returned from `aws acm list-certificates`.
 
-## Instructions
-1. `copilot app init franklin --domain <your registered DomainName here>`
+## Before you start
+
+At the root of this directory, if you want to take down the previously deployed Franklin API and DB to start a clean deploy:
+1. Ensure that `AWS_PROFILE` environment variable is set: i.e. `export AWS_PROFILE=franklin`, note that `franklin` is my aws profile name, you should use your own created from the prerequisites section
+1. At the root of this directory, run `copilot app delete franklin`.
+1. Answer `Y` if it asks you to confirm the deletion.
+1. After the command is finished, delete the `./copilot` directory.
+
+## If you make changes to configurations in the addons or the manifest after first deploy
+
+If you make changes:
+   - in `copilot/api/manifest.yml`
+   - parameters in `copilot/api/addons/**.yml`
+   - or add new addons
+
+For example, if you wish to change the running API task from 1 to 0, you may remove the following block from `copilot/api/manifest.yml`:
+
+```
+count:
+  range: 1-10
+  cpu_percentage: 70
+  memory_percentage: 80
+  requests: 10000
+  response_time: 2s
+```
+
+And then change it to something as below.
+
+```
+count:0
+```
+
+Then set the `AWS_PROFILE` environment variable: i.e. `export AWS_PROFILE=franklin`, note that `franklin` is my aws profile name, you should use your own created from the prerequisites section
+
+Run the following command and the CLI should pick up the changes and deploy the infra of the Franklin APIs incrementally.
+
+```
+copilot deploy -a franklin -e production -n api
+```
+
+Find out more information here: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+
+
+## Use the `./scripts/deploy` script for deployment
+
+1. Ensure that `AWS_PROFILE` environment variable is set: i.e. `export AWS_PROFILE=franklin`, note that `franklin` is my aws profile name, you should use your own created from the prerequisites section
+
+2. Make sure to check all the boxes in the prerequisites section, and run `./scripts/deploy`. Then follow the interactive prompts.
+
+3. It will first ask you to provide some basic parameters. Please make sure to provide your own parameters. The following are just my examples. E.g.:
+
+```
+What AWS_PROFILE would you like to use...?
+franklin
+Using franklin IAM profile to deploy your Franklin instance.
+
+Please provide S3 URL to the bucket for tile endpoint CDN logging: e.g. example-logs.s3.amazonaws.com...
+rasterfoundry-production-logs-us-east-1.s3.amazonaws.com
+Using rasterfoundry-production-logs-us-east-1.s3.amazonaws.com for tile endpoint CDN logging.
+
+Please provide a domain registered in Route 53...
+rasterfoundry.com
+Using rasterfoundry.com for your Franklin APIs.
+```
+
+4. When you are asked if to deploy a test environment, answer `N`. E.g.:
+
+```
+Would you like to deploy a test environment? [? for help] (y/N) N
+```
+
+5. When you are asked if to use default environment settings. Choose `Yes, use default`. E.g.:
+
+```
+Would you like to use the default configuration for a new environment?
+  - A new VPC with 2 AZs, 2 public subnets and 2 private subnets
+  - A new ECS Cluster
+  - New IAM Roles to manage services and jobs in your environment
+[Use arrows to move, type to filter]
+> Yes, use default.
+  Yes, but I'd like configure the default resources (CIDR ranges).
+  No, I'd like to import existing resources (VPC, subnets).
+```
+
+
+## Step-by-step Instructions
+1. Ensure that `AWS_PROFILE` environment variable is set: i.e. `export AWS_PROFILE=franklin`, note that `franklin` is my aws profile name, you should use your own created from the prerequisites section
+2. `copilot app init franklin --domain <your registered DomainName here>`
     
     - It is required that you have a registered domain name in Amazon Route53 before this step.
     - After going through this tutorial, your load balanced franklin API service is going to be accessible publicly through `${Service}.${Environment}.${Application}.${Domain}`.
@@ -22,7 +114,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
         ✔ The directory copilot will hold service manifests for application franklin.
         ```
 
-2. `copilot init`
+3. `copilot init`
 
     - Run the following command, it will:
       - initialize the infra to manage the containerized services for the `franklin` application's `api` service as a `Load Balanced Web Service`. Note that `--port 9090` is needed.
@@ -44,7 +136,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
         ```
     
     
-3. Override the default template
+4. Override the default template
 
     - In this step, we will override the auto generated `manifest.yml` template so that we will configure the infra further. Run the following commands.
         ```
@@ -76,7 +168,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
             response_time: 2s
         ```
 
-4. Attach a provisioned RDS Postgres 12.7 instance and give ECS task access to S3
+5. Attach a provisioned RDS Postgres 12.7 instance and give ECS task access to S3
 
     - The provisioned RDS instance we will use is of Postgres engine 12.7, which supports the PostGIS version 3.X since the tile rendering endpoints needs methods from this version of PostGI.S
     - Additionally, the ECS task role needs some additional policies attached so that it has S3 access.
@@ -87,7 +179,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
     cp iam.yml ./copilot/api/addons/iam.yml
     ```
 
-5. `copilot env init -n production`
+6. `copilot env init -n production -a franklin`
 
     - This command will create a new environment `production` where the serivces will live.
     - After answering the questions as below, it will:
@@ -98,7 +190,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
       - etc
      - Under the hood, on CloudFormation, it wil create a stack for cross-regional resources to support the CodePipeline for this workspace, and a stack for the environment template for infrastructure shared among Copilot workloads for this application.
     ```
-    $ copilot env init -n production
+    $ copilot env init -n production -a franklin
     Credential source: [profile default]
     Default environment configuration? Yes, use default.
     ```
@@ -122,7 +214,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
       ✔ Created environment production in region us-east-1 under application franklin.
     ```
 
-6. Add CDN in front of tile endpoint requests
+7. Add CDN in front of tile endpoint requests
 
     6.1 Get the `CertificateArn` from the subdomain
 
@@ -160,7 +252,7 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
         Default: <the S3 bucket URL for the CDN logs, e.g. rasterfoundry-production-logs-us-east-1.s3.amazonaws.com>
     ```
 
-7. `copilot deploy`
+8. `copilot deploy -a franklin -e production -n api`
 
     - This command will package the `manifest.yml` file and addons into `CloudFormation`, and create and/or update the ECS task definition and attached service.
     - Under the hood, this will create a stack that manages the franklin production API service, and the nested stack attached to the API service for DB and IAM role policy for the ECS task.
@@ -192,10 +284,10 @@ Deployment using [AWS Copilot CLI](https://aws.github.io/copilot-cli/) is a quic
        You can access your service at https://api.production.franklin.rasterfoundry.com over the internet.
     ```
 
-8.  Some commands to check the service
-    - `copilot svc show`: This command shows info about the deployed services, including the endpoints, capacity and related resources per environment.
-    - `copilot svc status`: This command shows the health statuses, e.g. service status, task status, and related CloudWatch alarms etc.
-    - `copilot svc logs`: This command shows the the logs of the deployed service.
+9.  Some commands to check the service
+    - `copilot svc show -a franklin -n api`: This command shows info about the deployed services, including the endpoints, capacity and related resources per environment.
+    - `copilot svc status -a franklin -n api -e production`: This command shows the health statuses, e.g. service status, task status, and related CloudWatch alarms etc.
+    - `copilot svc logs -a franklin -n api -e production`: This command shows the the logs of the deployed service.
 
 ## How to take down the deployed Franklin API server?
 
