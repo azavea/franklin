@@ -37,8 +37,8 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     Link(
       apiConfig.apiHost + "/open-api/spec.yaml",
       StacLinkType.ServiceDesc,
-      Some(VendorMediaType("application/vnd.oai.openapi;version=3.0")),
-      Some("OpenAPI 3.0 Documentation")
+      Some(VendorMediaType("application/vnd.oai.openapi+json;version=3.0")),
+      Some("Open API 3 Documentation")
     ),
     Link(
       apiConfig.apiHost + "/conformance",
