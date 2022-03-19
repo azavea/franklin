@@ -7,7 +7,7 @@ object Versions {
 // which is the same as that in the GeoTrellis
 // https://github.com/locationtech/geotrellis/blob/v3.6.0/project/Dependencies.scala#L86
   val AWSSdk2Version         = "2.16.13"
-  val CatsEffectVersion      = "2.5.4"
+  val CatsEffectVersion      = "3.3.8"
   val CatsScalacheckVersion  = "0.3.1"
   val CatsVersion            = "2.7.0"
   val CirceFs2Version        = "0.14.1"
