@@ -64,13 +64,15 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson",
-    "https://api.stacspec.org/v1.0.0-beta.1/core",
-    "https://api.stacspec.org/v1.0.0-beta.1/item-search",
-    "https://api.stacspec.org/v1.0.0-beta.1/item-search#context",
-    "https://api.stacspec.org/v1.0.0-beta.1/item-search#query"
+    "https://api.stacspec.org/v1.0.0-beta.5/core",
+    "https://api.stacspec.org/v1.0.0-beta.5/collections",
+    "https://api.stacspec.org/v1.0.0-beta.5/ogcapi-features",
+    "https://api.stacspec.org/v1.0.0-beta.5/item-search",
+    "https://api.stacspec.org/v1.0.0-beta.5/item-search#context",
+    "https://api.stacspec.org/v1.0.0-beta.5/item-search#query"
   ) `combine` (if (apiConfig.enableTransactions)
                  List[NonEmptyString](
-                   "https://api.stacspec.org/v1.0.0-beta.1/ogcapi-features/extensions/transaction"
+                   "https://api.stacspec.org/v1.0.0-beta.5/ogcapi-features/extensions/transaction"
                  )
                else List.empty[NonEmptyString])
 
