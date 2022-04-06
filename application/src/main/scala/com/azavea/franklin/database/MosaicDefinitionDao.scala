@@ -2,7 +2,6 @@ package com.azavea.franklin.database
 
 import cats.data.NonEmptyList
 import cats.data.OptionT
-import cats.effect.ContextShift
 import cats.effect.IO
 import cats.effect.LiftIO
 import cats.syntax.applicative._
