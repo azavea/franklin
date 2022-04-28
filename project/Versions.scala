@@ -41,8 +41,8 @@ object Versions {
   val SttpClientVersion      = "2.3.0"
   val SttpShared             = "1.3.2"
   val SttpModelVersion       = "1.4.25"
-  val TapirVersion           = "0.20.1"
-  val TapirOpenAPIVersion    = "0.20.1"
+  val TapirVersion           = "0.17.20"
+  val TapirOpenAPIVersion    = "0.17.20"
   val ThreeTenExtra          = "1.7.0"
   val TypenameVersion        = "1.0.0"
 }
