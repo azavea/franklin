@@ -1,6 +1,7 @@
 version: '2.3'
 services:
   database:
+    container_name: franklin-db
     image: quay.io/azavea/postgis:3-postgres12.2-slim
     environment:
       - POSTGRES_USER=franklin
@@ -15,3 +16,31 @@ services:
       retries: 3
       start_period: 5s
     command: postgres -c log_statement=all
+  database-pgstac:
+    container_name: pgstac-db
+    image: ghcr.io/stac-utils/pgstac:v0.4.5
+    environment:
+      - POSTGRES_USER=franklin
+      - POSTGRES_PASSWORD=franklin
+      - POSTGRES_DB=postgis
+      - PGUSER=franklin
+      - PGPASSWORD=franklin
+      - PGHOST=localhost
+      - PGDATABASE=postgis
+    ports:
+      - "5439:5432"
+    command: postgres -N 500
+  scriptrunner:
+    container_name: python-scripts
+    build:
+      context: .
+      dockerfile: Dockerfile.scriptrunner
+    environment:
+      - PGHOST=database-pgstac
+      - PGDATABASE=postgis
+      - PGUSER=franklin
+      - PGPASSWORD=franklin
+    volumes:
+      - ./scripts:/opt/src/scripts
+      - ./testdata:/opt/src/testdata
+      - ./data-files:/opt/src/data-files
