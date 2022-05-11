@@ -23,6 +23,9 @@ trait DatabaseOptions {
   private val databasePort = (Opts.option[PosInt]("db-port", help = databasePortHelp) orElse Opts
     .env[PosInt]("DB_PORT", help = databasePortHelp)) withDefault (databasePortDefault)
 
+  private val pgstacDatabasePort = (Opts.option[PosInt]("pgstac-db-port", help = databasePortHelp) orElse Opts
+    .env[PosInt]("PGSTAC_DB_PORT", help = databasePortHelp)) withDefault (PosInt(5439))
+
   private val databaseHostHelp = "Database host to connect to."
 
   private val databaseHost = (Opts.option[String]("db-host", help = databaseHostHelp) orElse Opts
@@ -32,6 +35,9 @@ trait DatabaseOptions {
 
   private val databaseName = (Opts.option[String]("db-name", help = databaseNameHelp) orElse Opts
     .env[String]("DB_NAME", help = databaseNameHelp)) withDefault (databaseOptionDefault)
+
+  private val pgstacDatabaseName = (Opts.option[String]("pgstac-db-name", help = databaseNameHelp) orElse Opts
+    .env[String]("PGSTAC_DB_NAME", help = databaseNameHelp)) withDefault ("postgis")
 
   private val databasePasswordHelp = s"Database password to use. Default: '$databaseOptionDefault'."
 
@@ -59,8 +65,10 @@ trait DatabaseOptions {
       databasePassword,
       databaseHost,
       databasePort,
-      databaseName
-    ).mapN { DatabaseConfig.FromComponents })
+      pgstacDatabasePort,
+      databaseName,
+      pgstacDatabaseName
+    ).mapN { DatabaseConfig.FromComponents.apply })
       .validate(
         e":boom: Unable to connect to database - please ensure database is configured and listening at entered port"
       ) { config =>

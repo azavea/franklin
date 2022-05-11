@@ -21,15 +21,52 @@ import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
 import io.chrisdavenport.log4cats.Logger
 import io.circe._
+import io.circe.optics.JsonPath._
 import io.circe.syntax._
+import monocle.syntax.all._
 import org.http4s.dsl.Http4sDsl
 import software.amazon.awssdk.core.internal.retry.SdkDefaultRetrySetting.Standard
 import sttp.client.{NothingT, SttpBackend}
 import sttp.tapir.server.http4s._
 
-import java.net.URLDecoder
+import java.net.{URLEncoder, URLDecoder}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+
+case class AddCollectionLinks(apiConfig: ApiConfig) {
+
+  val _collectionId = root.id.string
+
+  def _addLink(link: StacLink) = root.links.arr.modify({ ls: Vector[Json] => ls :+ link.asJson})
+
+  def addTileLink(collection: Json): Json = {
+    val encodedCollectionId =
+      URLEncoder.encode(_collectionId.getOption(collection).get, StandardCharsets.UTF_8.toString)
+    val tileLink = StacLink(
+      s"${apiConfig.apiHost}/collections/$encodedCollectionId/tiles",
+      StacLinkType.VendorLinkType("tiles"),
+      Some(`application/json`),
+      Some("Tile URLs for Collection")
+    )
+    _addLink(tileLink)(collection)
+  }
+
+  def addSelfLink(collection: Json): Json = {
+    val encodedCollectionId =
+      URLEncoder.encode(_collectionId.getOption(collection).get, StandardCharsets.UTF_8.toString)
+    val selfLink = StacLink(
+      s"${apiConfig.apiHost}/collections/$encodedCollectionId",
+      StacLinkType.Self,
+      Some(`application/json`),
+      None
+    )
+    _addLink(selfLink)(collection)
+  }
+
+  def apply(collection: Json) = {
+    (addSelfLink _  compose addTileLink)(collection)
+  }
+}
 
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
@@ -46,26 +83,46 @@ class CollectionsService[F[_]: Concurrent](
   val apiHost            = apiConfig.apiHost
   val enableTransactions = apiConfig.enableTransactions
   val enableTiles        = apiConfig.enableTiles
+  val addCollectionLinks = AddCollectionLinks(apiConfig)
+
+  val testOptics = root.links.each.json
 
   def listCollections(): F[Either[Unit, Json]] = {
     for {
       collections <- StacCollectionDao.listCollections().transact(xa)
-      validators <- collections traverse { collection =>
-        makeCollectionValidator(collection.stacExtensions, collectionExtensionsRef)
-      }
+      collectionsWithLinks = collections.map(addCollectionLinks(_))
     } yield {
-      val updated = collections map { _.maybeAddTilesLink(enableTiles, apiHost) } map {
-        _.updateLinksWithHost(apiConfig)
-      }
-      val validated = validators.zip(updated).map { case (f, v) => f(v) }
-      val links = collections flatMap { collection =>
-        collection.links.filter(_.rel == StacLinkType.Self) map { _.copy(rel = StacLinkType.Child) }
-      }
-      Either.right(CollectionsResponse(validated, links).asJson.dropNullValues)
+      val childrenLinks: List[Json] = collectionsWithLinks.map({ coll: Json =>
+        val collId = root.id.string.getOption(coll).get
+        val encodedCollectionId =
+          URLEncoder.encode(collId, StandardCharsets.UTF_8.toString)
+        StacLink(
+          s"${apiConfig.apiHost}/collections/$encodedCollectionId",
+          StacLinkType.Child,
+          Some(`application/json`),
+          None
+        ).asJson
+      })
+      Either.right(CollectionsResponse(collectionsWithLinks, childrenLinks).asJson.dropNullValues)
     }
   }
 
   def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    for {
+      collections <- StacCollectionDao
+        .getCollectionJson(collectionId)
+        .transact(xa)
+      collectionWithLinks = collections.map(addCollectionLinks(_))
+    } yield {
+      Either.fromOption(
+        collectionWithLinks.map(_.dropNullValues),
+        NF(s"Collection $collectionId not found")
+      )
+    }
+  }
+
+  def getCollectionUniqueOld(rawCollectionId: String): F[Either[NF, Json]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collectionOption <- StacCollectionDao

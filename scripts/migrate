@@ -26,6 +26,10 @@ then
         *)
             echo -e "\e[32m[franklin] Running migrations\e[0m"
             ./sbt 'application/run migrate --db-host=localhost'
+        docker-compose \
+            -f docker-compose.yml \
+            run --rm stac \
+            bash -c "pypgstac pgready && pypgstac migrate"
             ;;
     esac
 fi

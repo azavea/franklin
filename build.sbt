@@ -126,6 +126,7 @@ lazy val applicationDependencies = Seq(
   "io.circe"                     %% "circe-parser"                   % Versions.CirceVersion,
   "io.circe"                     %% "circe-refined"                  % Versions.CirceVersion,
   "io.circe"                     %% "circe-testing"                  % Versions.CirceVersion % Test,
+  "io.circe"                     %% "circe-optics"                   % Versions.CirceVersion,
   "net.postgis"                  % "postgis-geometry"                % Versions.Postgis,
   "net.postgis"                  % "postgis-jdbc"                    % Versions.Postgis,
   "org.asynchttpclient"          % "async-http-client"               % Versions.AsyncHttpClientVersion,

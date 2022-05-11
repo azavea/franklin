@@ -1,5 +1,7 @@
 package com.azavea.franklin.database
 
+import io.circe._
+import io.circe.syntax._
 import cats.data.OptionT
 import cats.syntax.foldable._
 import cats.syntax.list._
@@ -11,19 +13,19 @@ import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
+import doobie.postgres.circe.jsonb.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 
 import java.time.Instant
 
 object StacCollectionDao extends Dao[StacCollection] {
 
-  val selectF = fr"SELECT collection FROM collections"
+  val selectF = fr"SELECT content FROM collections"
 
   val tableName = "collections"
 
-  def listCollections(): ConnectionIO[List[StacCollection]] = {
-    selectF.query[StacCollection].to[List]
-  }
+  def listCollections(): ConnectionIO[List[Json]] =
+    selectF.query[Json].to[List]
 
   def updateExtent(
       collectionId: String,
@@ -82,7 +84,13 @@ object StacCollectionDao extends Dao[StacCollection] {
 
   def getCollection(
       collectionId: String
-  ): ConnectionIO[Option[StacCollection]] = query.filter(fr"id = $collectionId").selectOption
+  ): ConnectionIO[Option[StacCollection]] =
+    query.filter(fr"id = $collectionId").selectOption
+
+  def getCollectionJson(
+      collectionId: String
+  ): ConnectionIO[Option[Json]] =
+    genericQuery[Json].filter(fr"id = $collectionId").selectOption
 
   def insertStacCollection(
       collection: StacCollection,

@@ -101,6 +101,11 @@ $$$$
           connectionEc,
           Blocker.liftExecutionContext(transactionEc)
         )
+        pgstacxa <- HikariTransactor.fromHikariConfig[IO](
+          dbConfig.toPgstacHikariConfig,
+          connectionEc,
+          Blocker.liftExecutionContext(transactionEc)
+        )
         collectionItemEndpoints = new CollectionItemEndpoints[IO](
           apiConfig.defaultLimit,
           apiConfig.enableTransactions,
@@ -138,7 +143,7 @@ $$$$
         ).routes
         itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
         collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
-        collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
+        collectionRoutes = new CollectionsService[IO](pgstacxa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
           IO
         ](
           xa,
@@ -173,6 +178,8 @@ $$$$
 
     applicationCommand.parse(args, env = sys.env) map {
       case RunServer(apiConfig, dbConfig) if !apiConfig.runMigrations =>
+        println(s"apiconfig $apiConfig")
+        println(s"dbConfig $dbConfig")
         createServer(apiConfig, dbConfig)
           .use(_ => IO.never)
           .as(ExitCode.Success)

@@ -5,8 +5,8 @@ import io.circe._
 import io.circe.generic.semiauto._
 
 case class CollectionsResponse(
-    collections: List[StacCollection],
-    links: List[StacLink] = List()
+    collections: List[Json],
+    links: List[Json] = List()
 )
 
 object CollectionsResponse {
