@@ -24,21 +24,8 @@ object StacCollectionDao extends Dao[StacCollection] {
 
   val tableName = "collections"
 
-  def listCollections(): ConnectionIO[List[StacCollection]] = {
-    selectF.query[Json].to[List].map({ lst =>
-      lst.map({ js =>
-        print(s"JS $js")
-        val decoded = js.as[StacCollection]
-        decoded match {
-          case Right(collection) => collection
-          case Left(err) =>
-            println(s"JS $js")
-            println(err)
-            ???
-        }
-      })
-    })
-  }
+  def listCollections(): ConnectionIO[List[Json]] =
+    selectF.query[Json].to[List]
 
   def updateExtent(
       collectionId: String,
@@ -97,7 +84,13 @@ object StacCollectionDao extends Dao[StacCollection] {
 
   def getCollection(
       collectionId: String
-  ): ConnectionIO[Option[StacCollection]] = query.filter(fr"id = $collectionId").selectOption
+  ): ConnectionIO[Option[StacCollection]] =
+    query.filter(fr"id = $collectionId").selectOption
+
+  def getCollectionJson(
+      collectionId: String
+  ): ConnectionIO[Option[Json]] =
+    genericQuery[Json].filter(fr"id = $collectionId").selectOption
 
   def insertStacCollection(
       collection: StacCollection,

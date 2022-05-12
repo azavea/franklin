@@ -23,6 +23,10 @@ abstract class Dao[Model: Read: Write] extends Filterables {
   /** Begin construction of a complex, filtered query */
   def query: Dao.QueryBuilder[Model] =
     Dao.QueryBuilder[Model](selectF, tableF, List.empty)
+
+  /** Begin construction of a complex, filtered query */
+  def genericQuery[M: Read: Write]: Dao.QueryBuilder[M] =
+    Dao.QueryBuilder[M](selectF, tableF, List.empty)
 }
 
 object Dao {
