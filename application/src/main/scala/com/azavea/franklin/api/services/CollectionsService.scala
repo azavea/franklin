@@ -85,8 +85,6 @@ class CollectionsService[F[_]: Concurrent](
   val enableTiles        = apiConfig.enableTiles
   val addCollectionLinks = AddCollectionLinks(apiConfig)
 
-  val testOptics = root.links.each.json
-
   def listCollections(): F[Either[Unit, Json]] = {
     for {
       collections <- StacCollectionDao.listCollections().transact(xa)
@@ -122,37 +120,38 @@ class CollectionsService[F[_]: Concurrent](
     }
   }
 
-  def getCollectionUniqueOld(rawCollectionId: String): F[Either[NF, Json]] = {
-    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-    for {
-      collectionOption <- StacCollectionDao
-        .getCollection(collectionId)
-        .transact(xa)
-      // it looks unnecessary to check enableTiles here given the logic below, but
-      // we can skip the query if we know we don't need the mosaics
-      mosaicDefinitions <- if (enableTiles) {
-        MosaicDefinitionDao.listMosaicDefinitions(collectionId).transact(xa)
-      } else {
-        List.empty[MosaicDefinition].pure[F]
-      }
-      validatorOption <- collectionOption traverse { collection =>
-        makeCollectionValidator(collection.stacExtensions, collectionExtensionsRef)
-      }
-    } yield {
-      Either.fromOption(
-        (collectionOption, validatorOption) mapN {
-          case (collection, validator) =>
-            validator(
-              collection
-                .maybeAddTilesLink(enableTiles, apiHost)
-                .maybeAddMosaicLinks(enableTiles, apiHost, mosaicDefinitions)
-                .updateLinksWithHost(apiConfig)
-            ).asJson.dropNullValues
-        },
-        NF(s"Collection $collectionId not found")
-      )
-    }
-  }
+  // Old implementation (can delete once things work)
+  // def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
+  //   val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+  //   for {
+  //     collectionOption <- StacCollectionDao
+  //       .getCollection(collectionId)
+  //       .transact(xa)
+  //     // it looks unnecessary to check enableTiles here given the logic below, but
+  //     // we can skip the query if we know we don't need the mosaics
+  //     mosaicDefinitions <- if (enableTiles) {
+  //       MosaicDefinitionDao.listMosaicDefinitions(collectionId).transact(xa)
+  //     } else {
+  //       List.empty[MosaicDefinition].pure[F]
+  //     }
+  //     validatorOption <- collectionOption traverse { collection =>
+  //       makeCollectionValidator(collection.stacExtensions, collectionExtensionsRef)
+  //     }
+  //   } yield {
+  //     Either.fromOption(
+  //       (collectionOption, validatorOption) mapN {
+  //         case (collection, validator) =>
+  //           validator(
+  //             collection
+  //               .maybeAddTilesLink(enableTiles, apiHost)
+  //               .maybeAddMosaicLinks(enableTiles, apiHost, mosaicDefinitions)
+  //               .updateLinksWithHost(apiConfig)
+  //           ).asJson.dropNullValues
+  //       },
+  //       NF(s"Collection $collectionId not found")
+  //     )
+  //   }
+  // }
 
   def getCollectionTiles(rawCollectionId: String): F[Either[NF, (Json, String)]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)

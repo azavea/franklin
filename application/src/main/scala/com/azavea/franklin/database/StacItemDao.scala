@@ -19,6 +19,7 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.update.Update
+import doobie.postgres.circe.jsonb.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
@@ -54,7 +55,7 @@ object StacItemDao extends Dao[StacItem] {
   case class PatchInvalidatesItem(err: DecodingFailure)
       extends StacItemDaoError("Applying patch would create an invalid patch item")
 
-  val tableName = "collection_items"
+  val tableName = "items"
 
   val selectF = fr"SELECT item FROM " ++ tableF
 
@@ -318,6 +319,20 @@ object StacItemDao extends Dao[StacItem] {
       itemInsert map { item => (item, item.##.toString) }
     }
 
+  }
+
+  def getCollectionItemsJson(collectionId: String): ConnectionIO[List[Json]] = {
+    val fragment = fr"SELECT content FROM " ++ tableF ++ fr"WHERE collection_id = $collectionId"
+    fragment.query[Json].to[List]
+  }
+
+  def getCollectionItemJson(collectionId: String, itemId: String): ConnectionIO[Option[Json]] = {
+    val fragment = {
+      fr"SELECT content FROM " ++
+      tableF ++
+      fr"WHERE collection_id = $collectionId AND id = $itemId"
+    }
+    fragment.query[Json].option
   }
 
   def getCollectionItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] =

@@ -146,7 +146,7 @@ $$$$
         collectionRoutes = new CollectionsService[IO](pgstacxa, apiConfig, collectionExtensions).routes <+> new CollectionItemsService[
           IO
         ](
-          xa,
+          pgstacxa,
           apiConfig,
           itemExtensions,
           rootLink

@@ -29,6 +29,7 @@ import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.chrisdavenport.log4cats.Logger
 import io.circe._
+import io.circe.optics.JsonPath._
 import io.circe.syntax._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
@@ -38,8 +39,50 @@ import sttp.tapir.server.DecodeFailureContext
 import sttp.tapir.server.ServerDefaults
 import sttp.tapir.server.http4s._
 
-import java.net.URLDecoder
+
+import java.net.{URLEncoder, URLDecoder}
 import java.nio.charset.StandardCharsets
+
+
+case class AddItemLinks(apiConfig: ApiConfig) {
+
+  val _itemId = root.id.string
+  val _collectionId = root.collection.string
+
+  def _addLink(link: StacLink) = root.links.arr.modify({ ls: Vector[Json] => ls :+ link.asJson})
+
+  def addTileLink(item: Json): Json = item
+
+  // def addTileLink(item: Json): Json = {
+  //   val encodedCollectionId =
+  //     URLEncoder.encode(_collectionId.getOption(item).get, StandardCharsets.UTF_8.toString)
+  //   val tileLink = StacLink(
+  //     s"${apiConfig.apiHost}/collections/$encodedCollectionId/tiles",
+  //     StacLinkType.VendorLinkType("tiles"),
+  //     Some(`application/json`),
+  //     Some("Tile URLs for Collection")
+  //   )
+  //   _addLink(tileLink)(collection)
+  // }
+
+  def addSelfLink(item: Json): Json = {
+    val encodedCollectionId =
+      URLEncoder.encode(_collectionId.getOption(item).get, StandardCharsets.UTF_8.toString)
+    val encodedItemId =
+      URLEncoder.encode(_itemId.getOption(item).get, StandardCharsets.UTF_8.toString)
+    val selfLink = StacLink(
+      s"${apiConfig.apiHost}/collections/$encodedCollectionId/items/$encodedItemId",
+      StacLinkType.Self,
+      Some(`application/json`),
+      None
+    )
+    _addLink(selfLink)(item)
+  }
+
+  def apply(item: Json) = {
+    (addSelfLink _  compose addTileLink)(item)
+  }
+}
 
 class CollectionItemsService[F[_]: Concurrent](
     xa: Transactor[F],
@@ -58,52 +101,86 @@ class CollectionItemsService[F[_]: Concurrent](
   val defaultLimit       = apiConfig.defaultLimit
   val enableTransactions = apiConfig.enableTransactions
   val enableTiles        = apiConfig.enableTiles
+  val addItemLinks       = AddCollectionLinks(apiConfig)
 
   def listCollectionItems(
-      collectionId: String,
-      token: Option[PaginationToken],
-      limit: Option[NonNegInt]
+    collectionId: String,
+    token: Option[PaginationToken],
+    limit: Option[NonNegInt]
   ): F[Either[Unit, Json]] = {
     val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
-      items <- StacItemDao.query
-        .filter(StacItemDao.collectionFilter(decodedId))
-        .page(Page(limit getOrElse defaultLimit, token))
-        .transact(xa)
-      validators <- items traverse { item =>
-        makeItemValidator(item.stacExtensions, itemExtensionsRef)
-      }
-      paginationToken <- items.lastOption traverse { item =>
-        StacItemDao.getPaginationToken(item.id).transact(xa)
-      }
+      items <- StacItemDao.getCollectionItemsJson(decodedId).transact(xa)
     } yield {
-      val updatedItems = enableTiles match {
-        case true =>
-          items map { item => item.addTilesLink(apiHost, collectionId, item.id) }
-        case _ => items
-      }
-      val withValidatedLinks =
-        updatedItems.zip(validators) map { case (item, f) => f(item.addRootLink(rootLink)) }
-      val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
-        val lim = limit getOrElse defaultLimit
-        StacLink(
-          href = s"$apiHost/collections/$collectionId/items?next=${PaginationToken
-            .encPaginationToken(token)}&limit=$lim",
-          rel = StacLinkType.Next,
-          _type = Some(`application/json`),
-          title = None
-        )
-      }
-      val response = CollectionItemsResponse(
-        withValidatedLinks.map(_.updateLinksWithHost(apiConfig)),
-        nextLink.toList
+      val response = CollectionItemsResponseJson(
+        items.toList,
+        List()
       )
       Either.right(response.asJson)
     }
-
   }
 
+  // def listCollectionItemsOld(
+  //     collectionId: String,
+  //     token: Option[PaginationToken],
+  //     limit: Option[NonNegInt]
+  // ): F[Either[Unit, Json]] = {
+  //   val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
+  //   for {
+  //     items <- StacItemDao.query
+  //       .filter(StacItemDao.collectionFilter(decodedId))
+  //       .page(Page(limit getOrElse defaultLimit, token))
+  //       .transact(xa)
+  //     validators <- items traverse { item =>
+  //       makeItemValidator(item.stacExtensions, itemExtensionsRef)
+  //     }
+  //     paginationToken <- items.lastOption traverse { item =>
+  //       StacItemDao.getPaginationToken(item.id).transact(xa)
+  //     }
+  //   } yield {
+  //     val updatedItems = enableTiles match {
+  //       case true =>
+  //         items map { item => item.addTilesLink(apiHost, collectionId, item.id) }
+  //       case _ => items
+  //     }
+  //     val withValidatedLinks =
+  //       updatedItems.zip(validators) map { case (item, f) => f(item.addRootLink(rootLink)) }
+  //     val nextLink: Option[StacLink] = paginationToken.flatten map { token =>
+  //       val lim = limit getOrElse defaultLimit
+  //       StacLink(
+  //         href = s"$apiHost/collections/$collectionId/items?next=${PaginationToken
+  //           .encPaginationToken(token)}&limit=$lim",
+  //         rel = StacLinkType.Next,
+  //         _type = Some(`application/json`),
+  //         title = None
+  //       )
+  //     }
+  //     val response = CollectionItemsResponse(
+  //       withValidatedLinks.map(_.updateLinksWithHost(apiConfig)),
+  //       nextLink.toList
+  //     )
+  //     Either.right(response.asJson)
+  //   }
+  // }
+
   def getCollectionItemUnique(
+      rawCollectionId: String,
+      rawItemId: String
+  ): F[Either[NF, (Json, String)]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+
+    for {
+      itemOption <- StacItemDao.getCollectionItemJson(collectionId, itemId).transact(xa)
+    } yield {
+      itemOption match {
+        case Some(item) => Right((item, item.##.toString))
+        case None => Left(NF(s"Item $itemId in collection $collectionId not found"))
+      }
+    }
+  }
+
+  def getCollectionItemUniqueOld(
       rawCollectionId: String,
       rawItemId: String
   ): F[Either[NF, (Json, String)]] = {
