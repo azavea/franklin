@@ -17,7 +17,7 @@ import eu.timepit.refined.auto._
 import geotrellis.vector.io.json.Implicits._
 import geotrellis.vector.io.json._
 import geotrellis.vector.{Feature, Geometry}
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import io.circe.parser.decode
 import io.circe.syntax._
 import io.circe.{Decoder, Error => CirceError, JsonObject}

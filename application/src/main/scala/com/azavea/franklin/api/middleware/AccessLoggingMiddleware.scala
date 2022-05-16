@@ -4,7 +4,7 @@ import cats.data.Kleisli
 import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.functor._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe.syntax._
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.{HttpRoutes, Request}
