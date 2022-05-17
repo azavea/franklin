@@ -2,7 +2,7 @@ package com.azavea.franklin
 
 import cats.data.NonEmptyVector
 import cats.syntax.all._
-import com.azavea.franklin.database.SearchFilters
+import com.azavea.franklin.database.SearchParameters
 import com.azavea.franklin.datamodel._
 import com.azavea.stac4s._
 import com.azavea.stac4s.testing._
@@ -96,7 +96,7 @@ trait Generators extends NumericInstances {
 
   implicit val arbGeometry: Arbitrary[Geometry] = Arbitrary { rectangleGen }
 
-  private def searchFiltersGen: Gen[SearchFilters] = {
+  private def searchParametersGen: Gen[SearchParameters] = {
     (
       Gen.option(arbitrary(TestInstances.arbBbox)),
       Gen.option(arbitrary(JvmInstances.arbTemporalExtent)),
@@ -106,10 +106,10 @@ trait Generators extends NumericInstances {
       Gen.option(arbitrary[NonNegInt]),
       Gen.mapOf((nonEmptyAlphaStringGen, Gen.nonEmptyListOf(queryGen)).tupled),
       Gen.const(None)
-    ).mapN(SearchFilters.apply)
+    ).mapN(SearchParameters.apply)
   }
 
-  implicit val arbSearchFilters   = Arbitrary { searchFiltersGen }
+  implicit val arbSearchParameters   = Arbitrary { searchParametersGen }
   implicit val arbPaginationToken = Arbitrary { paginationTokenGen }
   implicit val arbMapCenter       = Arbitrary { mapCenterGen }
 

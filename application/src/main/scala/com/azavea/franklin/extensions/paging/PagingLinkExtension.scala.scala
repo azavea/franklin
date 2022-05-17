@@ -1,7 +1,8 @@
 package com.azavea.franklin.extensions.paging
 
-import com.azavea.franklin.database.SearchFilters
+import com.azavea.franklin.datamodel.SearchParameters
 import com.azavea.stac4s.extensions.LinkExtension
+
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.generic.semiauto._
 import io.circe.refined._
@@ -13,7 +14,7 @@ import io.circe.{Decoder, Encoder, Json}
 // and don't use this
 final case class PagingLinkExtension(
     headers: Map[NonEmptyString, String],
-    body: SearchFilters,
+    body: SearchParameters,
     merge: Boolean
 )
 

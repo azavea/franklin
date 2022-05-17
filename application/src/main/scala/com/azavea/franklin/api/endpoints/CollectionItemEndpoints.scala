@@ -25,7 +25,6 @@ import sttp.tapir.json.circe._
 class CollectionItemEndpoints[F[_]: Concurrent](
     defaultLimit: NonNegInt,
     enableTransactions: Boolean,
-    enableTiles: Boolean,
     pathPrefix: Option[String]
 ) {
 
@@ -34,7 +33,7 @@ class CollectionItemEndpoints[F[_]: Concurrent](
   val base = endpoint.in(basePath)
 
   val collectionItemsList: Endpoint[
-    (String, Option[PaginationToken], Option[NonNegInt]),
+    (String, Option[String], Option[NonNegInt]),
     Unit,
     Json,
     Fs2Streams[F]
@@ -43,8 +42,8 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       .in(path[String])
       .in("items")
       .in(
-        query[Option[PaginationToken]]("next")
-          .description("Opaque token to retrieve the next page of items")
+        query[Option[String]]("token")
+          .description("Token to retrieve the next page of items")
       )
       .in(
         query[Option[NonNegInt]]("limit")
@@ -62,14 +61,6 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       .out(header[String]("ETag"))
       .description("A single feature")
       .name("collectionItemUnique")
-
-  val collectionItemTiles: Endpoint[(String, String), NotFound, Json, Fs2Streams[F]] =
-    base.get
-      .in(path[String] / "items" / path[String] / "tiles")
-      .out(jsonBody[Json])
-      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
-      .description("An item's tile endpoints")
-      .name("collectionItemTiles")
 
   val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Fs2Streams[F]] =
     base.post
@@ -159,7 +150,5 @@ class CollectionItemEndpoints[F[_]: Concurrent](
   )
 
   val endpoints = List(collectionItemsList, collectionItemsUnique) ++
-    (if (enableTransactions) transactionEndpoints else Nil) ++ (if (enableTiles)
-                                                                  List(collectionItemTiles)
-                                                                else Nil)
+    (if (enableTransactions) transactionEndpoints else Nil)
 }

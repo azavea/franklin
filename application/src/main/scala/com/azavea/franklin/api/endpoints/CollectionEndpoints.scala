@@ -17,7 +17,6 @@ import java.util.UUID
 
 class CollectionEndpoints[F[_]: Concurrent](
     enableTransactions: Boolean,
-    enableTiles: Boolean,
     pathPrefix: Option[String]
 ) {
 
@@ -108,7 +107,6 @@ class CollectionEndpoints[F[_]: Concurrent](
       )
 
   val endpoints = List(collectionsList, collectionUnique) ++ {
-    if (enableTiles) List(collectionTiles, createMosaic, getMosaic, deleteMosaic, listMosaics)
-    else Nil
-  } ++ { if (enableTransactions) List(createCollection, deleteCollection) else Nil }
+    if (enableTransactions) List(createCollection, deleteCollection) else Nil
+  }
 }

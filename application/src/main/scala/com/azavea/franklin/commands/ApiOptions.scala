@@ -1,4 +1,4 @@
-package com.azavea.franklin.api.commands
+package com.azavea.franklin.commands
 
 import cats.data.Validated
 import cats.syntax.all._
@@ -81,25 +81,6 @@ trait ApiOptions {
         .toValidatedNel
     } withDefault (false)
 
-  private val enableTilesHelp = "Whether to include tile endpoints. Default: 'false'."
-
-  private val enableTiles = Opts
-    .flag(
-      "with-tiles",
-      help = enableTilesHelp
-    )
-    .orFalse orElse Opts
-    .env[String]("API_WITH_TILES", help = enableTilesHelp, metavar = "true||false")
-    .mapValidated { s =>
-      Validated
-        .fromTry(Try(s.toBoolean))
-        .leftMap(_ => s"Expected to find a value that can convert to a Boolean, but got $s")
-        .toValidatedNel
-    } withDefault (false)
-
-  private val runMigrations =
-    Opts.flag("run-migrations", "Run migrations before the API server starts").orFalse
-
   val apiConfig: Opts[ApiConfig] = (
     externalPort,
     internalPort,
@@ -108,7 +89,5 @@ trait ApiOptions {
     apiScheme,
     defaultLimit,
     enableTransactions,
-    enableTiles,
-    runMigrations
   ) mapN ApiConfig
 }

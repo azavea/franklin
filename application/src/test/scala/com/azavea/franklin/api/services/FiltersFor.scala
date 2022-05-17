@@ -3,7 +3,7 @@ package com.azavea.franklin.api.services
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import cats.{Monoid, Semigroup}
-import com.azavea.franklin.database.SearchFilters
+import com.azavea.franklin.database.SearchParameters
 import com.azavea.stac4s.{ItemDatetime, StacCollection, StacItem, TemporalExtent, TwoDimBbox}
 import geotrellis.vector.Extent
 import io.circe.syntax._
@@ -12,9 +12,9 @@ import java.time.Instant
 
 object FiltersFor {
 
-  implicit val searchFilterMonoid: Monoid[SearchFilters] = new Monoid[SearchFilters] {
+  implicit val searchFilterMonoid: Monoid[SearchParameters] = new Monoid[SearchParameters] {
 
-    def combine(x: SearchFilters, y: SearchFilters): SearchFilters = SearchFilters(
+    def combine(x: SearchParameters, y: SearchParameters): SearchParameters = SearchParameters(
       x.bbox orElse y.bbox,
       x.datetime orElse y.datetime,
       x.intersects orElse y.intersects,
@@ -25,7 +25,7 @@ object FiltersFor {
       x.next orElse y.next
     )
 
-    def empty: SearchFilters = SearchFilters(
+    def empty: SearchParameters = SearchParameters(
       None,
       None,
       None,
@@ -37,9 +37,9 @@ object FiltersFor {
     )
   }
 
-  def bboxFilterFor(item: StacItem): SearchFilters = {
+  def bboxFilterFor(item: StacItem): SearchParameters = {
     val itemGeomBbox = item.geometry.getEnvelopeInternal
-    SearchFilters(
+    SearchParameters(
       Some(
         TwoDimBbox(
           itemGeomBbox.getMinX,
@@ -58,7 +58,7 @@ object FiltersFor {
     )
   }
 
-  def timeFilterFor(item: StacItem): SearchFilters = {
+  def timeFilterFor(item: StacItem): SearchParameters = {
     val temporalExtent = item.properties.datetime match {
       case ItemDatetime.PointInTime(instant) =>
         TemporalExtent(instant.minusSeconds(60), Some(instant.plusSeconds(60)))
@@ -75,7 +75,7 @@ object FiltersFor {
           TemporalExtent(None, end.plusSeconds(60))
         }
     }
-    SearchFilters(
+    SearchParameters(
       None,
       Some(temporalExtent),
       None,
@@ -87,7 +87,7 @@ object FiltersFor {
     )
   }
 
-  def geomFilterFor(item: StacItem): SearchFilters = SearchFilters(
+  def geomFilterFor(item: StacItem): SearchParameters = SearchParameters(
     None,
     None,
     Some(item.geometry),
@@ -98,8 +98,8 @@ object FiltersFor {
     None
   )
 
-  def collectionFilterFor(collection: StacCollection): SearchFilters =
-    SearchFilters(
+  def collectionFilterFor(collection: StacCollection): SearchParameters =
+    SearchParameters(
       None,
       None,
       None,
@@ -110,7 +110,7 @@ object FiltersFor {
       None
     )
 
-  def itemFilterFor(item: StacItem): SearchFilters = SearchFilters(
+  def itemFilterFor(item: StacItem): SearchParameters = SearchParameters(
     None,
     None,
     None,
@@ -121,12 +121,12 @@ object FiltersFor {
     None
   )
 
-  def bboxFilterExcluding(item: StacItem): SearchFilters = {
+  def bboxFilterExcluding(item: StacItem): SearchParameters = {
     val itemGeomBbox = item.geometry.getEnvelopeInternal()
     val rhs          = itemGeomBbox.getMinX() - 1
     val bottom       = itemGeomBbox.getMinY() - 1
     val newBbox      = TwoDimBbox(rhs - 1, bottom - 1, rhs, bottom)
-    SearchFilters(
+    SearchParameters(
       Some(newBbox),
       None,
       None,
@@ -138,7 +138,7 @@ object FiltersFor {
     )
   }
 
-  def timeFilterExcluding(item: StacItem): SearchFilters = {
+  def timeFilterExcluding(item: StacItem): SearchParameters = {
     val temporalExtent = item.properties.datetime match {
       case ItemDatetime.PointInTime(instant) =>
         TemporalExtent(instant.minusSeconds(60), Some(instant.minusSeconds(30)))
@@ -155,7 +155,7 @@ object FiltersFor {
           TemporalExtent(None, start.minusSeconds(60))
         }
     }
-    SearchFilters(
+    SearchParameters(
       None,
       Some(temporalExtent),
       None,
@@ -167,12 +167,12 @@ object FiltersFor {
     )
   }
 
-  def geomFilterExcluding(item: StacItem): SearchFilters = {
+  def geomFilterExcluding(item: StacItem): SearchParameters = {
     val itemGeomBbox = item.geometry.getEnvelopeInternal()
     val rhs          = itemGeomBbox.getMinX() - 1
     val bottom       = itemGeomBbox.getMinY() - 1
     val newGeom      = Extent(rhs - 1, bottom - 1, rhs, bottom).toPolygon
-    SearchFilters(
+    SearchParameters(
       None,
       None,
       Some(newGeom),
@@ -184,7 +184,7 @@ object FiltersFor {
     )
   }
 
-  def collectionFilterExcluding(collection: StacCollection): SearchFilters = SearchFilters(
+  def collectionFilterExcluding(collection: StacCollection): SearchParameters = SearchParameters(
     None,
     None,
     None,
@@ -196,7 +196,7 @@ object FiltersFor {
     None
   )
 
-  def itemFilterExcluding(item: StacItem): SearchFilters = SearchFilters(
+  def itemFilterExcluding(item: StacItem): SearchParameters = SearchParameters(
     None,
     None,
     None,
@@ -208,8 +208,8 @@ object FiltersFor {
     None
   )
 
-  def inclusiveFilters(collection: StacCollection, item: StacItem): SearchFilters = {
-    val filters: NonEmptyList[SearchFilters] = NonEmptyList
+  def inclusiveFilters(collection: StacCollection, item: StacItem): SearchParameters = {
+    val filters: NonEmptyList[SearchParameters] = NonEmptyList
       .of(
         bboxFilterFor(item),
         timeFilterFor(item),
@@ -220,8 +220,8 @@ object FiltersFor {
     filters.combineAll
   }
 
-  def inclusiveFilters(collection: StacCollection): SearchFilters = {
-    val filters: NonEmptyList[Option[SearchFilters]] =
+  def inclusiveFilters(collection: StacCollection): SearchParameters = {
+    val filters: NonEmptyList[Option[SearchParameters]] =
       NonEmptyList.of(collectionFilterFor(collection).some)
     val concatenated = filters.combineAll
     // guaranteed to succeed, since most of the filters are being converted into options

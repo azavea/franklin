@@ -1,18 +1,18 @@
 package com.azavea.franklin.api
 
-import cats.effect._
-import cats.syntax.all._
-import com.azavea.franklin.api.commands.{ApiConfig, Commands, DatabaseConfig}
-import com.azavea.franklin.api.endpoints.LandingPageEndpoints
 import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,
   CollectionItemEndpoints,
-  SearchEndpoints,
-  TileEndpoints
+  LandingPageEndpoints,
+  SearchEndpoints
 }
 import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 import com.azavea.franklin.api.services._
 import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
+import com.azavea.franklin.commands._
+
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
@@ -109,37 +109,23 @@ $$$$
         collectionItemEndpoints = new CollectionItemEndpoints[IO](
           apiConfig.defaultLimit,
           apiConfig.enableTransactions,
-          apiConfig.enableTiles,
           apiConfig.path
         )
         collectionEndpoints = new CollectionEndpoints[IO](
           apiConfig.enableTransactions,
-          apiConfig.enableTiles,
           apiConfig.path
         )
         landingPage = new LandingPageEndpoints[IO](apiConfig.path)
         allEndpoints = collectionEndpoints.endpoints ++ collectionItemEndpoints.endpoints ++ new SearchEndpoints[
           IO
-        ](apiConfig.path).endpoints ++ new TileEndpoints[
-          IO
-        ](
-          apiConfig.enableTiles,
-          apiConfig.path
-        ).endpoints ++ landingPage.endpoints
+        ](apiConfig.path).endpoints ++ landingPage.endpoints
         docs      = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
         docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes = new SearchService[IO](
           apiConfig,
           apiConfig.defaultLimit,
-          apiConfig.enableTiles,
           xa,
           rootLink
-        ).routes
-        tileRoutes = new TileService[IO](
-          apiConfig.apiHost,
-          apiConfig.enableTiles,
-          apiConfig.path,
-          xa
         ).routes
         itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
         collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
@@ -154,7 +140,7 @@ $$$$
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
           new AccessLoggingMiddleware(
-            collectionRoutes <+> searchRoutes <+> tileRoutes <+> landingPageRoutes <+> docRoutes,
+            collectionRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
             logger
           ).withLogging(true)
         ).orNotFound
@@ -177,34 +163,12 @@ $$$$
     import Commands._
 
     applicationCommand.parse(args, env = sys.env) map {
-      case RunServer(apiConfig, dbConfig) if !apiConfig.runMigrations =>
+      case RunServer(apiConfig, dbConfig) =>
         println(s"apiconfig $apiConfig")
         println(s"dbConfig $dbConfig")
         createServer(apiConfig, dbConfig)
           .use(_ => IO.never)
           .as(ExitCode.Success)
-      case RunServer(apiConfig, dbConfig) =>
-        runMigrations(dbConfig) *>
-          createServer(apiConfig, dbConfig).use(_ => IO.never).as(ExitCode.Success)
-      case RunMigrations(config) => runMigrations(config)
-      case RunCatalogImport(catalogRoot, dbConfig, dryRun) =>
-        AsyncHttpClientCatsBackend.resource[IO]() use { implicit backend =>
-          runCatalogImport(catalogRoot, dbConfig, dryRun) map { _ => ExitCode.Success }
-        }
-      case RunItemsImport(collectionId, itemUris, dbConfig, dryRun) => {
-        AsyncHttpClientCatsBackend.resource[IO]() use { implicit backend =>
-          runStacItemImport(collectionId, itemUris, dbConfig, dryRun) map {
-            case Left(error) => {
-              println(s"Import failed: $error")
-              ExitCode.Error
-            }
-            case Right(numItemsImported) => {
-              println(s"Import succesful: ${numItemsImported} items imported")
-              ExitCode.Success
-            }
-          }
-        }
-      }
     } match {
       case Left(e) =>
         IO {

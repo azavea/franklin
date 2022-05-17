@@ -16,7 +16,7 @@ import io.circe.{Decoder, Encoder, Error => CirceError}
 import java.sql.Timestamp
 import java.time.{Instant, OffsetDateTime}
 
-package object database extends CirceJsonbMeta with GeotrellisWktMeta with Filterables {
+package object database extends CirceJsonbMeta with GeotrellisWktMeta {
 
   implicit val instantMeta: Meta[Instant]   = Meta[Timestamp].imap(_.toInstant)(Timestamp.from)
   implicit val instantRead: Read[Instant]   = Read[Timestamp].imap(_.toInstant)(Timestamp.from)

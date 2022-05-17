@@ -1,6 +1,6 @@
 package com.azavea.franklin.api
 
-import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString

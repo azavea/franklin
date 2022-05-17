@@ -1,15 +1,16 @@
 package com.azavea.franklin.api.services
 
+import com.azavea.franklin
+import com.azavea.franklin.api._
+import com.azavea.franklin.api.endpoints._
+import com.azavea.franklin.api.implicits._
+import com.azavea.franklin.commands.ApiConfig
+import com.azavea.franklin.database._
+import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
+
 import cats._
 import cats.effect._
 import cats.syntax.all._
-import com.azavea.franklin
-import com.azavea.franklin.api._
-import com.azavea.franklin.api.commands.ApiConfig
-import com.azavea.franklin.api.endpoints._
-import com.azavea.franklin.api.implicits._
-import com.azavea.franklin.database._
-import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import doobie._

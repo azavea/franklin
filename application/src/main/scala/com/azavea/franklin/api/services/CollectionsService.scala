@@ -4,12 +4,10 @@ import cats.data.EitherT
 import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
-import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.api.implicits._
-import com.azavea.franklin.database.MosaicDefinitionDao
-import com.azavea.franklin.database.StacCollectionDao
-import com.azavea.franklin.database.StacItemDao
+import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel.MosaicDefinition
 import com.azavea.franklin.datamodel.{CollectionsResponse, TileInfo}
 import com.azavea.franklin.error.{NotFound => NF}
@@ -82,12 +80,11 @@ class CollectionsService[F[_]: Concurrent](
 
   val apiHost            = apiConfig.apiHost
   val enableTransactions = apiConfig.enableTransactions
-  val enableTiles        = apiConfig.enableTiles
   val addCollectionLinks = AddCollectionLinks(apiConfig)
 
   def listCollections(): F[Either[Unit, Json]] = {
     for {
-      collections <- StacCollectionDao.listCollections().transact(xa)
+      collections <- PGStacQueries.listCollections().transact(xa)
       collectionsWithLinks = collections.map(addCollectionLinks(_))
     } yield {
       val childrenLinks: List[Json] = collectionsWithLinks.map({ coll: Json =>
@@ -108,8 +105,8 @@ class CollectionsService[F[_]: Concurrent](
   def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
-      collections <- StacCollectionDao
-        .getCollectionJson(collectionId)
+      collections <- PGStacQueries
+        .getCollection(collectionId)
         .transact(xa)
       collectionWithLinks = collections.map(addCollectionLinks(_))
     } yield {
@@ -153,136 +150,54 @@ class CollectionsService[F[_]: Concurrent](
   //   }
   // }
 
-  def getCollectionTiles(rawCollectionId: String): F[Either[NF, (Json, String)]] = {
-    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-    for {
-      collectionOption <- StacCollectionDao
-        .getCollection(collectionId)
-        .transact(xa)
-      mosaicDefinitions <- collectionOption.toList flatTraverse { _ =>
-        MosaicDefinitionDao.listMosaicDefinitions(collectionId).transact(xa)
-      }
-    } yield {
-      Either.fromOption(
-        collectionOption.map(collection =>
-          (
-            TileInfo.fromStacCollection(apiHost, collection, mosaicDefinitions).asJson,
-            collection.##.toString
-          )
-        ),
-        NF(s"Collection $collectionId")
-      )
-    }
-  }
+  def createCollection(collection: StacCollection): F[Either[Unit, Json]] = ???
+  // {
+  //   val newCollection = collection.copy(links =
+  //     collection.links.filter({ link =>
+  //       !Set[StacLinkType](StacLinkType.Item, StacLinkType.StacRoot, StacLinkType.Self)
+  //         .contains(link.rel)
+  //     }) ++
+  //       List(
+  //         StacLink(
+  //           s"$apiHost/collections/${collection.id}",
+  //           StacLinkType.Self,
+  //           Some(`application/json`),
+  //           collection.title
+  //         ),
+  //         StacLink(
+  //           s"$apiHost",
+  //           StacLinkType.StacRoot,
+  //           Some(`application/json`),
+  //           None
+  //         )
+  //       )
+  //   )
+  //   for {
+  //     inserted  <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
+  //     validator <- makeCollectionValidator(inserted.stacExtensions, collectionExtensionsRef)
+  //   } yield Right(validator(inserted).asJson.dropNullValues)
+  // }
 
-  def createCollection(collection: StacCollection): F[Either[Unit, Json]] = {
-    val newCollection = collection.copy(links =
-      collection.links.filter({ link =>
-        !Set[StacLinkType](StacLinkType.Item, StacLinkType.StacRoot, StacLinkType.Self)
-          .contains(link.rel)
-      }) ++
-        List(
-          StacLink(
-            s"$apiHost/collections/${collection.id}",
-            StacLinkType.Self,
-            Some(`application/json`),
-            collection.title
-          ),
-          StacLink(
-            s"$apiHost",
-            StacLinkType.StacRoot,
-            Some(`application/json`),
-            None
-          )
-        )
-    )
-    for {
-      inserted  <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
-      validator <- makeCollectionValidator(inserted.stacExtensions, collectionExtensionsRef)
-    } yield Right(validator(inserted).asJson.dropNullValues)
-  }
-
-  def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = {
-    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-    for {
-      collectionOption <- StacCollectionDao
-        .getCollection(collectionId)
-        .transact(xa)
-      deleted <- collectionOption traverse { _ =>
-        StacCollectionDao.query.filter(fr"id = $collectionId").delete.transact(xa).void
-      }
-    } yield {
-      Either.fromOption(
-        deleted,
-        NF(s"Collection $collectionId not found")
-      )
-    }
-  }
-
-  def createMosaic(
-      rawCollectionId: String,
-      mosaicDefinition: MosaicDefinition
-  ): F[Either[NF, MosaicDefinition]] = {
-    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-
-    (for {
-      itemsInCollection <- StacItemDao.checkItemsInCollection(mosaicDefinition.items, collectionId)
-      itemAssetValidity <- itemsInCollection flatTraverse { _ =>
-        StacItemDao.checkAssets(mosaicDefinition.items, collectionId)
-      }
-      inserted <- itemAssetValidity traverse { _ =>
-        MosaicDefinitionDao.insert(mosaicDefinition, collectionId)
-      }
-      _ <- (inserted, itemAssetValidity).tupled traverse {
-        case (mosaic, assets) =>
-          MosaicDefinitionDao.insertHistogram(mosaic.id, assets)
-      }
-    } yield inserted.leftMap({ err => NF(err.msg) })).transact(xa)
-  }
-
-  def getMosaic(
-      rawCollectionId: String,
-      mosaicId: UUID
-  ): F[Either[NF, MosaicDefinition]] = {
-    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-
-    MosaicDefinitionDao.getMosaicDefinition(collectionId, mosaicId).transact(xa) map {
-      Either.fromOption(_, NF())
-    }
-  }
-
-  def deleteMosaic(
-      rawCollectionId: String,
-      mosaicId: UUID
-  ): F[Either[NF, Unit]] = {
-    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-
-    MosaicDefinitionDao.deleteMosaicDefinition(collectionId, mosaicId).transact(xa) map {
-      case 0 => Left(NF())
-      case _ => Right(())
-    }
-  }
-
-  def listMosaics(
-      rawCollectionId: String
-  ): F[Either[NF, List[MosaicDefinition]]] = {
-    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-    (for {
-      collectionOption <- StacCollectionDao.getCollection(collectionId)
-      mosaics <- collectionOption traverse { collection =>
-        MosaicDefinitionDao.listMosaicDefinitions(collection.id)
-      }
-    } yield {
-      mosaics match {
-        case Some(mosaicDefinitions) => Right(mosaicDefinitions)
-        case _                       => Left(NF())
-      }
-    }).transact(xa)
-
-  }
+  def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = ???
+  // {
+  //   val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+  //   for {
+  //     collectionOption <- StacCollectionDao
+  //       .getCollection(collectionId)
+  //       .transact(xa)
+  //     deleted <- collectionOption traverse { _ =>
+  //       StacCollectionDao.query.filter(fr"id = $collectionId").delete.transact(xa).void
+  //     }
+  //   } yield {
+  //     Either.fromOption(
+  //       deleted,
+  //       NF(s"Collection $collectionId not found")
+  //     )
+  //   }
+  // }
 
   val collectionEndpoints =
-    new CollectionEndpoints[F](enableTransactions, enableTiles, apiConfig.path)
+    new CollectionEndpoints[F](enableTransactions, apiConfig.path)
 
   val routesList = List(
     Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionsList)(_ => listCollections()),
@@ -290,18 +205,6 @@ class CollectionsService[F[_]: Concurrent](
       case collectionId => getCollectionUnique(collectionId)
     })
   ) ++
-    (if (enableTiles) {
-       List(
-         Http4sServerInterpreter.toRoutes(collectionEndpoints.collectionTiles)(getCollectionTiles),
-         Http4sServerInterpreter
-           .toRoutes(collectionEndpoints.createMosaic)(Function.tupled(createMosaic)),
-         Http4sServerInterpreter
-           .toRoutes(collectionEndpoints.getMosaic)(Function.tupled(getMosaic)),
-         Http4sServerInterpreter
-           .toRoutes(collectionEndpoints.deleteMosaic)(Function.tupled(deleteMosaic)),
-         Http4sServerInterpreter.toRoutes(collectionEndpoints.listMosaics)(listMosaics)
-       )
-     } else Nil) ++
     (if (enableTransactions) {
        List(
          Http4sServerInterpreter.toRoutes(collectionEndpoints.createCollection)(collection =>

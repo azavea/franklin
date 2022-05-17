@@ -3,7 +3,7 @@ package com.azavea.franklin.api
 import cats.Applicative
 import cats.effect.{Concurrent, ContextShift, Timer}
 import cats.syntax.functor._
-import com.azavea.franklin.api.commands.ApiConfig
+import com.azavea.franklin.api.ApiConfig
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService, SearchService}
 import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}

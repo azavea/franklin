@@ -5,7 +5,7 @@ import cats.effect.IO
 import cats.syntax.all._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
-import com.azavea.franklin.database.{SearchFilters, TestDatabaseSpec}
+import com.azavea.franklin.database.{SearchParameters, TestDatabaseSpec}
 import com.azavea.franklin.datamodel.{PaginationToken, StacSearchCollection}
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
@@ -26,8 +26,8 @@ class SearchServiceSpec
   This specification verifies that the Search Service sensibly finds and excludes items
 
   The search service should:
-    - search with POST search filters                       $postSearchFiltersExpectation
-    - search with GET search filters                        $getSearchFiltersExpectation
+    - search with POST search filters                       $postSearchParametersExpectation
+    - search with GET search filters                        $getSearchParametersExpectation
     - find an item with filters designed to find it         $findItemWhenExpected
     - find two items with filters designed to find it       $find2ItemsWhenExpected
     - not find items when excluded by time                  $dontFindTimeFilters
@@ -44,7 +44,7 @@ class SearchServiceSpec
 
   private def getExclusionTest(
       name: String
-  )(getFilters: StacCollection => StacItem => SearchFilters) =
+  )(getFilters: StacCollection => StacItem => SearchParameters) =
     prop { (stacItem: StacItem, stacCollection: StacCollection) =>
       val params = getFilters(stacCollection)(stacItem)
       val testResult = {
@@ -73,9 +73,9 @@ class SearchServiceSpec
       testResult aka s"the item was included in the results for $name" must beFalse
     }
 
-  def postSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
+  def postSearchParametersExpectation = prop { (searchParameters: SearchParameters) =>
     val request = Request[IO](method = Method.POST, uri = Uri.fromString("/search").right.get)
-      .withEntity(searchFilters)
+      .withEntity(searchParameters)
     val result = for {
       resp    <- testServices.searchService.routes.run(request)
       decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
@@ -84,8 +84,8 @@ class SearchServiceSpec
     searchResult.context.returned ==== searchResult.features.length
   }
 
-  def getSearchFiltersExpectation = prop { (searchFilters: SearchFilters) =>
-    val queryParams = searchFilters.asQueryParameters
+  def getSearchParametersExpectation = prop { (searchParameters: SearchParameters) =>
+    val queryParams = searchParameters.asQueryParameters
     val request =
       Request[IO](method = Method.GET, uri = Uri.fromString(s"/search?$queryParams").right.get)
     val result = for {
@@ -123,10 +123,10 @@ class SearchServiceSpec
         _.getCollectionItemsResource(stacItem1 :: stacItem2 :: Nil, stacCollection)
       }
       val requestIO = resourceIO flatMap { resource =>
-        def getSearchCollection(searchFilters: SearchFilters): IO[Option[StacSearchCollection]] = {
+        def getSearchCollection(searchParameters: SearchParameters): IO[Option[StacSearchCollection]] = {
           val request =
             Request[IO](method = Method.POST, uri = Uri.unsafeFromString(s"/search"))
-              .withEntity(searchFilters.asJson)
+              .withEntity(searchParameters.asJson)
           (for {
             resp    <- testServices.searchService.routes.run(request)
             decoded <- OptionT.liftF { resp.as[StacSearchCollection] }
