@@ -17,27 +17,21 @@ trait DatabaseOptions {
 
   private val databaseOptionDefault = "franklin"
 
-  private val databasePortDefault = PosInt(5432)
+  private val databasePortDefault = PosInt(5439)
   private val databasePortHelp    = s"Port to connect to database on. Default: '$databasePortDefault'."
 
   private val databasePort = (Opts.option[PosInt]("db-port", help = databasePortHelp) orElse Opts
     .env[PosInt]("DB_PORT", help = databasePortHelp)) withDefault (databasePortDefault)
-
-  private val pgstacPort = (Opts.option[PosInt]("pgstac-port", help = databasePortHelp) orElse Opts
-    .env[PosInt]("PGSTAC_PORT", help = databasePortHelp)) withDefault (databasePortDefault)
 
   private val databaseHostHelp = "Database host to connect to."
 
   private val databaseHost = (Opts.option[String]("db-host", help = databaseHostHelp) orElse Opts
     .env[String]("DB_HOST", help = databaseHostHelp)) withDefault ("database.service.internal")
 
-  private val databaseNameHelp = s"Database name to connect to. Default: '$databaseOptionDefault'."
+  private val databaseNameHelp = s"Database name to connect to. Default: 'postgis'."
 
   private val databaseName = (Opts.option[String]("db-name", help = databaseNameHelp) orElse Opts
-    .env[String]("DB_NAME", help = databaseNameHelp)) withDefault (databaseOptionDefault)
-
-  private val pgstacName = (Opts.option[String]("pgstac-name", help = databaseNameHelp) orElse Opts
-    .env[String]("PGSTAC_NAME", help = databaseNameHelp)) withDefault (databaseOptionDefault)
+    .env[String]("DB_NAME", help = databaseNameHelp)) withDefault ("postgis")
 
   private val databasePasswordHelp = s"Database password to use. Default: '$databaseOptionDefault'."
 
@@ -57,9 +51,7 @@ trait DatabaseOptions {
       databasePassword,
       databaseHost,
       databasePort,
-      pgstacPort,
       databaseName,
-      pgstacName
     ) mapN DatabaseConfig.FromComponents).validate(
       e":boom: Unable to connect to database - please ensure database is configured and listening at entered port"
     ) { config =>

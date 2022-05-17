@@ -29,6 +29,12 @@ services:
       - PGDATABASE=postgis
     ports:
       - "5439:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "franklin"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     command: postgres -N 500
   scriptrunner:
     container_name: python-scripts

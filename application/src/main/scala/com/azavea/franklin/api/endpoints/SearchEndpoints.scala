@@ -3,38 +3,28 @@ package com.azavea.franklin.api.endpoints
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database._
 import com.azavea.franklin.datamodel.{PaginationToken, SearchParameters}
+import com.azavea.franklin.commands.ApiConfig
 import com.azavea.stac4s.{Bbox, TemporalExtent}
 
 import cats.effect.Concurrent
 import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
-import io.circe.{Json, Decoder}
+import io.circe.{Json, Decoder, Encoder}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-class SearchEndpoints[F[_]: Concurrent](pathPrefix: Option[String]) {
+class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
 
-  val base = endpoint.in(baseFor(pathPrefix, "search"))
+  val base = endpoint.in(baseFor(apiConfig.path, "search"))
 
   implicit val searchParametersValidator: Validator[SearchParameters] = Validator.pass[SearchParameters]
 
   val nextToken: EndpointInput.Query[Option[PaginationToken]] =
     query[Option[PaginationToken]]("next")
-
-    /*
-        query             <- c.downField("query").as[Option[Json]]
-        filter            <- c.downField("filter").as[Option[Json]]
-        filterLang        <- c.downField("filter_lang").as[Option[String]] match {
-                               case Left(_) => c.downField("filter-lang").as[Option[String]]
-                               case r@Right(_) => r
-                             }
-        token             <- c.downField("token").as[Option[String]]*/
-
-  val test = Decoder[Geometry]
 
   val searchParameters: EndpointInput[SearchParameters] =
     query[Option[Bbox]]("bbox")
@@ -43,10 +33,10 @@ class SearchEndpoints[F[_]: Concurrent](pathPrefix: Option[String]) {
       .and(query[Option[List[String]]]("collections"))
       .and(query[Option[List[String]]]("ids"))
       .and(query[Option[NonNegInt]]("limit"))
-      .and(query[Option[Json]])("query")
-      .and(query[Option[Json]])("filter")
-      .and(query[Option[String]])("filter_lang")
-      .and(query[Option[String]])("token")
+      .and(query[Option[Json]]("query"))
+      .and(query[Option[Json]]("filter"))
+      .and(query[Option[String]]("filter_lang"))
+      .and(query[Option[String]]("token"))
       .map(
         (tup: (
             Option[Bbox],

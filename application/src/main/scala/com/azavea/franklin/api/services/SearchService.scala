@@ -21,7 +21,6 @@ import sttp.tapir.server.http4s._
 
 class SearchService[F[_]: Concurrent](
     apiConfig: ApiConfig,
-    defaultLimit: NonNegInt,
     xa: Transactor[F],
     rootLink: StacLink
 )(
@@ -30,7 +29,8 @@ class SearchService[F[_]: Concurrent](
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
-  val searchEndpoints = new SearchEndpoints[F](apiConfig.path)
+  val searchEndpoints = new SearchEndpoints[F](apiConfig)
+  val defaultLimit = apiConfig.defaultLimit
 
   def search(searchParameters: SearchParameters, searchMethod: SearchMethod): F[Either[Unit, Json]] = ???
   // {

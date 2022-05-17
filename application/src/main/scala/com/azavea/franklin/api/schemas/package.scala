@@ -11,11 +11,14 @@ import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s._
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
+import geotrellis.vector.{io => _, _}
+import io.circe.parser.{decode => circeDecode}
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
+import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.{Codec, DecodeResult, Schema}
 
 import scala.util.Try
@@ -28,6 +31,24 @@ package object schemas {
     schemaForCirceJson.schemaType
   )
   implicit val schemaForGeometry: Schema[Geometry] = Schema(schemaForCirceJson.schemaType)
+
+  def decodeGeom(s: String): DecodeResult[Geometry] = circeDecode[Geometry](s) match {
+    case Right(v) => DecodeResult.Value(v)
+    case Left(f) => DecodeResult.Error(s, f)
+  }
+  def encodeGeom(geom: Geometry): String = geom.asJson.noSpaces
+
+  implicit val GeomCodec: Codec[String, Geometry, TextPlain] = 
+    Codec.string.mapDecode(decodeGeom)(encodeGeom)
+
+  def decodeJson(s: String): DecodeResult[Json] = circeDecode[Json](s) match {
+    case Right(v) => DecodeResult.Value(v)
+    case Left(f) => DecodeResult.Error(s, f)
+  }
+  def encodeJson(json: Json): String = json.noSpaces
+
+  implicit val JsonCodec: Codec[String, Json, TextPlain] = 
+    Codec.string.mapDecode(decodeJson)(encodeJson)
 
   implicit val schemaForStacItem: Schema[StacItem]         = Schema(schemaForCirceJson.schemaType)
   implicit val schemaForInvalidPatch: Schema[InvalidPatch] = Schema(schemaForCirceJson.schemaType)
