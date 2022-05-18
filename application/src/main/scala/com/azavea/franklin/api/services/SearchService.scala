@@ -38,7 +38,10 @@ class SearchService[F[_]: Concurrent](
     for {
       searchResults <- PGStacQueries.search(params).transact(xa)
     } yield {
-      searchResults
+      searchResults match {
+        case Some(res) => Either.right(res)
+        case None => Either.left(())
+      }
     }
   }
   // {

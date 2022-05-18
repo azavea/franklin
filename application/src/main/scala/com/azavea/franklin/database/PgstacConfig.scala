@@ -12,7 +12,7 @@ object PgstacConfig {
   val jdbcNoDBUrl: String =
     Properties.envOrElse(
       "POSTGRES_URL",
-      "jdbc:postgresql://localhost:5439/"
+      "jdbc:postgresql://localhost:5432/"
     )
 
   val jdbcDBName: String =

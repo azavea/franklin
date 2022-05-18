@@ -17,7 +17,7 @@ trait DatabaseOptions {
 
   private val databaseOptionDefault = "franklin"
 
-  private val databasePortDefault = PosInt(5439)
+  private val databasePortDefault = PosInt(5432)
   private val databasePortHelp    = s"Port to connect to database on. Default: '$databasePortDefault'."
 
   private val databasePort = (Opts.option[PosInt]("db-port", help = databasePortHelp) orElse Opts

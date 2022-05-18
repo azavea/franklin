@@ -49,11 +49,11 @@ object PGStacQueries {
       .to[List]
   }
 
-  def search(params: SearchParameters): ConnectionIO[List[Json]] = {
+  def search(params: SearchParameters): ConnectionIO[Option[Json]] = {
     val req = params.asJson
     fr"SELECT * FROM search($req::jsonb)"
       .query[Json]
-      .to[List]
+      .option
   }
   // val selectF = fr"SELECT content FROM collections"
 

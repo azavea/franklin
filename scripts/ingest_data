@@ -16,8 +16,7 @@ Sets up this project for development.
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     docker-compose \
         -f docker-compose.yml \
-        run --rm \
-        scriptrunner \
-        python /opt/src/scripts/bin/loadtestdata.py
+        run --rm scriptrunner \
+        bash -c "pypgstac pgready && python /opt/src/scripts/bin/loadtestdata.py"
 
 fi
