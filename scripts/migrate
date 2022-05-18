@@ -24,11 +24,10 @@ then
             usage
             ;;
         *)
-            echo -e "\e[32m[franklin] Running migrations\e[0m"
-            ./sbt 'application/run migrate --db-host=localhost'
+        echo -e "\e[32m[franklin] Running migrations\e[0m"
         docker-compose \
             -f docker-compose.yml \
-            run --rm stac \
+            run --rm scriptrunner \
             bash -c "pypgstac pgready && pypgstac migrate"
             ;;
     esac

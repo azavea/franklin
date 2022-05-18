@@ -88,6 +88,6 @@ trait ApiOptions {
     apiPath,
     apiScheme,
     defaultLimit,
-    enableTransactions,
+    enableTransactions
   ) mapN ApiConfig
 }

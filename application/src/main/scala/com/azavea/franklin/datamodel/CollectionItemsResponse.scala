@@ -32,17 +32,19 @@ final case class CollectionItemsResponseJson(
 
 object CollectionItemsResponseJson {
 
-  implicit val encCollectionItemsResponse: Encoder[CollectionItemsResponseJson] = Encoder.forProduct3(
-    "type",
-    "features",
-    "links"
-  )(resp => ("FeatureCollection", resp.features, resp.links))
+  implicit val encCollectionItemsResponse: Encoder[CollectionItemsResponseJson] =
+    Encoder.forProduct3(
+      "type",
+      "features",
+      "links"
+    )(resp => ("FeatureCollection", resp.features, resp.links))
 
-  implicit val decCollectionItemsResponse: Decoder[CollectionItemsResponseJson] = Decoder.forProduct3(
-    "type",
-    "features",
-    "links"
-  )((_: String, features: List[Json], links: List[Json]) =>
-    CollectionItemsResponseJson(features, links)
-  )
+  implicit val decCollectionItemsResponse: Decoder[CollectionItemsResponseJson] =
+    Decoder.forProduct3(
+      "type",
+      "features",
+      "links"
+    )((_: String, features: List[Json], links: List[Json]) =>
+      CollectionItemsResponseJson(features, links)
+    )
 }

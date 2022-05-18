@@ -51,7 +51,7 @@ trait DatabaseOptions {
       databasePassword,
       databaseHost,
       databasePort,
-      databaseName,
+      databaseName
     ) mapN DatabaseConfig.FromComponents).validate(
       e":boom: Unable to connect to database - please ensure database is configured and listening at entered port"
     ) { config =>

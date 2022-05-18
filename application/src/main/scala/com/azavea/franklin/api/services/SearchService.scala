@@ -3,7 +3,8 @@ package com.azavea.franklin.api.services
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.SearchEndpoints
 import com.azavea.franklin.api.implicits._
-import com.azavea.franklin.datamodel.{Context, SearchMethod, StacSearchCollection, SearchParameters}
+import com.azavea.franklin.datamodel.{Context, SearchMethod, SearchParameters, StacSearchCollection}
+import com.azavea.franklin.database.PGStacQueries
 
 import cats.effect._
 import cats.syntax.all._
@@ -30,11 +31,17 @@ class SearchService[F[_]: Concurrent](
 ) extends Http4sDsl[F] {
 
   val searchEndpoints = new SearchEndpoints[F](apiConfig)
-  val defaultLimit = apiConfig.defaultLimit
+  val defaultLimit    = apiConfig.defaultLimit
 
-  def search(searchParameters: SearchParameters, searchMethod: SearchMethod): F[Either[Unit, Json]] = ???
+  def search(params: SearchParameters): F[Either[Unit, Json]] = {
+    val limit = params.limit getOrElse defaultLimit
+    for {
+      searchResults <- PGStacQueries.search(params).transact(xa)
+    } yield {
+      searchResults
+    }
+  }
   // {
-  //   val limit = searchParameters.limit getOrElse defaultLimit
   //   for {
   //     itemsFib <- Concurrent[F].start {
   //       (StacItemDao.query
@@ -68,8 +75,8 @@ class SearchService[F[_]: Concurrent](
 
   val routes: HttpRoutes[F] =
     Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)(searchParameters =>
-      search(searchParameters, SearchMethod.Get)
+      search(searchParameters)
     ) <+> Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({
-      case searchParameters => search(searchParameters, SearchMethod.Post)
+      case searchParameters => search(searchParameters)
     })
 }

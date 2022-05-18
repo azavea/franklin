@@ -27,7 +27,7 @@ import software.amazon.awssdk.core.internal.retry.SdkDefaultRetrySetting.Standar
 import sttp.client.{NothingT, SttpBackend}
 import sttp.tapir.server.http4s._
 
-import java.net.{URLEncoder, URLDecoder}
+import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
@@ -35,7 +35,7 @@ case class AddCollectionLinks(apiConfig: ApiConfig) {
 
   val _collectionId = root.id.string
 
-  def _addLink(link: StacLink) = root.links.arr.modify({ ls: Vector[Json] => ls :+ link.asJson})
+  def _addLink(link: StacLink) = root.links.arr.modify({ ls: Vector[Json] => ls :+ link.asJson })
 
   def addTileLink(collection: Json): Json = {
     val encodedCollectionId =
@@ -62,7 +62,7 @@ case class AddCollectionLinks(apiConfig: ApiConfig) {
   }
 
   def apply(collection: Json) = {
-    (addSelfLink _  compose addTileLink)(collection)
+    (addSelfLink _ compose addTileLink)(collection)
   }
 }
 

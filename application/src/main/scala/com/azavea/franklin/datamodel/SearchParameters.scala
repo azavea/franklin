@@ -45,17 +45,25 @@ final case class SearchParameters(
     val idsQP = ids.toNel map { _ =>
       s"""ids=${SearchParameters.encodeString(ids.mkString(","))}"""
     }
-    val limitQP = limit map { lim =>
-      s"""limit=$lim"""
-    }
-    val queryQP = query map { q => s"""query=${SearchParameters.encodeString(q.noSpaces)}""" }
+    val limitQP  = limit map { lim => s"""limit=$lim""" }
+    val queryQP  = query map { q => s"""query=${SearchParameters.encodeString(q.noSpaces)}""" }
     val filterQP = filter map { f => s"""filter=${SearchParameters.encodeString(f.noSpaces)}""" }
-    val filterLangQP = filterLang map { fl => s"""filter_lang=${SearchParameters.encodeString(fl)}""" }
-    val tokenQP = token map { t => s"""token=${SearchParameters.encodeString(t)}"""}
+    val filterLangQP = filterLang map { fl =>
+      s"""filter_lang=${SearchParameters.encodeString(fl)}"""
+    }
+    val tokenQP = token map { t => s"""token=${SearchParameters.encodeString(t)}""" }
 
-    List(bboxQP, datetimeQP, intersectsQP,
-      collectionsQP, idsQP, limitQP, queryQP,
-      filterQP, filterLangQP, tokenQP
+    List(
+      bboxQP,
+      datetimeQP,
+      intersectsQP,
+      collectionsQP,
+      idsQP,
+      limitQP,
+      queryQP,
+      filterQP,
+      filterLangQP,
+      tokenQP
     ).flatten.mkString("&")
   }
 
@@ -66,6 +74,7 @@ object SearchParameters {
   def encodeString(s: String): String = URLEncoder.encode(s, StandardCharsets.UTF_8.toString)
 
   implicit val searchFilterDecoder = new Decoder[SearchParameters] {
+
     def apply(c: HCursor): Decoder.Result[SearchParameters] =
       for {
         bbox              <- c.downField("bbox").as[Option[Bbox]]
@@ -76,11 +85,11 @@ object SearchParameters {
         limit             <- c.downField("limit").as[Option[NonNegInt]]
         query             <- c.downField("query").as[Option[Json]]
         filter            <- c.downField("filter").as[Option[Json]]
-        filterLang        <- c.downField("filter_lang").as[Option[String]] match {
-                               case Left(_) => c.downField("filter-lang").as[Option[String]]
-                               case r@Right(_) => r
-                             }
-        token             <- c.downField("token").as[Option[String]]
+        filterLang <- c.downField("filter_lang").as[Option[String]] match {
+          case Left(_)      => c.downField("filter-lang").as[Option[String]]
+          case r @ Right(_) => r
+        }
+        token <- c.downField("token").as[Option[String]]
       } yield {
 
         SearchParameters(
@@ -92,7 +101,7 @@ object SearchParameters {
           limit,
           query,
           filter,
-          filterLang.map { _ => "cql2-json"},
+          filterLang.map { _ => "cql2-json" },
           token
         )
       }

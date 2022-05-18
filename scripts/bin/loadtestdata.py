@@ -1,27 +1,40 @@
 #!/usr/bin/env python
 
-import asyncio
 import os
 from pathlib import Path
 
-import orjson
-from pypgstac.load import DB, load_iterator, loadopt, tables
+from pypgstac.db import PgstacDB
+from pypgstac.load import Loader, Methods
 
 DATA_DIR = os.path.join(Path(os.path.dirname(__file__)).parent.parent, "data-files")
 collection = os.path.join(DATA_DIR, "naip/collection.json")
 items = os.path.join(DATA_DIR, "naip/items")
 
+db = PgstacDB()
+print("Updating franklin role settings")
 
-async def load_test_data() -> None:
-    async with DB() as conn:
-        with open(collection, "rb") as f:
-            c = orjson.loads(f.read())
-            await load_iterator([c], tables.collections, conn, loadopt.upsert)
-        pathlist = Path(items).glob("*.json")
-        for path in pathlist:
-            with open(str(path), "rb") as f:
-                i = orjson.loads(f.read())
-                await load_iterator([i], tables.items, conn, loadopt.upsert)
+with db.connect() as conn:
+    cur = conn.cursor()
+    cur.execute("ALTER ROLE franklin SET SEARCH_PATH to pgstac, '$user', public;")
+    cur.execute("ALTER ROLE franklin SET pgstac.context TO 'on';")
 
 
-asyncio.run(load_test_data())
+loader = Loader(db)
+
+print("Loading collections...")
+# Load naip collection
+loader.load_collections(
+    str(collection),
+    insert_mode=Methods.upsert,
+)
+
+print("Loading items...")
+# Load naip items
+item_path_list = Path(items).glob("*.json")
+for item_path in item_path_list:
+    loader.load_items(
+        str(item_path),
+        insert_mode=Methods.upsert,
+    )
+
+print("Finished loading data.")

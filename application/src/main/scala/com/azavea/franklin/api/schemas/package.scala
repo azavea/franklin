@@ -34,20 +34,20 @@ package object schemas {
 
   def decodeGeom(s: String): DecodeResult[Geometry] = circeDecode[Geometry](s) match {
     case Right(v) => DecodeResult.Value(v)
-    case Left(f) => DecodeResult.Error(s, f)
+    case Left(f)  => DecodeResult.Error(s, f)
   }
   def encodeGeom(geom: Geometry): String = geom.asJson.noSpaces
 
-  implicit val GeomCodec: Codec[String, Geometry, TextPlain] = 
+  implicit val GeomCodec: Codec[String, Geometry, TextPlain] =
     Codec.string.mapDecode(decodeGeom)(encodeGeom)
 
   def decodeJson(s: String): DecodeResult[Json] = circeDecode[Json](s) match {
     case Right(v) => DecodeResult.Value(v)
-    case Left(f) => DecodeResult.Error(s, f)
+    case Left(f)  => DecodeResult.Error(s, f)
   }
   def encodeJson(json: Json): String = json.noSpaces
 
-  implicit val JsonCodec: Codec[String, Json, TextPlain] = 
+  implicit val JsonCodec: Codec[String, Json, TextPlain] =
     Codec.string.mapDecode(decodeJson)(encodeJson)
 
   implicit val schemaForStacItem: Schema[StacItem]         = Schema(schemaForCirceJson.schemaType)

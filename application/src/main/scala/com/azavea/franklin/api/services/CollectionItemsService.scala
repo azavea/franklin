@@ -37,17 +37,15 @@ import sttp.tapir.server.DecodeFailureContext
 import sttp.tapir.server.ServerDefaults
 import sttp.tapir.server.http4s._
 
-
-import java.net.{URLEncoder, URLDecoder}
+import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
-
 
 case class AddItemLinks(apiConfig: ApiConfig) {
 
-  val _itemId = root.id.string
+  val _itemId       = root.id.string
   val _collectionId = root.collection.string
 
-  def _addLink(link: StacLink) = root.links.arr.modify({ ls: Vector[Json] => ls :+ link.asJson})
+  def _addLink(link: StacLink) = root.links.arr.modify({ ls: Vector[Json] => ls :+ link.asJson })
 
   def addTileLink(item: Json): Json = item
 
@@ -78,7 +76,7 @@ case class AddItemLinks(apiConfig: ApiConfig) {
   }
 
   def apply(item: Json) = {
-    (addSelfLink _  compose addTileLink)(item)
+    (addSelfLink _ compose addTileLink)(item)
   }
 }
 
@@ -101,14 +99,15 @@ class CollectionItemsService[F[_]: Concurrent](
   val addItemLinks       = AddCollectionLinks(apiConfig)
 
   def listCollectionItems(
-    collectionId: String,
-    token: Option[String],
-    limit: Option[NonNegInt]
+      collectionId: String,
+      token: Option[String],
+      limit: Option[NonNegInt]
   ): F[Either[Unit, Json]] = {
     val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
     for {
-      items <- PGStacQueries.listItems(decodedId, limit.map(_.value).getOrElse(defaultLimit))
-                 .transact(xa)
+      items <- PGStacQueries
+        .listItems(decodedId, limit.map(_.value).getOrElse(defaultLimit))
+        .transact(xa)
     } yield {
       val response = CollectionItemsResponseJson(
         items.toList,
@@ -130,12 +129,13 @@ class CollectionItemsService[F[_]: Concurrent](
     } yield {
       itemOption match {
         case Some(item) => Right((item, item.##.toString))
-        case None => Left(NF(s"Item $itemId in collection $collectionId not found"))
+        case None       => Left(NF(s"Item $itemId in collection $collectionId not found"))
       }
     }
   }
 
-  def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, (Json, String)]] = ???
+  def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, (Json, String)]] =
+    ???
   // {
   //   val fallbackCollectionLink = StacLink(
   //     s"/collections/$collectionId",

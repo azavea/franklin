@@ -1,24 +1,8 @@
 version: '2.3'
 services:
-  database:
-    container_name: franklin-db
-    image: quay.io/azavea/postgis:3-postgres12.2-slim
-    environment:
-      - POSTGRES_USER=franklin
-      - POSTGRES_PASSWORD=franklin
-      - POSTGRES_DB=franklin
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "franklin"]
-      interval: 3s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
-    command: postgres -c log_statement=all
   database-pgstac:
     container_name: pgstac-db
-    image: ghcr.io/stac-utils/pgstac:v0.4.5
+    image: ghcr.io/stac-utils/pgstac:v0.6.3
     environment:
       - POSTGRES_USER=franklin
       - POSTGRES_PASSWORD=franklin

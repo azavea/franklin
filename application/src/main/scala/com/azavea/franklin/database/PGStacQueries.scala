@@ -1,6 +1,10 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.datamodel.{BulkExtent, MapboxVectorTileFootprintRequest, SearchParameters}
+import com.azavea.franklin.datamodel.{
+  BulkExtent,
+  MapboxVectorTileFootprintRequest,
+  SearchParameters
+}
 
 import io.circe._
 import io.circe.syntax._
@@ -18,7 +22,6 @@ import doobie.postgres.circe.jsonb.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 
 import java.time.Instant
-
 
 object PGStacQueries {
 
@@ -45,23 +48,13 @@ object PGStacQueries {
       .query[Json]
       .to[List]
   }
-/*
-    async def _search_base(
-        self,
-        search_request: PgstacSearch,
-        **kwargs: Any,
-    ) -> ItemCollection:
-        """Cross catalog search (POST).
-        Called with `POST /search`.*/
+
   def search(params: SearchParameters): ConnectionIO[List[Json]] = {
     val req = params.asJson
     fr"SELECT * FROM search($req::jsonb)"
       .query[Json]
       .to[List]
-
   }
-
-
   // val selectF = fr"SELECT content FROM collections"
 
   // val tableName = "collections"

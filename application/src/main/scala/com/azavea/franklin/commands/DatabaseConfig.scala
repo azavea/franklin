@@ -32,7 +32,7 @@ case object DatabaseConfig {
       dbPass: String,
       dbHost: String,
       dbPort: PosInt,
-      dbName: String,
+      dbName: String
   ) extends DatabaseConfig {
     val jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
     println(s"JDBC!! $jdbcUrl")

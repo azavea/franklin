@@ -111,18 +111,16 @@ $$$$
           apiConfig.path
         )
         landingPage = new LandingPageEndpoints[IO](apiConfig.path)
-        allEndpoints =
-          collectionEndpoints.endpoints ++
+        allEndpoints = collectionEndpoints.endpoints ++
           collectionItemEndpoints.endpoints ++
           new SearchEndpoints[IO](apiConfig).endpoints ++
           landingPage.endpoints
-        docs      = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
-        docRoutes = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
+        docs         = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
+        docRoutes    = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes = new SearchService[IO](apiConfig, xa, rootLink).routes
         itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
         collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
-        collectionRoutes =
-          new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+>
+        collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+>
           new CollectionItemsService[IO](xa, apiConfig, itemExtensions, rootLink).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(

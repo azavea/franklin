@@ -24,8 +24,12 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         echo -e "\e[32m[franklin] Configuring npm...\e[0m"
         # npm install
         # npm run build
+        docker-compose up -d database-pgstac
+
         echo -e "\e[32m[franklin] Running migrations...\e[0m"
-        docker-compose up -d database database-pgstac
+        ./scripts/migrate
+
+        echo -e "\e[32m[franklin] Loading development data...\e[0m"
         ./scripts/migrate
         ;;
     esac

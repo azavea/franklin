@@ -10,7 +10,7 @@ import cats.effect.Concurrent
 import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
-import io.circe.{Json, Decoder, Encoder}
+import io.circe.{Decoder, Encoder, Json}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
 import sttp.tapir.codec.refined._
@@ -21,7 +21,8 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
 
   val base = endpoint.in(baseFor(apiConfig.path, "search"))
 
-  implicit val searchParametersValidator: Validator[SearchParameters] = Validator.pass[SearchParameters]
+  implicit val searchParametersValidator: Validator[SearchParameters] =
+    Validator.pass[SearchParameters]
 
   val nextToken: EndpointInput.Query[Option[PaginationToken]] =
     query[Option[PaginationToken]]("next")
@@ -50,7 +51,18 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
             Option[String],
             Option[String]
         )) => {
-          val (bbox, temporalExtent, intersects, collections, ids, limit, query, filter, filterLang, token) = tup
+          val (
+            bbox,
+            temporalExtent,
+            intersects,
+            collections,
+            ids,
+            limit,
+            query,
+            filter,
+            filterLang,
+            token
+          ) = tup
           // query is empty here because entering query extension fields in url params is
           // completely insane
           SearchParameters(
@@ -67,8 +79,18 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
           )
         }
       )(sp =>
-        (sp.bbox, sp.datetime, sp.intersects, Some(sp.collections), Some(sp.ids),
-        sp.limit, sp.query, sp.filter, sp.filterLang, sp.token)
+        (
+          sp.bbox,
+          sp.datetime,
+          sp.intersects,
+          Some(sp.collections),
+          Some(sp.ids),
+          sp.limit,
+          sp.query,
+          sp.filter,
+          sp.filterLang,
+          sp.token
+        )
       )
 
   val searchPostInput: EndpointInput[SearchParameters] =
