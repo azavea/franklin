@@ -3,48 +3,48 @@ package com.azavea.franklin.datamodel
 import com.azavea.stac4s.{StacItem, StacLink}
 import io.circe.{Decoder, Encoder, Json}
 
-final case class CollectionItemsResponse(
+final case class ItemsResponse(
     features: List[StacItem],
     links: List[StacLink]
 )
 
-object CollectionItemsResponse {
+object ItemsResponse {
 
-  implicit val encCollectionItemsResponse: Encoder[CollectionItemsResponse] = Encoder.forProduct3(
+  implicit val encItemsResponse: Encoder[ItemsResponse] = Encoder.forProduct3(
     "type",
     "features",
     "links"
   )(resp => ("FeatureCollection", resp.features, resp.links))
 
-  implicit val decCollectionItemsResponse: Decoder[CollectionItemsResponse] = Decoder.forProduct3(
+  implicit val decItemsResponse: Decoder[ItemsResponse] = Decoder.forProduct3(
     "type",
     "features",
     "links"
   )((_: String, features: List[StacItem], links: List[StacLink]) =>
-    CollectionItemsResponse(features, links)
+    ItemsResponse(features, links)
   )
 }
 
-final case class CollectionItemsResponseJson(
+final case class ItemsResponseJson(
     features: List[Json],
     links: List[Json]
 )
 
-object CollectionItemsResponseJson {
+object ItemsResponseJson {
 
-  implicit val encCollectionItemsResponse: Encoder[CollectionItemsResponseJson] =
+  implicit val encItemsResponse: Encoder[ItemsResponseJson] =
     Encoder.forProduct3(
       "type",
       "features",
       "links"
     )(resp => ("FeatureCollection", resp.features, resp.links))
 
-  implicit val decCollectionItemsResponse: Decoder[CollectionItemsResponseJson] =
+  implicit val decItemsResponse: Decoder[ItemsResponseJson] =
     Decoder.forProduct3(
       "type",
       "features",
       "links"
     )((_: String, features: List[Json], links: List[Json]) =>
-      CollectionItemsResponseJson(features, links)
+      ItemsResponseJson(features, links)
     )
 }

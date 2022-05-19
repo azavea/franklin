@@ -10,18 +10,27 @@ services:
       - PGDATABASE=postgis
       - PGUSER=franklin
       - PGPASSWORD=franklin
+    ports:
+      - "9090:9090"
     volumes:
       - ./:/opt/src/
-    command: sbt run serve --db-host=pgstac
+    command: sbt application/run serve --db-host=pgstac
   pgstac:
     container_name: pgstac
     image: ghcr.io/stac-utils/pgstac:v0.6.3
     environment:
+      - PGUSER=franklin
+      - PGPASSWORD=franklin
+      - PGHOST=pgstac
+      - PGDATABASE=postgis
+
       - POSTGRES_USER=franklin
       - POSTGRES_PASSWORD=franklin
       - POSTGRES_DB=postgis
     ports:
       - "5432:5432"
+    volumes:
+      - franklin-pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "franklin"]
       interval: 3s
@@ -44,3 +53,9 @@ services:
       - ./scripts:/opt/src/scripts
       - ./testdata:/opt/src/testdata
       - ./data-files:/opt/src/data-files
+
+volumes:
+  franklin-pgdata:
+networks:
+  default:
+    name: franklin-dev-network

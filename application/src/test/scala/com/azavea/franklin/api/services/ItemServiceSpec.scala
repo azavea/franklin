@@ -6,7 +6,7 @@ import cats.syntax.apply._
 import com.azavea.franklin.Generators
 import com.azavea.franklin.api.{TestClient, TestServices}
 import com.azavea.franklin.database.TestDatabaseSpec
-import com.azavea.franklin.datamodel.CollectionItemsResponse
+import com.azavea.franklin.datamodel.ItemsResponse
 import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.stac4s.testing.JvmInstances._
 import com.azavea.stac4s.testing._
@@ -24,7 +24,7 @@ import org.specs2.{ScalaCheck, Specification}
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-class CollectionItemsServiceSpec
+class ItemsServiceSpec
     extends Specification
     with ScalaCheck
     with TestDatabaseSpec
@@ -34,23 +34,23 @@ class CollectionItemsServiceSpec
 
   The collection items service should:
     - create and delete items         $createDeleteItemExpectation
-    - list items                      $listCollectionItemsExpectation
+    - list items                      $listItemsExpectation
     - update an item                  $updateItemExpectation
     - patch an item                   $patchItemExpectation
-    - get an item                     $getCollectionItemExpectation
+    - get an item                     $getItemExpectation
 """
 
   val testServices = new TestServices[IO](transactor)
 
-  val testClient = (testServices.collectionsService, testServices.collectionItemsService) mapN {
+  val testClient = (testServices.collectionsService, testServices.itemsService) mapN {
     new TestClient[IO](_, _)
   }
 
-  def listCollectionItemsExpectation = prop {
+  def listItemsExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem) =>
-      val listIO = (testClient, testServices.collectionItemsService).tupled flatMap {
-        case (client, collectionItemsService) =>
-          client.getCollectionItemResource(stacItem, stacCollection) use {
+      val listIO = (testClient, testServices.itemsService).tupled flatMap {
+        case (client, itemsService) =>
+          client.getItemResource(stacItem, stacCollection) use {
             case (collection, _) =>
               val encodedCollectionId =
                 URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
@@ -59,8 +59,8 @@ class CollectionItemsServiceSpec
                 Uri.unsafeFromString(s"/collections/$encodedCollectionId/items")
               )
               (for {
-                response <- collectionItemsService.routes.run(request)
-                decoded  <- OptionT.liftF { response.as[CollectionItemsResponse] }
+                response <- itemsService.routes.run(request)
+                decoded  <- OptionT.liftF { response.as[ItemsResponse] }
               } yield decoded).value
           }
       }
@@ -71,7 +71,7 @@ class CollectionItemsServiceSpec
   }
 
   // since creation / deletion is a part of the collection item resource, and accurate creation is checked
-  // in getCollectionItemExpectation, this test just:
+  // in getItemExpectation, this test just:
   // - makes sure that if other tests are failing, it's not because create/delete are broken.
   // - makes sure that the collection extent is correctly grown to include the item (because the generators
   //   have two wholly independent samples for the bboxes)
@@ -79,7 +79,7 @@ class CollectionItemsServiceSpec
   def createDeleteItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
     val testIO: IO[Result] = (testClient, testServices.collectionsService).tupled flatMap {
       case (client, collectionsService) =>
-        client.getCollectionItemResource(stacItem, stacCollection) use {
+        client.getItemResource(stacItem, stacCollection) use {
           case (collection, (item, _)) =>
             val encodedCollectionId =
               URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
@@ -103,10 +103,10 @@ class CollectionItemsServiceSpec
     testIO.unsafeRunSync
   }
 
-  def getCollectionItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
-    val fetchIO = (testClient, testServices.collectionItemsService).tupled flatMap {
-      case (client, collectionItemsService) =>
-        client.getCollectionItemResource(stacItem, stacCollection) use {
+  def getItemExpectation = prop { (stacCollection: StacCollection, stacItem: StacItem) =>
+    val fetchIO = (testClient, testServices.itemsService).tupled flatMap {
+      case (client, itemsService) =>
+        client.getItemResource(stacItem, stacCollection) use {
           case (collection, (item, _)) =>
             val encodedCollectionId =
               URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
@@ -117,7 +117,7 @@ class CollectionItemsServiceSpec
             )
 
             (for {
-              response <- collectionItemsService.routes.run(request)
+              response <- itemsService.routes.run(request)
               decoded  <- OptionT.liftF { response.as[StacItem] }
             } yield decoded).value
         }
@@ -140,9 +140,9 @@ class CollectionItemsServiceSpec
 
   def updateItemExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem, update: StacItem, mode: IfMatchMode) =>
-      val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
-        case (client, collectionItemsService) =>
-          client.getCollectionItemResource(stacItem, stacCollection) use {
+      val updateIO = (testClient, testServices.itemsService).tupled flatMap {
+        case (client, itemsService) =>
+          client.getItemResource(stacItem, stacCollection) use {
             case (collection, (item, etag)) =>
               val encodedCollectionId =
                 URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
@@ -158,7 +158,7 @@ class CollectionItemsServiceSpec
                                                          else { s"$etag" })))
               ).withEntity(toUpdate)
               (for {
-                response <- collectionItemsService.routes.run(request)
+                response <- itemsService.routes.run(request)
                 decoded  <- OptionT.liftF { response.as[StacItem] }
               } yield decoded).value
 
@@ -184,9 +184,9 @@ class CollectionItemsServiceSpec
 
   def patchItemExpectation = prop {
     (stacCollection: StacCollection, stacItem: StacItem, mode: IfMatchMode) =>
-      val updateIO = (testClient, testServices.collectionItemsService).tupled flatMap {
-        case (client, collectionItemsService) =>
-          client.getCollectionItemResource(stacItem, stacCollection) use {
+      val updateIO = (testClient, testServices.itemsService).tupled flatMap {
+        case (client, itemsService) =>
+          client.getItemResource(stacItem, stacCollection) use {
             case (collection, (item, etag)) =>
               val encodedCollectionId =
                 URLEncoder.encode(collection.id, StandardCharsets.UTF_8.toString)
@@ -201,7 +201,7 @@ class CollectionItemsServiceSpec
               ).withEntity(patch)
 
               (for {
-                response <- collectionItemsService.routes.run(request)
+                response <- itemsService.routes.run(request)
                 decoded  <- OptionT.liftF { response.as[StacItem] }
               } yield decoded).value
           }

@@ -5,7 +5,7 @@ import cats.data.NonEmptyList
 import cats.effect._
 import cats.syntax.all._
 import com.azavea.franklin.commands.ApiConfig
-import com.azavea.franklin.api.endpoints.CollectionItemEndpoints
+import com.azavea.franklin.api.endpoints.ItemEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
@@ -80,7 +80,7 @@ case class AddItemLinks(apiConfig: ApiConfig) {
   }
 }
 
-class CollectionItemsService[F[_]: Concurrent](
+class ItemService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
     itemExtensionsRef: ExtensionRef[F, StacItem],
@@ -98,7 +98,7 @@ class CollectionItemsService[F[_]: Concurrent](
   val enableTransactions = apiConfig.enableTransactions
   val addItemLinks       = AddCollectionLinks(apiConfig)
 
-  def listCollectionItems(
+  def listItems(
       collectionId: String,
       token: Option[String],
       limit: Option[NonNegInt]
@@ -109,7 +109,7 @@ class CollectionItemsService[F[_]: Concurrent](
         .listItems(decodedId, limit.map(_.value).getOrElse(defaultLimit))
         .transact(xa)
     } yield {
-      val response = CollectionItemsResponseJson(
+      val response = ItemsResponseJson(
         items.toList,
         List()
       )
@@ -117,7 +117,7 @@ class CollectionItemsService[F[_]: Concurrent](
     }
   }
 
-  def getCollectionItemUnique(
+  def getItemUnique(
       rawCollectionId: String,
       rawItemId: String
   ): F[Either[NF, (Json, String)]] = {
@@ -321,31 +321,31 @@ class CollectionItemsService[F[_]: Concurrent](
   //   }
   // }
 
-  val collectionItemEndpoints =
-    new CollectionItemEndpoints(defaultLimit, enableTransactions, apiConfig.path)
+  val itemEndpoints =
+    new ItemEndpoints(defaultLimit, enableTransactions, apiConfig.path)
 
   val transactionRoutes: List[HttpRoutes[F]] = List(
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.postItem)({
+    Http4sServerInterpreter.toRoutes(itemEndpoints.postItem)({
       case (collectionId, stacItem) => postItem(collectionId, stacItem)
     }),
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.putItem)({
+    Http4sServerInterpreter.toRoutes(itemEndpoints.putItem)({
       case (collectionId, itemId, stacItem, etag) => putItem(collectionId, itemId, stacItem, etag)
     }),
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.deleteItem)({
+    Http4sServerInterpreter.toRoutes(itemEndpoints.deleteItem)({
       case (collectionId, itemId) => deleteItem(collectionId, itemId)
     }),
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.patchItem)({
+    Http4sServerInterpreter.toRoutes(itemEndpoints.patchItem)({
       case (collectionId, itemId, jsonPatch, etag) =>
         patchItem(collectionId, itemId, jsonPatch, etag)
     })
   )
 
   val routesList: NonEmptyList[HttpRoutes[F]] = NonEmptyList.of(
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemsList)({ query =>
-      Function.tupled(listCollectionItems _)(query)
+    Http4sServerInterpreter.toRoutes(itemEndpoints.itemsList)({ query =>
+      Function.tupled(listItems _)(query)
     }),
-    Http4sServerInterpreter.toRoutes(collectionItemEndpoints.collectionItemsUnique)({
-      case (collectionId, itemId) => getCollectionItemUnique(collectionId, itemId)
+    Http4sServerInterpreter.toRoutes(itemEndpoints.itemsUnique)({
+      case (collectionId, itemId) => getItemUnique(collectionId, itemId)
     })
   ) ++ (if (enableTransactions) {
           transactionRoutes

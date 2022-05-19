@@ -22,7 +22,7 @@ import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-class CollectionItemEndpoints[F[_]: Concurrent](
+class ItemEndpoints[F[_]: Concurrent](
     defaultLimit: NonNegInt,
     enableTransactions: Boolean,
     pathPrefix: Option[String]
@@ -32,7 +32,7 @@ class CollectionItemEndpoints[F[_]: Concurrent](
 
   val base = endpoint.in(basePath)
 
-  val collectionItemsList: Endpoint[
+  val itemsList: Endpoint[
     (String, Option[String], Option[NonNegInt]),
     Unit,
     Json,
@@ -51,16 +51,16 @@ class CollectionItemEndpoints[F[_]: Concurrent](
       )
       .out(jsonBody[Json])
       .description("A feature collection of collection items")
-      .name("collectionItems")
+      .name("items")
 
-  val collectionItemsUnique: Endpoint[(String, String), NotFound, (Json, String), Fs2Streams[F]] =
+  val itemsUnique: Endpoint[(String, String), NotFound, (Json, String), Fs2Streams[F]] =
     base.get
       .in(path[String] / "items" / path[String])
       .out(jsonBody[Json])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .out(header[String]("ETag"))
       .description("A single feature")
-      .name("collectionItemUnique")
+      .name("itemUnique")
 
   val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Fs2Streams[F]] =
     base.post
@@ -149,6 +149,6 @@ class CollectionItemEndpoints[F[_]: Concurrent](
     deleteItem
   )
 
-  val endpoints = List(collectionItemsList, collectionItemsUnique) ++
+  val endpoints = List(itemsList, itemsUnique) ++
     (if (enableTransactions) transactionEndpoints else Nil)
 }

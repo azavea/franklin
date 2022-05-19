@@ -2,7 +2,7 @@ package com.azavea.franklin.api
 
 import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,
-  CollectionItemEndpoints,
+  ItemEndpoints,
   LandingPageEndpoints,
   SearchEndpoints
 }
@@ -101,31 +101,33 @@ $$$$
           connectionEc,
           Blocker.liftExecutionContext(transactionEc)
         )
-        collectionItemEndpoints = new CollectionItemEndpoints[IO](
-          apiConfig.defaultLimit,
-          apiConfig.enableTransactions,
-          apiConfig.path
-        )
         collectionEndpoints = new CollectionEndpoints[IO](
           apiConfig.enableTransactions,
           apiConfig.path
         )
+        itemEndpoints = new ItemEndpoints[IO](
+          apiConfig.defaultLimit,
+          apiConfig.enableTransactions,
+          apiConfig.path
+        )
+        searchEndpoints = new SearchEndpoints[IO](apiConfig).endpoints
         landingPage = new LandingPageEndpoints[IO](apiConfig.path)
-        allEndpoints = collectionEndpoints.endpoints ++
-          collectionItemEndpoints.endpoints ++
-          new SearchEndpoints[IO](apiConfig).endpoints ++
+        allEndpoints =
+          collectionEndpoints.endpoints ++
+          itemEndpoints.endpoints ++
+          searchEndpoints ++
           landingPage.endpoints
         docs         = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
         docRoutes    = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes = new SearchService[IO](apiConfig, xa, rootLink).routes
         itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
         collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
-        collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes <+>
-          new CollectionItemsService[IO](xa, apiConfig, itemExtensions, rootLink).routes
+        collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes
+        itemRoutes = new ItemService[IO](xa, apiConfig, itemExtensions, rootLink).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
           new AccessLoggingMiddleware(
-            collectionRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
+            collectionRoutes <+> itemRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
             logger
           ).withLogging(true)
         ).orNotFound
