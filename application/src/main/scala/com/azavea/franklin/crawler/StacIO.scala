@@ -1,7 +1,7 @@
 package com.azavea.franklin.crawler
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.syntax.all._
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.azavea.stac4s.{`application/json`, StacCollection, StacItem, StacLink, StacLinkType}
@@ -148,7 +148,7 @@ object StacIO {
       rewriteSourceIfPresent: Boolean,
       inCollectionId: Option[String]
   )(
-      implicit
+      implicit contextShift: ContextShift[IO],
       logger: Logger[IO],
       backend: SttpBackend[IO, Nothing, NothingT]
   ): IO[StacItem] = {
