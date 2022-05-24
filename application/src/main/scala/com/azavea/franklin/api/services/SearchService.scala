@@ -1,5 +1,8 @@
 package com.azavea.franklin.api.services
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.SearchEndpoints
 import com.azavea.franklin.api.implicits._
@@ -20,6 +23,7 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
+
 
 case class UpdateSearchResults(params: SearchParameters, host: String) {
 
@@ -44,6 +48,10 @@ case class UpdateSearchResults(params: SearchParameters, host: String) {
       case NextLink => params.copy(token=s"next:$page".some)
       case PrevLink => params.copy(token=s"prev:$page".some)
     }
+    val stacLinkType = linkType match {
+      case NextLink => StacLinkType.Next
+      case PrevLink => StacLinkType.Prev
+    }
     val body: Option[Json] = searchMethod match {
       case SearchGET => None
       case SearchPOST => updatedParams.asJson.some
@@ -59,7 +67,7 @@ case class UpdateSearchResults(params: SearchParameters, host: String) {
 
     Link(
       href,
-      StacLinkType.Next,
+      stacLinkType,
       Some(`application/json`),
       None,
       Some(Method.GET),

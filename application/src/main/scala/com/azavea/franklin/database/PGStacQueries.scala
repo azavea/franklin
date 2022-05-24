@@ -50,9 +50,7 @@ object PGStacQueries {
   }
 
   def search(params: SearchParameters): ConnectionIO[Option[Json]] = {
-    println(s"THE PARAMETERS $params")
     val req = params.asJson.deepDropNullValues
-    println(s"THE JSON PARAMS ${req.noSpaces}")
     fr"SELECT search($req::jsonb)"
       .query[Json]
       .option

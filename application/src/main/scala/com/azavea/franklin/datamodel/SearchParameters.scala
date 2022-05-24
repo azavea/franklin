@@ -51,7 +51,7 @@ final case class SearchParameters(
     val filterLangQP = filterLang map { fl =>
       s"""filter_lang=${SearchParameters.encodeString(fl)}"""
     }
-    val tokenQP = token map { t => s"""token=next:${SearchParameters.encodeString(t)}""" }
+    val tokenQP = token map { t => s"""token=${t}""" }
 
     List(
       bboxQP,
