@@ -2,7 +2,7 @@ package com.azavea.franklin.datamodel
 
 import cats.syntax.either._
 import com.azavea.stac4s.{StacLinkType, StacMediaType}
-import io.circe.{Encoder, Decoder}
+import io.circe.{Encoder, Decoder, Json}
 import io.circe.generic.semiauto._
 import org.http4s.{Method, ParseResult, ParseFailure}
 import sttp.tapir.Schema
@@ -19,14 +19,14 @@ case class Link(
 
 object Link {
 
-  implicit val encStacLink: Encoder[Link] = Encoder.forProduct5(
+  implicit val encStacLink: Encoder[Link] = Encoder.forProduct6(
     "href",
     "rel",
     "type",
     "title",
     "method",
     "body"
-  )(link => (link.href, link.rel, link._type, link.title, link.method.map(_.name), body))
+  )(link => (link.href, link.rel, link._type, link.title, link.method.map(_.name), link.body))
 
   implicit val decodeMethod: Decoder[Method] = Decoder.decodeString.emap { str =>
     val parsed: Either[ParseFailure, Method] = Method.fromString(str)

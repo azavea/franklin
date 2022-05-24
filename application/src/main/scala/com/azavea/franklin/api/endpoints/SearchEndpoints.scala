@@ -97,7 +97,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
   val searchPostInput: EndpointInput[SearchParameters] =
     jsonBody[SearchParameters]
 
-  val searchGet: Endpoint[(String, SearchParameters), Unit, Json, Fs2Streams[F]] =
+  val searchGet: Endpoint[SearchParameters, Unit, Json, Fs2Streams[F]] =
     base
       .get
       .in(searchParameters)
@@ -105,7 +105,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
       .description("Search endpoint for all collections")
       .name("search-get")
 
-  val searchPost: Endpoint[(String, SearchParameters), Unit, Json, Fs2Streams[F]] =
+  val searchPost: Endpoint[SearchParameters, Unit, Json, Fs2Streams[F]] =
     base
       .post
       .in(searchPostInput)

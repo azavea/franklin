@@ -21,95 +21,112 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
-object UpdateSearchResults {
-  def addLink(link: Json): Json => Json = root.links.arr.modify({ arr: Vector[Json] => arr :+ link })
+case class UpdateSearchResults(params: SearchParameters, host: String) {
 
-  val next = root.next.string
-  val rmNext = root.at("next").set(None)
-  def addNextGetLink(res: Json): Json = {
-    next.getOption(res) match {
-      case Some(nextPage) =>
-        val nextLink = Link(
-          "/search" + nextPage,
-          StacLinkType.Next,
-          Some(`application/json`),
-          None,
-          Some(Method.GET)
-        ).asJson
-        val withLink = addLink(nextLink)(res)
-        rmNext(withLink)
-      case None =>
-        rmNext(res)
-    }
-  }
-  def addNextPostLink(res: Json): Json = {
-    next.getOption(res) match {
-      case Some(nextPage) =>
-        val nextLink = Link(
-          "/search" + nextPage,
-          StacLinkType.Next,
-          Some(`application/json`),
-          None,
-          Some(Method.POST)
-        ).asJson
-        val withLink = addLink(nextLink)(res)
-        rmNext(withLink)
-      case None =>
-        rmNext(res)
-    }
-  }
+  sealed trait PageLinkType
+  case object NextLink extends PageLinkType
+  case object PrevLink extends PageLinkType
 
-  val prev = root.prev.string
-  val rmPrev = root.at("prev").set(None)
-  def addPrevGetLink(res: Json): Json = {
-    prev.getOption(res) match {
-      case Some(prevPage) =>
-        val prevLink = Link(
-          "" + prevPage,
-          StacLinkType.Prev,
-          Some(`application/json`),
-          None,
-          Some(Method.GET)
-        ).asJson
-        val withLink = addLink(prevLink)(res)
-        rmPrev(withLink)
-      case None =>
-        rmPrev(res)
-    }
-  }
-  def addPrevPostLink(res: Json): Json = {
-    prev.getOption(res) match {
-      case Some(prevPage) =>
-        val prevLink = Link(
-          "" + prevPage,
-          StacLinkType.Prev,
-          Some(`application/json`),
-          None,
-          Some(Method.POST)
-        ).asJson
-        val withLink = addLink(prevLink)(res)
-        rmPrev(withLink)
-      case None =>
-        rmPrev(res)
-    }
-  }
+  sealed trait SearchMethod
+  case object SearchGET extends SearchMethod
+  case object SearchPOST extends SearchMethod
 
+  // Various optics to update json
   val addLinkArray = root.at("links").set(Some(Vector[Json]().asJson))
-  val addAllGetLinks = (addLinkArray andThen addNextGetLink andThen addPrevGetLink)
-  val addAllPostLinks = (addLinkArray andThen addNextPostLink andThen addPrevPostLink)
+  def addLink(link: Json): Json => Json = root.links.arr.modify({ arr: Vector[Json] => arr :+ link })
+  val next = root.next.string
+  val prev = root.prev.string
+  val rmNext = root.at("next").set(None)
+  val rmPrev = root.at("prev").set(None)
 
-  def forGet(res: Json, params: SearchParameters): Json = {
-    addAllGetLinks(res)
+  def constructPageLink(page: String, linkType: PageLinkType, searchMethod: SearchMethod): Json = {
+    val updatedParams = linkType match {
+      case NextLink => params.copy(token=s"next:$page".some)
+      case PrevLink => params.copy(token=s"prev:$page".some)
+    }
+    val body: Option[Json] = searchMethod match {
+      case SearchGET => None
+      case SearchPOST => updatedParams.asJson.some
+    }
+    val href = searchMethod match {
+      case SearchGET =>
+        val queryParams = updatedParams.asQueryParameters
+        val queryString = if (queryParams.length > 0) "?" + queryParams else ""
+        host + "/search" + queryString
+      case SearchPOST =>
+        host + "/search"
+    }
+
+    Link(
+      href,
+      StacLinkType.Next,
+      Some(`application/json`),
+      None,
+      Some(Method.GET),
+      body=body
+    ).asJson
   }
-  def forPost(res: Json, params: SearchParameters): Json = {
-    addAllLinks(res)
+
+  def constructSelfLink(searchMethod: SearchMethod): Json = {
+    searchMethod match {
+      case SearchGET =>
+        val queryParams = params.asQueryParameters
+        val queryString = if (queryParams.length > 0) "?" + queryParams else ""
+        Link(
+          host + "/search" + queryString,
+          StacLinkType.Self,
+          Some(`application/json`),
+          None,
+          Some(Method.GET)
+        ).asJson
+      case SearchPOST =>
+        Link(
+          host + "/search",
+          StacLinkType.Self,
+          Some(`application/json`),
+          None,
+          Some(Method.POST),
+          params.asJson.some
+        ).asJson
+    }
+  }
+  def constructRootLink: Json = {
+    Link(
+      host,
+      StacLinkType.StacRoot,
+      Some(`application/json`),
+      None,
+      Some(Method.GET)
+    ).asJson
+  }
+
+  def addLinks(res: Json, searchMethod: SearchMethod): Json = {
+    val withLinkArray = addLinkArray(res)
+    val withNextLink: Json = next.getOption(withLinkArray).map({ nextPage =>
+      val link = constructPageLink(nextPage, NextLink, searchMethod)
+      addLink(link)(withLinkArray)
+    }).getOrElse(withLinkArray)
+    val withPrevLink: Json = prev.getOption(withNextLink).map({ prevPage =>
+      val link = constructPageLink(prevPage, PrevLink, searchMethod)
+      addLink(link)(withNextLink)
+    }).getOrElse(withNextLink)
+    val withSelfLink = addLink(constructSelfLink(searchMethod))(withPrevLink)
+    val withRootLink = addLink(constructRootLink)(withSelfLink)
+    (rmNext andThen rmPrev)(withRootLink)
+  }
+
+
+  def GET(res: Json): Json = {
+    addLinks(res, SearchGET).deepDropNullValues
+  }
+  def POST(res: Json): Json = {
+    addLinks(res, SearchPOST).deepDropNullValues
   }
 }
 
 class SearchService[F[_]: Concurrent](
     apiConfig: ApiConfig,
-    xa: Transactor[F],
-    rootLink: StacLink
+    xa: Transactor[F]
 )(
     implicit contextShift: ContextShift[F],
     timerF: Timer[F],
@@ -119,68 +136,29 @@ class SearchService[F[_]: Concurrent](
   val searchEndpoints = new SearchEndpoints[F](apiConfig)
   val defaultLimit    = apiConfig.defaultLimit
 
-/* Analogous links to add
-
-"links":[
-  {"rel":"next","type":"application/json","method":"GET","href":"https://planetarycomputer.microsoft.com/api/stac/v1/search?limit=1000&token=next:INM-CM4-8.ssp585.2085"},
-  {"rel":"root","type":"application/json","href":"https://planetarycomputer.microsoft.com/api/stac/v1/"},
-  {"rel":"self","type":"application/json","href":"https://planetarycomputer.microsoft.com/api/stac/v1/search?limit=1000"}
-]
-*/
-
-  def search(path: String, params: SearchParameters): F[Either[Unit, Json]] = {
-    println(s"THE PATH IN QUeSTION $path")
+  def search(params: SearchParameters): F[Either[Unit, Json]] = {
     val limit = params.limit getOrElse defaultLimit
-    val updatedParams = params.copy(limit=Some(limit), collections=List("naip"))
+    val updatedParams = params.copy(limit=Some(limit))
     for {
       searchResults <- PGStacQueries.search(updatedParams).transact(xa)
     } yield {
       searchResults match {
-        case Some(res) => Either.right(UpdateSearchResults(res))
+        case Some(res) => Either.right(res)
         case None => Either.left(())
       }
     }
   }
-  // {
-  //   for {
-  //     itemsFib <- Concurrent[F].start {
-  //       (StacItemDao.query
-  //         .filter(searchParameters)
-  //         .list(limit.value) flatMap { items =>
-  //         StacItemDao.getSearchLinks(items, limit, searchParameters, apiConfig.apiHost, searchMethod) map {
-  //           (items, _)
-  //         }
-  //       }).transact(xa)
-  //     }
-  //     countFib <- Concurrent[F].start {
-  //       StacItemDao.getSearchContext(searchParameters).transact(xa)
-  //     }
-  //     ((items, links), count) <- (itemsFib, countFib).tupled.join
-  //   } yield {
-  //     val withApiHost = items map { _.updateLinksWithHost(apiConfig) }
-  //     val searchResult =
-  //       StacSearchCollection(Context(limit, items.length, count), withApiHost, links)
-  //     val updatedFeatures = searchResult.features
-  //       .map { item =>
-  //         ((item.collection, enableTiles) match {
-  //           case (Some(collectionId), true) =>
-  //             item.addTilesLink(apiConfig.apiHost, collectionId, item.id)
-  //           case _ => item
-  //         }).addRootLink(rootLink)
-  //       }
 
-  //     Either.right(searchResult.copy(features = updatedFeatures).asJson)
-  //   }
-  // }
-
-  val routes: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)({
-      case (path, searchParameters) => {
-        search(path, searchParameters)
-      }
-    }) <+> Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({
-      case (path, searchParameters) => {
-        search(path, searchParameters)
-      }
+  val searchRouteGet =
+    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)({ case searchParameters =>
+      search(searchParameters)
+        .map(_.map(UpdateSearchResults(searchParameters, apiConfig.apiHost).GET))
     })
+  val searchRoutePost =
+    Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({ case searchParameters =>
+      search(searchParameters)
+        .map(_.map(UpdateSearchResults(searchParameters, apiConfig.apiHost).POST))
+    })
+  val routes: HttpRoutes[F] =
+    searchRouteGet <+> searchRoutePost
 }

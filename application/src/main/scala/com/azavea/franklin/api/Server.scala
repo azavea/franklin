@@ -119,7 +119,7 @@ $$$$
           landingPage.endpoints
         docs         = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
         docRoutes    = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
-        searchRoutes = new SearchService[IO](apiConfig, xa, rootLink).routes
+        searchRoutes = new SearchService[IO](apiConfig, xa).routes
         itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
         collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
         collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes

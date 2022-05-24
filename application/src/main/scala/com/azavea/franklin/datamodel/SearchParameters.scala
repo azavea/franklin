@@ -51,7 +51,7 @@ final case class SearchParameters(
     val filterLangQP = filterLang map { fl =>
       s"""filter_lang=${SearchParameters.encodeString(fl)}"""
     }
-    val tokenQP = token map { t => s"""token=${SearchParameters.encodeString(t)}""" }
+    val tokenQP = token map { t => s"""token=next:${SearchParameters.encodeString(t)}""" }
 
     List(
       bboxQP,
@@ -85,7 +85,7 @@ object SearchParameters {
         limit             <- c.downField("limit").as[Option[NonNegInt]]
         query             <- c.downField("query").as[Option[Json]]
         filter            <- c.downField("filter").as[Option[Json]]
-        filterLang <- c.downField("filter_lang").as[Option[String]] match {
+        filterLang        <- c.downField("filter_lang").as[Option[String]] match {
           case Left(_)      => c.downField("filter-lang").as[Option[String]]
           case r @ Right(_) => r
         }
