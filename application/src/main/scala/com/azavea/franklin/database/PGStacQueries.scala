@@ -40,10 +40,19 @@ object PGStacQueries {
       .to[List]
   }
 
-  def getItem(collectionId: String, itemId: String): ConnectionIO[Option[Json]] = {
-    fr"SELECT content FROM items WHERE collection = $collectionId AND id = $itemId"
+  def getItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] = {
+    val params = SearchParameters.getItemById(collectionId, itemId)
+      .asJson
+      .deepDropNullValues
+    fr"SELECT search($params::jsonb)"
       .query[Json]
       .option
+      .map({ maybejs =>
+        maybejs.flatMap({ js =>
+          val cursor = js.hcursor
+          cursor.downField("features").downArray.as[StacItem].toOption
+        })
+      })
   }
 
   def listItems(collectionId: String, limit: Int): ConnectionIO[List[Json]] = {

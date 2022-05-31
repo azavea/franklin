@@ -71,10 +71,22 @@ final case class SearchParameters(
 
 object SearchParameters {
 
+  def getItemById(collectionId: String, itemId: String): SearchParameters = SearchParameters(
+    None,
+    None,
+    None,
+    List(collectionId),
+    List(itemId),
+    None,
+    None,
+    None,
+    None,
+    None
+  )
+
   def encodeString(s: String): String = URLEncoder.encode(s, StandardCharsets.UTF_8.toString)
 
   implicit val searchFilterDecoder = new Decoder[SearchParameters] {
-
     def apply(c: HCursor): Decoder.Result[SearchParameters] =
       for {
         bbox              <- c.downField("bbox").as[Option[Bbox]]

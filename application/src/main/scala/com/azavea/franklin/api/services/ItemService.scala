@@ -120,14 +120,14 @@ class ItemService[F[_]: Concurrent](
   def getItemUnique(
       rawCollectionId: String,
       rawItemId: String
-  ): F[Either[NF, (Json, String)]] = {
+  ): F[Either[NF, (StacItem, String)]] = {
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
 
     for {
-      itemOption <- PGStacQueries.getItem(collectionId, itemId).transact(xa)
+      itemResults <- PGStacQueries.getItem(collectionId, itemId).transact(xa)
     } yield {
-      itemOption match {
+      itemResults match {
         case Some(item) => Right((item, item.##.toString))
         case None       => Left(NF(s"Item $itemId in collection $collectionId not found"))
       }
