@@ -42,41 +42,19 @@ import java.nio.charset.StandardCharsets
 
 case class AddItemLinks(apiConfig: ApiConfig) {
 
-  val _itemId       = root.id.string
-  val _collectionId = root.collection.string
-
-  def _addLink(link: StacLink) = root.links.arr.modify({ ls: Vector[Json] => ls :+ link.asJson })
-
-  def addTileLink(item: Json): Json = item
-
-  // def addTileLink(item: Json): Json = {
-  //   val encodedCollectionId =
-  //     URLEncoder.encode(_collectionId.getOption(item).get, StandardCharsets.UTF_8.toString)
-  //   val tileLink = StacLink(
-  //     s"${apiConfig.apiHost}/collections/$encodedCollectionId/tiles",
-  //     StacLinkType.VendorLinkType("tiles"),
-  //     Some(`application/json`),
-  //     Some("Tile URLs for Collection")
-  //   )
-  //   _addLink(tileLink)(collection)
-  // }
-
-  def addSelfLink(item: Json): Json = {
-    val encodedCollectionId =
-      URLEncoder.encode(_collectionId.getOption(item).get, StandardCharsets.UTF_8.toString)
-    val encodedItemId =
-      URLEncoder.encode(_itemId.getOption(item).get, StandardCharsets.UTF_8.toString)
-    val selfLink = StacLink(
-      s"${apiConfig.apiHost}/collections/$encodedCollectionId/items/$encodedItemId",
+  def createSelfLink(item: StacItem): StacLink =
+    StacLink(
+      s"${apiConfig.apiHost}/collections/${item.collection.get}/items/${item.id}",
       StacLinkType.Self,
       Some(`application/json`),
       None
     )
-    _addLink(selfLink)(item)
-  }
 
-  def apply(item: Json) = {
-    (addSelfLink _ compose addTileLink)(item)
+  def apply(item: StacItem): StacItem = {
+    val prunedLinks = item.links.filter { link =>
+      link.rel != StacLinkType.Self
+    }
+    item.copy(links=prunedLinks :+ createSelfLink(item))
   }
 }
 
@@ -96,7 +74,7 @@ class ItemService[F[_]: Concurrent](
   val apiHost            = apiConfig.apiHost
   val defaultLimit       = apiConfig.defaultLimit
   val enableTransactions = apiConfig.enableTransactions
-  val addItemLinks       = AddCollectionLinks(apiConfig)
+  val addItemLinks       = AddItemLinks(apiConfig)
 
   def listItems(
       collectionId: String,
@@ -128,7 +106,10 @@ class ItemService[F[_]: Concurrent](
       itemResults <- PGStacQueries.getItem(collectionId, itemId).transact(xa)
     } yield {
       itemResults match {
-        case Some(item) => Right((item, item.##.toString))
+        case Some(item) => {
+          val itemWithLinks = addItemLinks(item)
+          Right((itemWithLinks, itemWithLinks.##.toString))
+        }
         case None       => Left(NF(s"Item $itemId in collection $collectionId not found"))
       }
     }
