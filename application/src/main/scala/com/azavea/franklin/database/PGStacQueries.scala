@@ -5,6 +5,7 @@ import com.azavea.franklin.datamodel.{
   MapboxVectorTileFootprintRequest,
   SearchParameters
 }
+import com.azavea.franklin.datamodel.stactypes.Collection
 
 import io.circe._
 import io.circe.syntax._
@@ -24,27 +25,29 @@ import eu.timepit.refined.types.string.NonEmptyString
 import java.time.Instant
 
 object PGStacQueries {
+  implicit val meta: Meta[Collection] = new Meta(pgDecoderGet, pgEncoderPut)
 
-  def getCollection(collectionId: String): ConnectionIO[Option[Json]] = {
+
+  def getCollection(collectionId: String): ConnectionIO[Option[Collection]] = {
     fr"SELECT content FROM collections WHERE id = $collectionId"
-      .query[Json]
+      .query[Collection]
       .option
   }
 
-  def listCollections(): ConnectionIO[List[Json]] = {
+  def listCollections(): ConnectionIO[List[Collection]] = {
     fr"SELECT content FROM collections"
-      .query[Json]
+      .query[Collection]
       .to[List]
   }
 
   def getItem(collectionId: String, itemId: String): ConnectionIO[Option[Json]] = {
-    fr"SELECT content FROM items WHERE collection_id = $collectionId AND id = $itemId"
+    fr"SELECT content FROM items WHERE collection = $collectionId AND id = $itemId"
       .query[Json]
       .option
   }
 
   def listItems(collectionId: String, limit: Int): ConnectionIO[List[Json]] = {
-    fr"SELECT content FROM items WHERE collection_id = $collectionId LIMIT $limit"
+    fr"SELECT content FROM items WHERE collection = $collectionId LIMIT $limit"
       .query[Json]
       .to[List]
   }

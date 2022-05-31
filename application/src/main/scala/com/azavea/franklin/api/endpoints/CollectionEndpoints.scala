@@ -2,7 +2,8 @@ package com.azavea.franklin.api.endpoints
 
 import cats.effect.Concurrent
 import com.azavea.franklin.api.schemas._
-import com.azavea.franklin.datamodel.MosaicDefinition
+import com.azavea.franklin.datamodel.{CollectionsResponse, MosaicDefinition}
+import com.azavea.franklin.datamodel.stactypes.{Collection}
 import com.azavea.franklin.error.NotFound
 import com.azavea.stac4s.StacCollection
 import io.circe._
@@ -24,9 +25,9 @@ class CollectionEndpoints[F[_]: Concurrent](
 
   val base = endpoint.in(basePath)
 
-  val collectionsList: Endpoint[Unit, Unit, Json, Fs2Streams[F]] =
+  val collectionsList: Endpoint[Unit, Unit, CollectionsResponse, Fs2Streams[F]] =
     base.get
-      .out(jsonBody[Json])
+      .out(jsonBody[CollectionsResponse])
       .description("A list of collections")
       .name("collections")
 
@@ -47,10 +48,10 @@ class CollectionEndpoints[F[_]: Concurrent](
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .name("collectionDelete")
 
-  val collectionUnique: Endpoint[String, NotFound, Json, Fs2Streams[F]] =
+  val collectionUnique: Endpoint[String, NotFound, Collection, Fs2Streams[F]] =
     base.get
       .in(path[String])
-      .out(jsonBody[Json])
+      .out(jsonBody[Collection])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .description("A single collection")
       .name("collectionUnique")

@@ -121,8 +121,7 @@ $$$$
         docRoutes    = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes = new SearchService[IO](apiConfig, xa).routes
         itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
-        collectionExtensions <- Resource.eval { collectionExtensionsRef[IO] }
-        collectionRoutes = new CollectionsService[IO](xa, apiConfig, collectionExtensions).routes
+        collectionRoutes = new CollectionsService[IO](xa, apiConfig).routes
         itemRoutes = new ItemService[IO](xa, apiConfig, itemExtensions, rootLink).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(

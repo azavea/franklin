@@ -17,6 +17,7 @@ import doobie._
 import doobie.implicits._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
+import io.circe.Json
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
@@ -83,7 +84,7 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     Applicative[F].pure(Either.right[Unit, FranklinConformance](conformance))
   }
 
-  def landingPage: F[Either[Unit, LandingPage]] = {
+  def landingPage: F[Either[Unit, Json]] = {
     val title: NonEmptyString = "Welcome to Franklin"
     val description: NonEmptyString =
       "An OGC API - Features, Tiles, and STAC Server"
@@ -95,9 +96,9 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
       description,
       links,
       conformances
-    )
+    ).asJson.deepDropNullValues
 
-    Applicative[F].pure(Either.right[Unit, LandingPage](landingPage))
+    Applicative[F].pure(Either.right[Unit, Json](landingPage))
 
   }
 

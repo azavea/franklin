@@ -8,8 +8,8 @@ import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.PGStacQueries
-import com.azavea.franklin.datamodel.MosaicDefinition
-import com.azavea.franklin.datamodel.{CollectionsResponse, TileInfo}
+import com.azavea.franklin.datamodel.{CollectionsResponse, MosaicDefinition, TileInfo}
+import com.azavea.franklin.datamodel.stactypes.Collection
 import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.extensions.validation._
 import com.azavea.stac4s._
@@ -35,41 +35,24 @@ case class AddCollectionLinks(apiConfig: ApiConfig) {
 
   val _collectionId = root.id.string
 
-  def _addLink(link: StacLink) = root.links.arr.modify({ ls: Vector[Json] => ls :+ link.asJson })
-
-  def addTileLink(collection: Json): Json = {
-    val encodedCollectionId =
-      URLEncoder.encode(_collectionId.getOption(collection).get, StandardCharsets.UTF_8.toString)
-    val tileLink = StacLink(
-      s"${apiConfig.apiHost}/collections/$encodedCollectionId/tiles",
-      StacLinkType.VendorLinkType("tiles"),
-      Some(`application/json`),
-      Some("Tile URLs for Collection")
-    )
-    _addLink(tileLink)(collection)
-  }
-
-  def addSelfLink(collection: Json): Json = {
-    val encodedCollectionId =
-      URLEncoder.encode(_collectionId.getOption(collection).get, StandardCharsets.UTF_8.toString)
-    val selfLink = StacLink(
-      s"${apiConfig.apiHost}/collections/$encodedCollectionId",
+  def createSelfLink(collection: Collection): StacLink = {
+    StacLink(
+      s"${apiConfig.apiHost}/collections/${collection.id}",
       StacLinkType.Self,
       Some(`application/json`),
       None
     )
-    _addLink(selfLink)(collection)
   }
 
-  def apply(collection: Json) = {
-    (addSelfLink _ compose addTileLink)(collection)
+  def apply(collection: Collection) = {
+    val selfLink = createSelfLink(collection)
+    collection.copy(links=collection.links :+ selfLink)
   }
 }
 
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
-    collectionExtensionsRef: ExtensionRef[F, StacCollection]
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
@@ -82,36 +65,34 @@ class CollectionsService[F[_]: Concurrent](
   val enableTransactions = apiConfig.enableTransactions
   val addCollectionLinks = AddCollectionLinks(apiConfig)
 
-  def listCollections(): F[Either[Unit, Json]] = {
+  def listCollections(): F[Either[Unit, CollectionsResponse]] = {
     for {
       collections <- PGStacQueries.listCollections().transact(xa)
       collectionsWithLinks = collections.map(addCollectionLinks(_))
     } yield {
-      val childrenLinks: List[Json] = collectionsWithLinks.map({ coll: Json =>
-        val collId = root.id.string.getOption(coll).get
-        val encodedCollectionId =
-          URLEncoder.encode(collId, StandardCharsets.UTF_8.toString)
+      val childLinks: List[StacLink] = collectionsWithLinks.map({ coll: Collection =>
         StacLink(
-          s"${apiConfig.apiHost}/collections/$encodedCollectionId",
+          s"${apiConfig.apiHost}/collections/${coll.id}",
           StacLinkType.Child,
           Some(`application/json`),
           None
-        ).asJson
+        )
       })
-      Either.right(CollectionsResponse(collectionsWithLinks, childrenLinks).asJson.dropNullValues)
+      Either.right(CollectionsResponse(collections, childLinks))
     }
   }
 
-  def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
+  def getCollectionUnique(rawCollectionId: String): F[Either[NF, Collection]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
-      collections <- PGStacQueries
+      collection <- PGStacQueries
         .getCollection(collectionId)
         .transact(xa)
-      collectionWithLinks = collections.map(addCollectionLinks(_))
+      //collectionWithLinks = collections.map(addCollectionLinks(_))
     } yield {
       Either.fromOption(
-        collectionWithLinks.map(_.dropNullValues),
+        collection,
+        //collectionWithLinks.map(_.dropNullValues),
         NF(s"Collection $collectionId not found")
       )
     }

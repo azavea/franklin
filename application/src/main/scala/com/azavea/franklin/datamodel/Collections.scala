@@ -1,12 +1,14 @@
 package com.azavea.franklin.datamodel
 
+import com.azavea.franklin.datamodel.stactypes.{Collection}
 import com.azavea.stac4s.{StacCollection, StacLink}
 import io.circe._
 import io.circe.generic.semiauto._
 
+
 case class CollectionsResponse(
-    collections: List[Json],
-    links: List[Json] = List()
+    collections: List[Collection],
+    links: List[StacLink] = List()
 )
 
 object CollectionsResponse {
