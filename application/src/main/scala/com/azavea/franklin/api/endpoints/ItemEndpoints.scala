@@ -62,11 +62,11 @@ class ItemEndpoints[F[_]: Concurrent](
       .description("A single feature")
       .name("itemUnique")
 
-  val postItem: Endpoint[(String, StacItem), ValidationError, (Json, String), Fs2Streams[F]] =
+  val postItem: Endpoint[(String, StacItem), ValidationError, (StacItem, String), Fs2Streams[F]] =
     base.post
       .in(path[String] / "items")
       .in(accumulatingJsonBody[StacItem])
-      .out(jsonBody[Json])
+      .out(jsonBody[StacItem])
       .out(header[String]("ETag"))
       .errorOut(
         oneOf(
@@ -81,14 +81,14 @@ class ItemEndpoints[F[_]: Concurrent](
       .name("postItem")
 
   val putItem
-      : Endpoint[(String, String, StacItem, IfMatchMode), CrudError, (Json, String), Fs2Streams[
+      : Endpoint[(String, String, StacItem, IfMatchMode), CrudError, (StacItem, String), Fs2Streams[
         F
       ]] =
     base.put
       .in(path[String] / "items" / path[String])
       .in(accumulatingJsonBody[StacItem])
       .in(header[IfMatchMode]("If-Match"))
-      .out(jsonBody[Json])
+      .out(jsonBody[StacItem])
       .out(header[String]("ETag"))
       .errorOut(
         oneOf[CrudError](
@@ -116,12 +116,12 @@ class ItemEndpoints[F[_]: Concurrent](
       .out(statusCode(StatusCode.NoContent))
 
   val patchItem
-      : Endpoint[(String, String, Json, IfMatchMode), CrudError, (Json, String), Fs2Streams[F]] =
+      : Endpoint[(String, String, Json, IfMatchMode), CrudError, (StacItem, String), Fs2Streams[F]] =
     base.patch
       .in(path[String] / "items" / path[String])
       .in(accumulatingJsonBody[Json])
       .in(header[IfMatchMode]("If-Match"))
-      .out(jsonBody[Json])
+      .out(jsonBody[StacItem])
       .out(header[String]("ETag"))
       .errorOut(
         oneOf[CrudError](

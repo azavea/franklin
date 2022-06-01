@@ -77,14 +77,14 @@ class ItemService[F[_]: Concurrent](
   val addItemLinks       = AddItemLinks(apiConfig)
 
   def listItems(
-      collectionId: String,
+      rawCollectionId: String,
       token: Option[String],
       limit: Option[NonNegInt]
   ): F[Either[Unit, Json]] = {
-    val decodedId = URLDecoder.decode(collectionId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       items <- PGStacQueries
-        .listItems(decodedId, limit.map(_.value).getOrElse(defaultLimit))
+        .listItems(collectionId, limit.map(_.value).getOrElse(defaultLimit))
         .transact(xa)
     } yield {
       val response = ItemsResponseJson(
@@ -115,192 +115,80 @@ class ItemService[F[_]: Concurrent](
     }
   }
 
-  def postItem(collectionId: String, item: StacItem): F[Either[ValidationError, (Json, String)]] =
-    ???
-  // {
-  //   val fallbackCollectionLink = StacLink(
-  //     s"/collections/$collectionId",
-  //     StacLinkType.Parent,
-  //     Some(`application/json`),
-  //     Some("Parent collection")
-  //   )
-  //   val collectionNotFound: String => Either[ValidationError, (Json, String)] = (s: String) =>
-  //     Left(
-  //       ValidationError(s"Cannot create an item in non-existent collection: $s")
-  //     )
-  //   makeItemValidator(item.stacExtensions, itemExtensionsRef) flatMap { validator =>
-  //     item.collection match {
-  //       case Some(collId) =>
-  //         if (collectionId == collId) {
-  //           val parentLink = item.links.filter(_.rel == StacLinkType.Parent).headOption map {
-  //             existingLink => existingLink.copy(href = s"/collections/$collectionId")
-  //           } getOrElse {
-  //             fallbackCollectionLink
-  //           }
-  //           val withParent =
-  //             item.copy(links = parentLink +: item.links.filter(_.rel != StacLinkType.Parent))
-  //           StacItemDao.insertStacItem(withParent).transact(xa) map {
-  //             case Right((inserted, etag)) =>
-  //               val validated = validator(inserted)
-  //               Right((validated.asJson, etag))
-  //             case Left(StacItemDao.InvalidTimeForPeriod) =>
-  //               Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
-  //             // this fall through covers the only other failure mode for item creation
-  //             case Left(_) =>
-  //               collectionNotFound(collId)
-  //           }
-  //         } else {
-  //           Left(
-  //             ValidationError(
-  //               s"Collection ID in item $collId did not match collection ID in route $collectionId"
-  //             )
-  //           ).pure[F].widen
-  //         }
-  //       case None =>
-  //         val withParent =
-  //           item
-  //             .copy(links = fallbackCollectionLink +: item.links, collection = Some(collectionId))
-  //             .addRootLink(rootLink)
-  //         StacItemDao.insertStacItem(withParent).transact(xa) map {
-  //           case Right((inserted, etag)) =>
-  //             val validated = validator(inserted)
-  //             Right((validated.asJson, etag))
-  //           case Left(StacItemDao.InvalidTimeForPeriod) =>
-  //             Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
-  //           // this fall through covers the only other failure mode for item creation
-  //           case Left(_) =>
-  //             collectionNotFound(collectionId)
-  //         }
-  //     }
-  //   }
-
-  // }
+  def postItem(rawCollectionId: String, item: StacItem): F[Either[ValidationError, (StacItem, String)]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    val updatedItemCollection = item.copy(collection=Some(collectionId))
+    for {
+      _ <- PGStacQueries.createItem(item).transact(xa)
+    } yield {
+      Right((updatedItemCollection, updatedItemCollection.##.toString))
+    }
+  }
 
   def putItem(
       rawCollectionId: String,
       rawItemId: String,
-      itemUpdate: StacItem,
+      newItem: StacItem,
       etag: IfMatchMode
-  ): F[Either[CrudError, (Json, String)]] = ???
-  // {
-  //   val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
-  //   val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-
-  //   makeItemValidator(itemUpdate.stacExtensions, itemExtensionsRef) flatMap { validator =>
-  //     StacItemDao.updateStacItem(collectionId, itemId, itemUpdate, etag).transact(xa) map {
-  //       case Left(StacItemDao.StaleObject(etag, item)) =>
-  //         Left(
-  //           MidAirCollision(
-  //             s"Item $itemId changed server side. Refresh object and try again",
-  //             etag,
-  //             item
-  //           )
-  //         )
-  //       case Left(StacItemDao.ItemNotFound) =>
-  //         Left(NF(s"Item $itemId in collection $collectionId not found"))
-  //       case Left(StacItemDao.InvalidTimeForPeriod) =>
-  //         Left(ValidationError(StacItemDao.InvalidTimeForPeriod.msg))
-  //       case Left(_) =>
-  //         Left(ValidationError(s"Update of $itemId not possible with value passed"))
-  //       case Right((item, etag)) =>
-  //         Right((validator(item).addRootLink(rootLink).asJson, etag))
-  //     }
-  //   }
-  // }
+  ): F[Either[CrudError, (StacItem, String)]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val updatedItemCollection = newItem.copy(collection=Some(collectionId))
+    if (updatedItemCollection.id != itemId) {
+      Either.left[CrudError, (StacItem, String)](
+        ValidationError(s"ID on stac item (${newItem.id}) doesn't match path ID (${itemId})")
+      ).pure[F]
+    } else {
+      for {
+        _ <- PGStacQueries.updateItem(updatedItemCollection).transact(xa)
+      } yield {
+        Right((updatedItemCollection, updatedItemCollection.##.toString))
+      }
+    }
+  }
 
   def deleteItem(
       rawCollectionId: String,
       rawItemId: String
-  ): F[Either[Unit, Unit]] = ???
-  // {
-  //   val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
-  //   val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-
-  //   StacItemDao.query
-  //     .filter(fr"id = $itemId")
-  //     .filter(StacItemDao.collectionFilter(collectionId))
-  //     .delete
-  //     .transact(xa) *> Applicative[F].pure { Right(()) }
-  // }
+  ): F[Either[Unit, Unit]] ={
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    for {
+      _ <- PGStacQueries.deleteItem(collectionId, itemId).transact(xa)
+    } yield {
+      Right(())
+    }
+  }
 
   def patchItem(
       rawCollectionId: String,
       rawItemId: String,
       jsonPatch: Json,
       etag: IfMatchMode
-  ): F[Either[CrudError, (Json, String)]] = ???
-  // {
-  //   val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
-  //   val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-
-  //   StacItemDao
-  //     .patchItem(
-  //       collectionId,
-  //       itemId,
-  //       jsonPatch,
-  //       etag
-  //     )
-  //     .transact(xa) flatMap {
-  //     case None | Some(Left(StacItemDao.ItemNotFound)) |
-  //         Some(Left(StacItemDao.CollectionNotFound)) =>
-  //       Either
-  //         .left[CrudError, (Json, String)](
-  //           NF(s"Item $itemId in collection $collectionId not found")
-  //         )
-  //         .pure[F]
-  //     case Some(Left(StacItemDao.StaleObject(etag, item))) =>
-  //       Either
-  //         .left[CrudError, (Json, String)](
-  //           MidAirCollision(
-  //             s"Item $itemId changed server side. Refresh object and try again",
-  //             etag,
-  //             item
-  //           )
-  //         )
-  //         .pure[F]
-  //     case Some(Left(StacItemDao.UpdateFailed)) =>
-  //       Either
-  //         .left[CrudError, (Json, String)](
-  //           ValidationError(
-  //             s"Update of $itemId not possible with value passed"
-  //           )
-  //         )
-  //         .pure[F]
-  //     case Some(Left(StacItemDao.PatchInvalidatesItem(err))) =>
-  //       Either
-  //         .left[CrudError, (Json, String)](
-  //           InvalidPatch(
-  //             s"Patch would invalidate item $itemId: ${CursorOp.opsToPath(err.history)}",
-  //             jsonPatch
-  //           )
-  //         )
-  //         .pure[F]
-  //     case Some(Left(StacItemDao.InvalidTimeForPeriod)) =>
-  //       // can't match the error in the pattern, because we get a warning about the type
-  //       // not definitely being as narrow as we think it is which refers to
-  //       // https://github.com/scala/bug/issues/1503
-  //       // anyway, it's a case object, so we can just grab the same single object and
-  //       // use its message
-  //       Either
-  //         .left[CrudError, (Json, String)](
-  //           InvalidPatch(
-  //             StacItemDao.InvalidTimeForPeriod.msg,
-  //             jsonPatch
-  //           )
-  //         )
-  //         .pure[F]
-  //     case Some(Right((updated, etag))) =>
-  //       makeItemValidator(updated.stacExtensions, itemExtensionsRef) map { validator =>
-  //         Either.right(
-  //           (
-  //             validator(updated).addRootLink(rootLink).asJson,
-  //             etag
-  //           )
-  //         )
-  //       }
-
-  //   }
-  // }
+  ): F[Either[CrudError, (StacItem, String)]] = {
+    val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    for {
+      dbItem     <- PGStacQueries.getItem(collectionId, itemId).transact(xa)
+      merged     = dbItem.map(_.asJson.deepMerge(jsonPatch).deepDropNullValues)
+      rehydrated = merged.flatMap(_.as[StacItem].toOption)
+      _          <- rehydrated match {
+                      case Some(item) => PGStacQueries.updateItem(item).transact(xa)
+                      case None => None.pure[F]
+                    }
+    } yield {
+      if (dbItem.isEmpty) {
+        Either.left[CrudError, (StacItem, String)](InvalidPatch(s"No item found at collection $collectionId and id $itemId", jsonPatch))
+      } else {
+        rehydrated match {
+          case Some(item) => 
+            Either.right[CrudError, (StacItem, String)]((item, item.##.toString))
+          case None =>
+            Either.left[CrudError, (StacItem, String)](InvalidPatch("Unable to successfully merge patch with item in database", jsonPatch))
+        }
+      }
+    }
+  }
 
   val itemEndpoints =
     new ItemEndpoints(defaultLimit, enableTransactions, apiConfig.path)

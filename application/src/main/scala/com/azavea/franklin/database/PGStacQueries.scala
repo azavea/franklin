@@ -28,17 +28,30 @@ object PGStacQueries {
   implicit val meta: Meta[Collection] = new Meta(pgDecoderGet, pgEncoderPut)
 
 
-  def getCollection(collectionId: String): ConnectionIO[Option[Collection]] = {
+  def getCollection(collectionId: String): ConnectionIO[Option[Collection]] =
     fr"SELECT content FROM collections WHERE id = $collectionId"
       .query[Collection]
       .option
-  }
 
-  def listCollections(): ConnectionIO[List[Collection]] = {
+  def listCollections(): ConnectionIO[List[Collection]] =
     fr"SELECT content FROM collections"
       .query[Collection]
       .to[List]
-  }
+
+  def createItem(item: StacItem): ConnectionIO[Unit] =
+    sql"SELECT create_item($item::jsonb);"
+      .query[Unit]
+      .unique
+
+  def updateItem(item: StacItem): ConnectionIO[Unit] =
+    sql"SELECT update_item($item::jsonb);"
+      .query[Unit]
+      .unique
+
+  def deleteItem(collectionId: String, itemId: String) =
+    sql"SELECT delete_item($collectionId, $itemId);"
+      .query[Unit]
+      .unique
 
   def getItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] = {
     val params = SearchParameters.getItemById(collectionId, itemId)
@@ -55,11 +68,10 @@ object PGStacQueries {
       })
   }
 
-  def listItems(collectionId: String, limit: Int): ConnectionIO[List[Json]] = {
+  def listItems(collectionId: String, limit: Int): ConnectionIO[List[Json]] =
     fr"SELECT content FROM items WHERE collection = $collectionId LIMIT $limit"
       .query[Json]
       .to[List]
-  }
 
   def search(params: SearchParameters): ConnectionIO[Option[Json]] = {
     val req = params.asJson.deepDropNullValues
