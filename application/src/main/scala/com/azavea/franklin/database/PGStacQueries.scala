@@ -23,10 +23,29 @@ import doobie.postgres.circe.jsonb.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 
 import java.time.Instant
+import com.azavea.franklin.datamodel.StacSearchCollection
 
 object PGStacQueries {
-  implicit val meta: Meta[Collection] = new Meta(pgDecoderGet, pgEncoderPut)
+  implicit val collectionMeta: Meta[Collection] = new Meta(pgDecoderGet, pgEncoderPut)
+  implicit val searchresultsMeta: Meta[StacSearchCollection] = new Meta(pgDecoderGet, pgEncoderPut)
 
+
+  // Collections
+
+  def createCollection(collection: Collection): ConnectionIO[Unit] =
+    sql"SELECT create_collection($collection::jsonb);"
+      .query[Unit]
+      .unique
+
+  def updateCollection(collection: Collection): ConnectionIO[Unit] =
+    sql"SELECT update_collection($collection::jsonb);"
+      .query[Unit]
+      .unique
+
+  def deleteCollection(collection: Collection): ConnectionIO[Unit] =
+    sql"SELECT delete_collection($collection::jsonb);"
+      .query[Unit]
+      .unique
 
   def getCollection(collectionId: String): ConnectionIO[Option[Collection]] =
     fr"SELECT content FROM collections WHERE id = $collectionId"
@@ -37,6 +56,9 @@ object PGStacQueries {
     fr"SELECT content FROM collections"
       .query[Collection]
       .to[List]
+
+
+  // Items
 
   def createItem(item: StacItem): ConnectionIO[Unit] =
     sql"SELECT create_item($item::jsonb);"
@@ -55,17 +77,11 @@ object PGStacQueries {
 
   def getItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] = {
     val params = SearchParameters.getItemById(collectionId, itemId)
-      .asJson
-      .deepDropNullValues
-    fr"SELECT search($params::jsonb)"
-      .query[Json]
-      .option
-      .map({ maybejs =>
-        maybejs.flatMap({ js =>
-          val cursor = js.hcursor
-          cursor.downField("features").downArray.as[StacItem].toOption
-        })
+    search(params).map({ maybeSearchResults =>
+      maybeSearchResults.map({ searchResults =>
+        searchResults.features.head
       })
+    })
   }
 
   def listItems(collectionId: String, limit: Int): ConnectionIO[List[Json]] =
@@ -73,12 +89,13 @@ object PGStacQueries {
       .query[Json]
       .to[List]
 
-  def search(params: SearchParameters): ConnectionIO[Option[Json]] = {
+  def search(params: SearchParameters): ConnectionIO[Option[StacSearchCollection]] = {
     val req = params.asJson.deepDropNullValues
     fr"SELECT search($req::jsonb)"
-      .query[Json]
+      .query[StacSearchCollection]
       .option
   }
+
   // val selectF = fr"SELECT content FROM collections"
 
   // val tableName = "collections"

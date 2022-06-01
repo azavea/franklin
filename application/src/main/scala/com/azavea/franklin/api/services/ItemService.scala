@@ -133,18 +133,19 @@ class ItemService[F[_]: Concurrent](
   ): F[Either[CrudError, (StacItem, String)]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
-    val updatedItemCollection = newItem.copy(collection=Some(collectionId))
-    if (updatedItemCollection.id != itemId) {
-      Either.left[CrudError, (StacItem, String)](
-        ValidationError(s"ID on stac item (${newItem.id}) doesn't match path ID (${itemId})")
-      ).pure[F]
-    } else {
-      for {
-        _ <- PGStacQueries.updateItem(updatedItemCollection).transact(xa)
-      } yield {
-        Right((updatedItemCollection, updatedItemCollection.##.toString))
+    val updatedItem = newItem.copy(id=itemId, collection=Some(collectionId))
+    PGStacQueries.getItem(collectionId, itemId).transact(xa).flatMap({ oldItem =>
+      if (etag.matches(oldItem.##.toString())) {
+        PGStacQueries.updateItem(updatedItem).transact(xa).map({ _ =>
+          Either.right[CrudError, (StacItem, String)]((updatedItem, updatedItem.##.toString()))
+        })
+      } else {
+        Either.left[CrudError, (StacItem, String)](
+          ValidationError(
+            s"Update of $itemId not possible with value passed"
+          )).pure[F]
       }
-    }
+    })
   }
 
   def deleteItem(

@@ -98,40 +98,22 @@ class CollectionsService[F[_]: Concurrent](
     }
   }
 
-  // Old implementation (can delete once things work)
-  // def getCollectionUnique(rawCollectionId: String): F[Either[NF, Json]] = {
-  //   val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-  //   for {
-  //     collectionOption <- StacCollectionDao
-  //       .getCollection(collectionId)
-  //       .transact(xa)
-  //     // it looks unnecessary to check enableTiles here given the logic below, but
-  //     // we can skip the query if we know we don't need the mosaics
-  //     mosaicDefinitions <- if (enableTiles) {
-  //       MosaicDefinitionDao.listMosaicDefinitions(collectionId).transact(xa)
-  //     } else {
-  //       List.empty[MosaicDefinition].pure[F]
-  //     }
-  //     validatorOption <- collectionOption traverse { collection =>
-  //       makeCollectionValidator(collection.stacExtensions, collectionExtensionsRef)
-  //     }
-  //   } yield {
-  //     Either.fromOption(
-  //       (collectionOption, validatorOption) mapN {
-  //         case (collection, validator) =>
-  //           validator(
-  //             collection
-  //               .maybeAddTilesLink(enableTiles, apiHost)
-  //               .maybeAddMosaicLinks(enableTiles, apiHost, mosaicDefinitions)
-  //               .updateLinksWithHost(apiConfig)
-  //           ).asJson.dropNullValues
-  //       },
-  //       NF(s"Collection $collectionId not found")
-  //     )
-  //   }
-  // }
 
-  def createCollection(collection: StacCollection): F[Either[Unit, Json]] = ???
+  def postCollection(collection: Collection): F[Either[Unit, Collection]] = {
+    for {
+      _ <- PGStacQueries.createCollection(collection).transact(xa)
+    } yield {
+      Right(collection)
+    }
+  }
+
+  def putCollection(collection: Collection): F[Either[Unit, Collection]] = {
+    for {
+      _ <- PGStacQueries.updateCollection(collection).transact(xa)
+    } yield {
+      Right(collection)
+    }
+  }
   // {
   //   val newCollection = collection.copy(links =
   //     collection.links.filter({ link =>
@@ -188,8 +170,11 @@ class CollectionsService[F[_]: Concurrent](
   ) ++
     (if (enableTransactions) {
        List(
-         Http4sServerInterpreter.toRoutes(collectionEndpoints.createCollection)(collection =>
-           createCollection(collection)
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.postCollection)(collection =>
+           postCollection(collection)
+         ),
+         Http4sServerInterpreter.toRoutes(collectionEndpoints.putCollection)(collection =>
+           putCollection(collection)
          ),
          Http4sServerInterpreter.toRoutes(collectionEndpoints.deleteCollection)(rawCollectionId =>
            deleteCollection(rawCollectionId)

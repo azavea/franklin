@@ -4,6 +4,13 @@ import com.azavea.stac4s.{StacItem, StacLink}
 import io.circe._
 import io.circe.syntax._
 
+
+case class StacSearchCollection(
+    context: Context,
+    features: List[StacItem],
+    links: List[StacLink]
+)
+
 object StacSearchCollection {
 
   implicit val stacSearchEncoder = new Encoder[StacSearchCollection] {
@@ -29,9 +36,3 @@ object StacSearchCollection {
       }
   }
 }
-
-case class StacSearchCollection(
-    context: Context,
-    features: List[StacItem],
-    links: List[StacLink]
-)
