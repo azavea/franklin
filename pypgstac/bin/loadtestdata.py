@@ -9,7 +9,7 @@ from pypgstac.load import Loader, Methods
 from psycopg.conninfo import make_conninfo
 
 
-DATA_DIR = os.path.join(Path(os.path.dirname(__file__)).parent.parent, "data-files")
+DATA_DIR = os.path.join(Path(os.path.dirname(__file__)).parent, "data-files")
 collection = os.path.join(DATA_DIR, "naip/collection.json")
 items = os.path.join(DATA_DIR, "naip/items")
 

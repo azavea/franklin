@@ -50,7 +50,7 @@ services:
       - PGUSER=franklin
       - PGPASSWORD=franklin
     volumes:
-      - ./pygstac/bin:/opt/src/bin
+      - ./pypgstac/bin:/opt/src/bin
       - ./scripts:/opt/src/scripts
       - ./testdata:/opt/src/testdata
       - ./data-files:/opt/src/data-files
