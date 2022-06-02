@@ -1,12 +1,11 @@
 package com.azavea.franklin.api.endpoints
 
+import cats.effect.Concurrent
 import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
-import com.azavea.franklin.datamodel.{CollectionsResponse, MosaicDefinition}
 import com.azavea.franklin.datamodel.stactypes.{Collection}
+import com.azavea.franklin.datamodel.{CollectionsResponse, MosaicDefinition}
 import com.azavea.franklin.error.NotFound
-
-import cats.effect.Concurrent
 import io.circe._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.model.StatusCode

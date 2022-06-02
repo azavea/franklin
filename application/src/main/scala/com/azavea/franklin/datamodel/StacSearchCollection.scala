@@ -4,7 +4,6 @@ import com.azavea.stac4s.StacItem
 import io.circe._
 import io.circe.syntax._
 
-
 case class StacSearchCollection(
     context: Context,
     features: List[StacItem],
@@ -21,7 +20,7 @@ object StacSearchCollection {
     "features",
     "links",
     "stac_version"
-  )( searchResults =>
+  )(searchResults =>
     (
       "FeatureCollection",
       searchResults.context,

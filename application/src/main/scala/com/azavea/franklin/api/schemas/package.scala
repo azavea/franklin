@@ -16,9 +16,9 @@ import io.circe.parser.{decode => circeDecode}
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import sttp.tapir.Codec.PlainCodec
+import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
-import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.{Codec, DecodeResult, Schema}
 
 import scala.util.Try

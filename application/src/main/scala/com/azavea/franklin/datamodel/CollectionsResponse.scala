@@ -5,7 +5,6 @@ import com.azavea.stac4s.{StacCollection, StacLink}
 import io.circe._
 import io.circe.generic.semiauto._
 
-
 case class CollectionsResponse(
     collections: List[Collection],
     links: List[Link] = List()

@@ -1,18 +1,17 @@
 package com.azavea.franklin.api.services
 
-import com.azavea.franklin.commands.ApiConfig
-import com.azavea.franklin.api.endpoints.CollectionEndpoints
-import com.azavea.franklin.database.PGStacQueries
-import com.azavea.franklin.datamodel.{CollectionsResponse, MosaicDefinition, TileInfo, Link}
-import com.azavea.franklin.datamodel.stactypes.Collection
-import com.azavea.franklin.error.{NotFound => NF}
-import com.azavea.franklin.extensions.validation._
-import com.azavea.stac4s._
-
 import cats.data.EitherT
 import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
+import com.azavea.franklin.api.endpoints.CollectionEndpoints
+import com.azavea.franklin.commands.ApiConfig
+import com.azavea.franklin.database.PGStacQueries
+import com.azavea.franklin.datamodel.stactypes.Collection
+import com.azavea.franklin.datamodel.{CollectionsResponse, Link, MosaicDefinition, TileInfo}
+import com.azavea.franklin.error.{NotFound => NF}
+import com.azavea.franklin.extensions.validation._
+import com.azavea.stac4s._
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -31,7 +30,6 @@ import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-
 case class AddCollectionLinks(apiConfig: ApiConfig) {
 
   val _collectionId = root.id.string
@@ -47,13 +45,13 @@ case class AddCollectionLinks(apiConfig: ApiConfig) {
 
   def apply(collection: Collection) = {
     val selfLink = createSelfLink(collection)
-    collection.copy(links=collection.links :+ selfLink)
+    collection.copy(links = collection.links :+ selfLink)
   }
 }
 
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
-    apiConfig: ApiConfig,
+    apiConfig: ApiConfig
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
@@ -98,7 +96,6 @@ class CollectionsService[F[_]: Concurrent](
       )
     }
   }
-
 
   def postCollection(collection: Collection): F[Either[Unit, Collection]] = {
     for {

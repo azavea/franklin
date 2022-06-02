@@ -2,7 +2,6 @@ package com.azavea.franklin.extensions.paging
 
 import com.azavea.franklin.datamodel.SearchParameters
 import com.azavea.stac4s.extensions.LinkExtension
-
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.generic.semiauto._
 import io.circe.refined._

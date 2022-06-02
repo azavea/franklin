@@ -8,10 +8,10 @@ import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
 import geotrellis.vector.io.json.GeometryFormats._
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto._
-import io.circe.refined._
 import io.circe.parser.{parse => parseJson}
+import io.circe.refined._
+import io.circe.syntax._
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -87,6 +87,7 @@ object SearchParameters {
   def encodeString(s: String): String = URLEncoder.encode(s, StandardCharsets.UTF_8.toString)
 
   implicit val searchFilterDecoder = new Decoder[SearchParameters] {
+
     def apply(c: HCursor): Decoder.Result[SearchParameters] =
       for {
         bbox              <- c.downField("bbox").as[Option[Bbox]]
@@ -97,7 +98,7 @@ object SearchParameters {
         limit             <- c.downField("limit").as[Option[NonNegInt]]
         query             <- c.downField("query").as[Option[Json]]
         filter            <- c.downField("filter").as[Option[Json]]
-        filterLang        <- c.downField("filter_lang").as[Option[String]] match {
+        filterLang <- c.downField("filter_lang").as[Option[String]] match {
           case Left(_)      => c.downField("filter-lang").as[Option[String]]
           case r @ Right(_) => r
         }

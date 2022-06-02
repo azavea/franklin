@@ -2,19 +2,19 @@ package com.azavea.franklin.datamodel
 
 import cats.syntax.either._
 import com.azavea.stac4s.{StacLinkType, StacMediaType}
-import io.circe.{Encoder, Decoder, Json}
 import io.circe.generic.semiauto._
-import org.http4s.{Method, ParseResult, ParseFailure}
+import io.circe.{Decoder, Encoder, Json}
+import org.http4s.{Method, ParseFailure, ParseResult}
 import sttp.tapir.Schema
 import sttp.tapir.codec.refined._
 
 case class Link(
-  href: String,
-  rel: StacLinkType,
-  _type: Option[StacMediaType],
-  title: Option[String] = None,
-  method: Option[Method] = None,
-  body: Option[Json] = None
+    href: String,
+    rel: StacLinkType,
+    _type: Option[StacMediaType],
+    title: Option[String] = None,
+    method: Option[Method] = None,
+    body: Option[Json] = None
 )
 
 object Link {

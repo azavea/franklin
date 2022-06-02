@@ -1,34 +1,32 @@
 package com.azavea.franklin.database
 
+import cats.data.OptionT
+import cats.syntax.foldable._
+import cats.syntax.list._
+import com.azavea.franklin.datamodel.StacSearchCollection
+import com.azavea.franklin.datamodel.stactypes.Collection
 import com.azavea.franklin.datamodel.{
   BulkExtent,
   MapboxVectorTileFootprintRequest,
   SearchParameters
 }
-import com.azavea.franklin.datamodel.stactypes.Collection
-
-import io.circe._
-import io.circe.syntax._
-import cats.data.OptionT
-import cats.syntax.foldable._
-import cats.syntax.list._
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
 import com.azavea.stac4s.syntax._
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
-import doobie.refined.implicits._
 import doobie.postgres.circe.jsonb.implicits._
+import doobie.refined.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
+import io.circe._
+import io.circe.syntax._
 
 import java.time.Instant
-import com.azavea.franklin.datamodel.StacSearchCollection
 
 object PGStacQueries {
-  implicit val collectionMeta: Meta[Collection] = new Meta(pgDecoderGet, pgEncoderPut)
+  implicit val collectionMeta: Meta[Collection]              = new Meta(pgDecoderGet, pgEncoderPut)
   implicit val searchresultsMeta: Meta[StacSearchCollection] = new Meta(pgDecoderGet, pgEncoderPut)
-
 
   // Collections
 
@@ -57,7 +55,6 @@ object PGStacQueries {
       .query[Collection]
       .to[List]
 
-
   // Items
 
   def createItem(item: StacItem): ConnectionIO[Unit] =
@@ -84,7 +81,6 @@ object PGStacQueries {
     fr"SELECT content FROM items WHERE collection = $collectionId LIMIT $limit"
       .query[Json]
       .to[List]
-
 
   // Search
 

@@ -1,5 +1,7 @@
 package com.azavea.franklin.api
 
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,
   ItemEndpoints,
@@ -8,11 +10,8 @@ import com.azavea.franklin.api.endpoints.{
 }
 import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 import com.azavea.franklin.api.services._
-import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import com.azavea.franklin.commands._
-
-import cats.effect._
-import cats.syntax.all._
+import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
@@ -111,18 +110,17 @@ $$$$
           apiConfig.path
         )
         searchEndpoints = new SearchEndpoints[IO](apiConfig).endpoints
-        landingPage = new LandingPageEndpoints[IO](apiConfig.path)
-        allEndpoints =
-          collectionEndpoints.endpoints ++
+        landingPage     = new LandingPageEndpoints[IO](apiConfig.path)
+        allEndpoints = collectionEndpoints.endpoints ++
           itemEndpoints.endpoints ++
           searchEndpoints ++
           landingPage.endpoints
         docs         = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
         docRoutes    = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes = new SearchService[IO](apiConfig, xa).routes
-        itemExtensions       <- Resource.eval { itemExtensionsRef[IO] }
-        collectionRoutes = new CollectionsService[IO](xa, apiConfig).routes
-        itemRoutes = new ItemService[IO](xa, apiConfig, itemExtensions, rootLink).routes
+        itemExtensions <- Resource.eval { itemExtensionsRef[IO] }
+        collectionRoutes  = new CollectionsService[IO](xa, apiConfig).routes
+        itemRoutes        = new ItemService[IO](xa, apiConfig, itemExtensions, rootLink).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
           new AccessLoggingMiddleware(

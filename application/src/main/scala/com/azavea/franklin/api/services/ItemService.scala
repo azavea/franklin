@@ -1,7 +1,11 @@
 package com.azavea.franklin.api.services
 
-import com.azavea.franklin.commands.ApiConfig
+import cats.Applicative
+import cats.data.NonEmptyList
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.ItemEndpoints
+import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.error.{
@@ -15,11 +19,6 @@ import com.azavea.franklin.extensions.validation._
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import com.azavea.stac4s.{`application/json`, StacItem, StacLink}
-
-import cats.Applicative
-import cats.data.NonEmptyList
-import cats.effect._
-import cats.syntax.all._
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -40,7 +39,6 @@ import sttp.tapir.server.http4s._
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 
-
 case class AddItemLinks(apiConfig: ApiConfig) {
 
   def createSelfLink(item: StacItem): StacLink =
@@ -52,10 +50,8 @@ case class AddItemLinks(apiConfig: ApiConfig) {
     )
 
   def apply(item: StacItem): StacItem = {
-    val prunedLinks = item.links.filter { link =>
-      link.rel != StacLinkType.Self
-    }
-    item.copy(links=prunedLinks :+ createSelfLink(item))
+    val prunedLinks = item.links.filter { link => link.rel != StacLinkType.Self }
+    item.copy(links = prunedLinks :+ createSelfLink(item))
   }
 }
 
@@ -111,14 +107,17 @@ class ItemService[F[_]: Concurrent](
           val itemWithLinks = addItemLinks(item)
           Right((itemWithLinks, itemWithLinks.##.toString))
         }
-        case None       => Left(NF(s"Item $itemId in collection $collectionId not found"))
+        case None => Left(NF(s"Item $itemId in collection $collectionId not found"))
       }
     }
   }
 
-  def postItem(rawCollectionId: String, item: StacItem): F[Either[ValidationError, (StacItem, String)]] = {
-    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-    val updatedItemCollection = item.copy(collection=Some(collectionId))
+  def postItem(
+      rawCollectionId: String,
+      item: StacItem
+  ): F[Either[ValidationError, (StacItem, String)]] = {
+    val collectionId          = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    val updatedItemCollection = item.copy(collection = Some(collectionId))
     for {
       _ <- PGStacQueries.createItem(item).transact(xa)
     } yield {
@@ -134,25 +133,34 @@ class ItemService[F[_]: Concurrent](
   ): F[Either[CrudError, (StacItem, String)]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
-    val updatedItem = newItem.copy(id=itemId, collection=Some(collectionId))
-    PGStacQueries.getItem(collectionId, itemId).transact(xa).flatMap({ oldItem =>
-      if (etag.matches(oldItem.##.toString())) {
-        PGStacQueries.updateItem(updatedItem).transact(xa).map({ _ =>
-          Either.right[CrudError, (StacItem, String)]((updatedItem, updatedItem.##.toString()))
-        })
-      } else {
-        Either.left[CrudError, (StacItem, String)](
-          ValidationError(
-            s"Update of $itemId not possible with value passed"
-          )).pure[F]
-      }
-    })
+    val updatedItem  = newItem.copy(id = itemId, collection = Some(collectionId))
+    PGStacQueries
+      .getItem(collectionId, itemId)
+      .transact(xa)
+      .flatMap({ oldItem =>
+        if (etag.matches(oldItem.##.toString())) {
+          PGStacQueries
+            .updateItem(updatedItem)
+            .transact(xa)
+            .map({ _ =>
+              Either.right[CrudError, (StacItem, String)]((updatedItem, updatedItem.##.toString()))
+            })
+        } else {
+          Either
+            .left[CrudError, (StacItem, String)](
+              ValidationError(
+                s"Update of $itemId not possible with value passed"
+              )
+            )
+            .pure[F]
+        }
+      })
   }
 
   def deleteItem(
       rawCollectionId: String,
       rawItemId: String
-  ): F[Either[Unit, Unit]] ={
+  ): F[Either[Unit, Unit]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     for {
@@ -171,22 +179,26 @@ class ItemService[F[_]: Concurrent](
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
-      dbItem     <- PGStacQueries.getItem(collectionId, itemId).transact(xa)
+      dbItem <- PGStacQueries.getItem(collectionId, itemId).transact(xa)
       merged     = dbItem.map(_.asJson.deepMerge(jsonPatch).deepDropNullValues)
       rehydrated = merged.flatMap(_.as[StacItem].toOption)
-      _          <- rehydrated match {
-                      case Some(item) => PGStacQueries.updateItem(item).transact(xa)
-                      case None => None.pure[F]
-                    }
+      _ <- rehydrated match {
+        case Some(item) => PGStacQueries.updateItem(item).transact(xa)
+        case None       => None.pure[F]
+      }
     } yield {
       if (dbItem.isEmpty) {
-        Either.left[CrudError, (StacItem, String)](InvalidPatch(s"No item found at collection $collectionId and id $itemId", jsonPatch))
+        Either.left[CrudError, (StacItem, String)](
+          InvalidPatch(s"No item found at collection $collectionId and id $itemId", jsonPatch)
+        )
       } else {
         rehydrated match {
-          case Some(item) => 
+          case Some(item) =>
             Either.right[CrudError, (StacItem, String)]((item, item.##.toString))
           case None =>
-            Either.left[CrudError, (StacItem, String)](InvalidPatch("Unable to successfully merge patch with item in database", jsonPatch))
+            Either.left[CrudError, (StacItem, String)](
+              InvalidPatch("Unable to successfully merge patch with item in database", jsonPatch)
+            )
         }
       }
     }

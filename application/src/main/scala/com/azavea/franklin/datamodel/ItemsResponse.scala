@@ -20,9 +20,7 @@ object ItemsResponse {
     "type",
     "features",
     "links"
-  )((_: String, features: List[StacItem], links: List[StacLink]) =>
-    ItemsResponse(features, links)
-  )
+  )((_: String, features: List[StacItem], links: List[StacLink]) => ItemsResponse(features, links))
 }
 
 final case class ItemsResponseJson(
@@ -44,7 +42,5 @@ object ItemsResponseJson {
       "type",
       "features",
       "links"
-    )((_: String, features: List[Json], links: List[Json]) =>
-      ItemsResponseJson(features, links)
-    )
+    )((_: String, features: List[Json], links: List[Json]) => ItemsResponseJson(features, links))
 }

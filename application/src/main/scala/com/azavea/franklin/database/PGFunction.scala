@@ -5,7 +5,6 @@ import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.refined.implicits._
 
-
 object PGFunction {
   //def apply[T: Write](function: String, arg: String):
 }
