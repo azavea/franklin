@@ -5,7 +5,7 @@ import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database._
-import com.azavea.franklin.datamodel.{PaginationToken, SearchParameters, StacSearchCollection}
+import com.azavea.franklin.datamodel.{PaginationToken, SearchParameters, StacSearchCollection, Sorter}
 import com.azavea.stac4s.{Bbox, TemporalExtent}
 import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
@@ -38,6 +38,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
       .and(query[Option[Json]]("filter"))
       .and(query[Option[String]]("filter_lang"))
       .and(query[Option[String]]("token"))
+      .and(query[Option[String]]("sortby"))
       .map(
         (tup: (
             Option[Bbox],
@@ -48,6 +49,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
             Option[NonNegInt],
             Option[Json],
             Option[Json],
+            Option[String],
             Option[String],
             Option[String]
         )) => {
@@ -61,7 +63,8 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
             query,
             filter,
             filterLang,
-            token
+            token,
+            sortby
           ) = tup
           // query is empty here because entering query extension fields in url params is
           // completely insane
@@ -75,7 +78,8 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
             query,
             filter,
             filterLang,
-            token
+            token,
+            sortby.map(_.split(",").map(Sorter.fromString).toList)
           )
         }
       )(sp =>
@@ -89,7 +93,8 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
           sp.query,
           sp.filter,
           sp.filterLang,
-          sp.token
+          sp.token,
+          sp.sortby.map(lst => lst.map(_.toQP).mkString(","))
         )
       )
 

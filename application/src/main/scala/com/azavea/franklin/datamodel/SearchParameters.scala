@@ -16,6 +16,31 @@ import io.circe.syntax._
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+final case class Sorter(
+  field: String,
+  direction: String
+) {
+  def toQP =
+    if (direction == "asc") s"+${field}"
+    else s"-${field}"
+}
+
+object Sorter {
+  def fromString(s: String): Sorter =
+    if (s.startsWith(("-"))) {
+      Sorter(s.drop(1), "desc")
+    } else if (s.startsWith("+")) {
+      Sorter(s.drop(1), "asc")
+    } else {
+      Sorter(s,"asc")
+    }
+
+  implicit val sorterDecoder: Decoder[Sorter] = deriveDecoder[Sorter]
+  implicit val sorterEncoder: Encoder[Sorter] = deriveEncoder[Sorter]
+}
+
+
+
 // https://github.com/radiantearth/stac-api-spec/tree/master/item-search#query-parameter-table
 final case class SearchParameters(
     bbox: Option[Bbox],
@@ -27,7 +52,8 @@ final case class SearchParameters(
     query: Option[Json],
     filter: Option[Json],
     filterLang: Option[String],
-    token: Option[String]
+    token: Option[String],
+    sortby: Option[List[Sorter]]
 ) {
 
   def asQueryParameters: String = {
@@ -52,6 +78,7 @@ final case class SearchParameters(
       s"""filter_lang=${SearchParameters.encodeString(fl)}"""
     }
     val tokenQP = token map { t => s"""token=${t}""" }
+    val sortbyQP = sortby map { t => s"sortby=${t.map(_.toQP).mkString(",")}" }
 
     List(
       bboxQP,
@@ -63,7 +90,8 @@ final case class SearchParameters(
       queryQP,
       filterQP,
       filterLangQP,
-      tokenQP
+      tokenQP,
+      sortbyQP
     ).flatten.mkString("&")
   }
 
@@ -77,6 +105,7 @@ object SearchParameters {
     None,
     List(collectionId),
     List(itemId),
+    None,
     None,
     None,
     None,
@@ -103,6 +132,7 @@ object SearchParameters {
           case r @ Right(_) => r
         }
         token <- c.downField("token").as[Option[String]]
+        sortby <- c.downField("sortby").as[Option[List[Sorter]]]
       } yield {
 
         SearchParameters(
@@ -115,12 +145,13 @@ object SearchParameters {
           query,
           filter,
           filterLang.map { _ => "cql2-json" },
-          token
+          token,
+          sortby
         )
       }
   }
 
-  implicit val searchFilterEncoder: Encoder[SearchParameters] = Encoder.forProduct10(
+  implicit val searchFilterEncoder: Encoder[SearchParameters] = Encoder.forProduct11(
     "bbox",
     "datetime",
     "intersects",
@@ -130,7 +161,8 @@ object SearchParameters {
     "query",
     "filter",
     "filterLang",
-    "token"
+    "token",
+    "sortby"
   )(filters =>
     (
       filters.bbox,
@@ -142,7 +174,8 @@ object SearchParameters {
       filters.query,
       filters.filter,
       filters.filterLang,
-      filters.token
+      filters.token,
+      filters.sortby
     )
   )
 }
