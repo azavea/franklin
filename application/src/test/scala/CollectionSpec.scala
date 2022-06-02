@@ -1,17 +1,17 @@
 package com.azavea.franklin.datamodel
 
 import com.azavea.franklin.datamodel.stactypes.Collection
-
 import io.circe._
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
-import matchers.should.Matchers._
-
+import org.scalatest.matchers.should.Matchers._
 
 class CollectionSpec extends AnyFlatSpec {
-  val collectionContent = """
+
+  val collectionContent =
+    """
   |{
   |  "id": "naip",
   |  "type": "Collection",
@@ -162,16 +162,15 @@ class CollectionSpec extends AnyFlatSpec {
   |  "msft:storage_account": "naipeuwest",
   |  "msft:short_description": "NAIP provides US-wide, high-resolution aerial imagery.  This dataset includes NAIP images from 2010 to the present."
   |}""".stripMargin
-    
 
   "A collection" should "roundtrip serialize and deserialize" in {
-    val parsed = parse(collectionContent).getOrElse(Json.Null)
+    val parsed  = parse(collectionContent).getOrElse(Json.Null)
     val encoded = parsed.as[Collection]
     val roundTrip = encoded match {
       case Right(enc) => enc.asJson.deepDropNullValues
-      case Left(err) => throw err
+      case Left(err)  => throw err
     }
     encoded shouldBe ('right)
-    roundTrip should be (parsed)
+    roundTrip should be(parsed)
   }
 }
