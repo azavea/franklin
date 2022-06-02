@@ -5,11 +5,7 @@ import cats.syntax.foldable._
 import cats.syntax.list._
 import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.franklin.datamodel.stactypes.Collection
-import com.azavea.franklin.datamodel.{
-  BulkExtent,
-  MapboxVectorTileFootprintRequest,
-  SearchParameters
-}
+import com.azavea.franklin.datamodel.{BulkExtent, SearchParameters}
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
 import com.azavea.stac4s.syntax._
@@ -24,9 +20,7 @@ import io.circe.syntax._
 
 import java.time.Instant
 
-object PGStacQueries {
-  implicit val collectionMeta: Meta[Collection]              = new Meta(pgDecoderGet, pgEncoderPut)
-  implicit val searchresultsMeta: Meta[StacSearchCollection] = new Meta(pgDecoderGet, pgEncoderPut)
+object PGStacQueries extends CirceJsonbMeta {
 
   // Collections
 
@@ -77,9 +71,9 @@ object PGStacQueries {
     search(params).map({ results => results.features.headOption })
   }
 
-  def listItems(collectionId: String, limit: Int): ConnectionIO[List[Json]] =
+  def listItems(collectionId: String, limit: Int): ConnectionIO[List[StacItem]] =
     fr"SELECT content FROM items WHERE collection = $collectionId LIMIT $limit"
-      .query[Json]
+      .query[StacItem]
       .to[List]
 
   // Search

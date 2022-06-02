@@ -11,7 +11,6 @@ import com.azavea.franklin.api.endpoints.{
 import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 import com.azavea.franklin.api.services._
 import com.azavea.franklin.commands._
-import com.azavea.franklin.extensions.validation.{collectionExtensionsRef, itemExtensionsRef}
 import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
@@ -115,12 +114,11 @@ $$$$
           itemEndpoints.endpoints ++
           searchEndpoints ++
           landingPage.endpoints
-        docs         = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
-        docRoutes    = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
-        searchRoutes = new SearchService[IO](apiConfig, xa).routes
-        itemExtensions <- Resource.eval { itemExtensionsRef[IO] }
+        docs              = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
+        docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
+        searchRoutes      = new SearchService[IO](apiConfig, xa).routes
         collectionRoutes  = new CollectionsService[IO](xa, apiConfig).routes
-        itemRoutes        = new ItemService[IO](xa, apiConfig, itemExtensions, rootLink).routes
+        itemRoutes        = new ItemService[IO](xa, apiConfig, rootLink).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
           new AccessLoggingMiddleware(

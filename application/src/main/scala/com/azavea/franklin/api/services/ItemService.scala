@@ -15,7 +15,6 @@ import com.azavea.franklin.error.{
   NotFound => NF,
   ValidationError
 }
-import com.azavea.franklin.extensions.validation._
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import com.azavea.stac4s.{`application/json`, StacItem, StacLink}
@@ -58,7 +57,6 @@ case class AddItemLinks(apiConfig: ApiConfig) {
 class ItemService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
-    itemExtensionsRef: ExtensionRef[F, StacItem],
     rootLink: StacLink
 )(
     implicit contextShift: ContextShift[F],
@@ -84,7 +82,7 @@ class ItemService[F[_]: Concurrent](
         .listItems(collectionId, limit.map(_.value).getOrElse(defaultLimit))
         .transact(xa)
     } yield {
-      val response = ItemsResponseJson(
+      val response = ItemsResponse(
         items.toList,
         List()
       )

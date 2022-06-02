@@ -16,7 +16,7 @@ printf "Initializing Franklin app...\n\n"
 copilot app init franklin --domain $DOMAIN_NAME
 
 printf "Initializing API service...\n\n"
-echo $(copilot init -a franklin --dockerfile ./Dockerfile --name api --port 9090 -t "Load Balanced Web Service")
+echo "$(copilot init -a franklin --dockerfile ./Dockerfile --name api --port 9090 -t "Load Balanced Web Service")"
 
 printf "Overriding default manifest.yml...\n\n"
 rm ./copilot/api/manifest.yml
@@ -30,7 +30,7 @@ cp db.yml ./copilot/api/addons/db.yml
 cp iam.yml ./copilot/api/addons/iam.yml
 
 printf "Initializing production env...\n\n"
-echo $(copilot env init -n production -a franklin --profile $AWS_PROFILE)
+echo "$(copilot env init -n production -a franklin --profile "$AWS_PROFILE")"
 
 printf "Getting certificate ARN...\n\n"
 CertificateArn=$(aws acm list-certificates | jq -rc '.CertificateSummaryList | map(select( .DomainName | contains("production.franklin"))) | .[0].CertificateArn')

@@ -3,11 +3,9 @@
 import os
 from pathlib import Path
 
-from pypgstac.db import PgstacDB
-from pypgstac.load import Loader, Methods
-
-from psycopg.conninfo import make_conninfo
-
+from psycopg.conninfo import make_conninfo  # type: ignore
+from pypgstac.db import PgstacDB  # type: ignore
+from pypgstac.load import Loader, Methods  # type: ignore
 
 DATA_DIR = os.path.join(Path(os.path.dirname(__file__)).parent, "data-files")
 collection = os.path.join(DATA_DIR, "naip/collection.json")
@@ -19,18 +17,27 @@ dbport = os.getenv("PGPORT") or 5432
 dbuser = os.getenv("PGUSER") or "franklin"
 dbpass = os.getenv("PGPASSWORD") or "franklin"
 
-conninfo = make_conninfo("postgres://u@h/d", user=dbuser, host=dbhost, port=dbport, dbname=dbname, password=dbpass)
+conninfo = make_conninfo(
+    "postgres://u@h/d",
+    user=dbuser,
+    host=dbhost,
+    port=dbport,
+    dbname=dbname,
+    password=dbpass,
+)
 print(f"CONNINFO, {conninfo}")
 db = PgstacDB(conninfo)
 print("Updating franklin role settings")
 
 with db.connect() as conn:
+    sql = "ALTER ROLE franklin SET SEARCH_PATH to pgstac, '$user', public;"
     cur = conn.cursor()
-    cur.execute("ALTER ROLE franklin SET SEARCH_PATH to pgstac, '$user', public;")
+    cur.execute(sql)
 
 with db.connect() as conn:
+    sql = "ALTER ROLE franklin SET pgstac.context TO 'on';"
     cur = conn.cursor()
-    cur.execute("ALTER ROLE franklin SET pgstac.context TO 'on';")
+    cur.execute(sql)
 
 
 loader = Loader(db)

@@ -1,6 +1,5 @@
 package com.azavea.franklin
 
-import com.azavea.franklin.datamodel.ItemAsset
 import geotrellis.raster.geotiff.GeoTiffRasterSource
 import geotrellis.raster.histogram._
 import geotrellis.raster.io.geotiff.MultibandGeoTiff
@@ -16,7 +15,5 @@ package object cache {
     CaffeineCache[Option[Array[Histogram[Int]]]]
 
   implicit val gtRasterSourceCache: Cache[GeoTiffRasterSource] = CaffeineCache[GeoTiffRasterSource]
-
-  implicit val itemAssetListcache: Cache[List[ItemAsset]] = CaffeineCache[List[ItemAsset]]
 
 }

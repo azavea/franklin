@@ -8,9 +8,8 @@ import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel.stactypes.Collection
-import com.azavea.franklin.datamodel.{CollectionsResponse, Link, MosaicDefinition, TileInfo}
+import com.azavea.franklin.datamodel.{CollectionsResponse, Link}
 import com.azavea.franklin.error.{NotFound => NF}
-import com.azavea.franklin.extensions.validation._
 import com.azavea.stac4s._
 import doobie._
 import doobie.implicits._
@@ -115,12 +114,10 @@ class CollectionsService[F[_]: Concurrent](
 
   def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-    try {
-      for {
-        queryResult <- PGStacQueries.deleteCollection(collectionId).attempt.transact(xa)
-      } yield {
-        queryResult.leftMap { _ => NF(s"Collection ID $collectionId not found") }
-      }
+    for {
+      queryResult <- PGStacQueries.deleteCollection(collectionId).attempt.transact(xa)
+    } yield {
+      queryResult.leftMap { _ => NF(s"Collection ID $collectionId not found") }
     }
   }
 
