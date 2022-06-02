@@ -1,18 +1,18 @@
 package com.azavea.franklin.api.endpoints
 
-import cats.effect.Concurrent
+import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.datamodel.{CollectionsResponse, MosaicDefinition}
 import com.azavea.franklin.datamodel.stactypes.{Collection}
 import com.azavea.franklin.error.NotFound
-import com.azavea.stac4s.StacCollection
+
+import cats.effect.Concurrent
 import io.circe._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.model.StatusCode
 import sttp.model.StatusCode.{NotFound => NF}
 import sttp.tapir._
 import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe._
 
 import java.util.UUID
 
@@ -24,6 +24,14 @@ class CollectionEndpoints[F[_]: Concurrent](
   val basePath = baseFor(pathPrefix, "collections")
 
   val base = endpoint.in(basePath)
+
+  val collectionUnique: Endpoint[String, NotFound, Collection, Fs2Streams[F]] =
+    base.get
+      .in(path[String])
+      .out(jsonBody[Collection])
+      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
+      .description("A single collection")
+      .name("collectionUnique")
 
   val collectionsList: Endpoint[Unit, Unit, CollectionsResponse, Fs2Streams[F]] =
     base.get
@@ -54,18 +62,10 @@ class CollectionEndpoints[F[_]: Concurrent](
       .name("putCollection")
 
   val deleteCollection: Endpoint[String, NotFound, Unit, Fs2Streams[F]] =
-    base.get
+    base.delete
       .in(path[String])
       .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
       .name("collectionDelete")
-
-  val collectionUnique: Endpoint[String, NotFound, Collection, Fs2Streams[F]] =
-    base.get
-      .in(path[String])
-      .out(jsonBody[Collection])
-      .errorOut(oneOf(statusMapping(NF, jsonBody[NotFound].description("not found"))))
-      .description("A single collection")
-      .name("collectionUnique")
 
   val endpoints = List(collectionsList, collectionUnique) ++ {
     if (enableTransactions) List(postCollection, putCollection, deleteCollection) else Nil

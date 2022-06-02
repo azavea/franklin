@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets
 
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.SearchEndpoints
-import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.database.PGStacQueries
 
@@ -36,14 +35,15 @@ case class UpdateSearchResults(params: SearchParameters, host: String) {
   case object SearchPOST extends SearchMethod
 
   // Various optics to update json
-  val addLinkArray = root.at("links").set(Some(Vector[Json]().asJson))
-  def addLink(link: Json): Json => Json = root.links.arr.modify({ arr: Vector[Json] => arr :+ link })
+  def addLink(link: Link): StacSearchCollection => StacSearchCollection = { searchCollection =>
+    searchCollection.copy(links = searchCollection.links :+ link)
+  }
   val next = root.next.string
   val prev = root.prev.string
   val rmNext = root.at("next").set(None)
   val rmPrev = root.at("prev").set(None)
 
-  def constructPageLink(page: String, linkType: PageLinkType, searchMethod: SearchMethod): Json = {
+  def constructPageLink(page: String, linkType: PageLinkType, searchMethod: SearchMethod): Link = {
     val updatedParams = linkType match {
       case NextLink => params.copy(token=s"next:$page".some)
       case PrevLink => params.copy(token=s"prev:$page".some)
@@ -54,7 +54,7 @@ case class UpdateSearchResults(params: SearchParameters, host: String) {
     }
     val body: Option[Json] = searchMethod match {
       case SearchGET => None
-      case SearchPOST => updatedParams.asJson.some
+      case SearchPOST => updatedParams.asJson.dropNullValues.some
     }
     val href = searchMethod match {
       case SearchGET =>
@@ -72,10 +72,10 @@ case class UpdateSearchResults(params: SearchParameters, host: String) {
       None,
       Some(Method.GET),
       body=body
-    ).asJson
+    )
   }
 
-  def constructSelfLink(searchMethod: SearchMethod): Json = {
+  def constructSelfLink(searchMethod: SearchMethod): Link = {
     searchMethod match {
       case SearchGET =>
         val queryParams = params.asQueryParameters
@@ -86,7 +86,7 @@ case class UpdateSearchResults(params: SearchParameters, host: String) {
           Some(`application/json`),
           None,
           Some(Method.GET)
-        ).asJson
+        )
       case SearchPOST =>
         Link(
           host + "/search",
@@ -95,40 +95,33 @@ case class UpdateSearchResults(params: SearchParameters, host: String) {
           None,
           Some(Method.POST),
           params.asJson.some
-        ).asJson
+        )
     }
   }
-  def constructRootLink: Json = {
+  def constructRootLink: Link = {
     Link(
       host,
       StacLinkType.StacRoot,
       Some(`application/json`),
       None,
       Some(Method.GET)
-    ).asJson
+    )
   }
 
-  def addLinks(res: Json, searchMethod: SearchMethod): Json = {
-    val withLinkArray = addLinkArray(res)
-    val withNextLink: Json = next.getOption(withLinkArray).map({ nextPage =>
-      val link = constructPageLink(nextPage, NextLink, searchMethod)
-      addLink(link)(withLinkArray)
-    }).getOrElse(withLinkArray)
-    val withPrevLink: Json = prev.getOption(withNextLink).map({ prevPage =>
-      val link = constructPageLink(prevPage, PrevLink, searchMethod)
-      addLink(link)(withNextLink)
-    }).getOrElse(withNextLink)
-    val withSelfLink = addLink(constructSelfLink(searchMethod))(withPrevLink)
-    val withRootLink = addLink(constructRootLink)(withSelfLink)
-    (rmNext andThen rmPrev)(withRootLink)
+  def addLinks(searchResults: StacSearchCollection, searchMethod: SearchMethod): StacSearchCollection = {
+    val nextPageLink = searchResults.next.map { constructPageLink(_, NextLink, searchMethod) }
+    val prevPageLink = searchResults.prev.map { constructPageLink(_, PrevLink, searchMethod) }
+    val selfLink = constructSelfLink(searchMethod)
+    val rootLink = constructRootLink
+    searchResults.copy(links = searchResults.links ++ List(nextPageLink, prevPageLink, selfLink.some, rootLink.some).flatten)
   }
 
 
-  def GET(res: Json): Json = {
-    addLinks(res, SearchGET).deepDropNullValues
+  def GET(searchResults: StacSearchCollection): StacSearchCollection = {
+    addLinks(searchResults, SearchGET)
   }
-  def POST(res: Json): Json = {
-    addLinks(res, SearchPOST).deepDropNullValues
+  def POST(searchResults: StacSearchCollection): StacSearchCollection = {
+    addLinks(searchResults, SearchPOST)
   }
 }
 
@@ -141,19 +134,18 @@ class SearchService[F[_]: Concurrent](
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
+  implicit val MySpecialPrinter = Printer(true, "")
+
   val searchEndpoints = new SearchEndpoints[F](apiConfig)
   val defaultLimit    = apiConfig.defaultLimit
 
-  def search(params: SearchParameters): F[Either[Unit, Json]] = {
+  def search(params: SearchParameters): F[Either[Unit, StacSearchCollection]] = {
     val limit = params.limit getOrElse defaultLimit
     val updatedParams = params.copy(limit=Some(limit))
     for {
-      searchResults <- PGStacQueries.search(updatedParams).transact(xa)
+      searchResults <- PGStacQueries.search(updatedParams).attempt.transact(xa)
     } yield {
-      searchResults match {
-        case Some(res) => Either.right(res)
-        case None => Either.left(())
-      }
+      searchResults.leftMap(_ => ())
     }
   }
 

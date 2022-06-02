@@ -8,7 +8,7 @@ import io.circe.generic.semiauto._
 
 case class CollectionsResponse(
     collections: List[Collection],
-    links: List[StacLink] = List()
+    links: List[Link] = List()
 )
 
 object CollectionsResponse {

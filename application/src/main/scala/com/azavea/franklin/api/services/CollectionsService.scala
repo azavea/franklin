@@ -1,18 +1,18 @@
 package com.azavea.franklin.api.services
 
-import cats.data.EitherT
-import cats.effect._
-import cats.effect.concurrent.Ref
-import cats.syntax.all._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
-import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.PGStacQueries
-import com.azavea.franklin.datamodel.{CollectionsResponse, MosaicDefinition, TileInfo}
+import com.azavea.franklin.datamodel.{CollectionsResponse, MosaicDefinition, TileInfo, Link}
 import com.azavea.franklin.datamodel.stactypes.Collection
 import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.franklin.extensions.validation._
 import com.azavea.stac4s._
+
+import cats.data.EitherT
+import cats.effect._
+import cats.effect.concurrent.Ref
+import cats.syntax.all._
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -31,12 +31,13 @@ import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
+
 case class AddCollectionLinks(apiConfig: ApiConfig) {
 
   val _collectionId = root.id.string
 
-  def createSelfLink(collection: Collection): StacLink = {
-    StacLink(
+  def createSelfLink(collection: Collection): Link = {
+    Link(
       s"${apiConfig.apiHost}/collections/${collection.id}",
       StacLinkType.Self,
       Some(`application/json`),
@@ -70,8 +71,8 @@ class CollectionsService[F[_]: Concurrent](
       collections <- PGStacQueries.listCollections().transact(xa)
       collectionsWithLinks = collections.map(addCollectionLinks(_))
     } yield {
-      val childLinks: List[StacLink] = collectionsWithLinks.map({ coll: Collection =>
-        StacLink(
+      val childLinks: List[Link] = collectionsWithLinks.map({ coll: Collection =>
+        Link(
           s"${apiConfig.apiHost}/collections/${coll.id}",
           StacLinkType.Child,
           Some(`application/json`),
@@ -114,50 +115,17 @@ class CollectionsService[F[_]: Concurrent](
       Right(collection)
     }
   }
-  // {
-  //   val newCollection = collection.copy(links =
-  //     collection.links.filter({ link =>
-  //       !Set[StacLinkType](StacLinkType.Item, StacLinkType.StacRoot, StacLinkType.Self)
-  //         .contains(link.rel)
-  //     }) ++
-  //       List(
-  //         StacLink(
-  //           s"$apiHost/collections/${collection.id}",
-  //           StacLinkType.Self,
-  //           Some(`application/json`),
-  //           collection.title
-  //         ),
-  //         StacLink(
-  //           s"$apiHost",
-  //           StacLinkType.StacRoot,
-  //           Some(`application/json`),
-  //           None
-  //         )
-  //       )
-  //   )
-  //   for {
-  //     inserted  <- StacCollectionDao.insertStacCollection(newCollection, None).transact(xa)
-  //     validator <- makeCollectionValidator(inserted.stacExtensions, collectionExtensionsRef)
-  //   } yield Right(validator(inserted).asJson.dropNullValues)
-  // }
 
-  def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = ???
-  // {
-  //   val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
-  //   for {
-  //     collectionOption <- StacCollectionDao
-  //       .getCollection(collectionId)
-  //       .transact(xa)
-  //     deleted <- collectionOption traverse { _ =>
-  //       StacCollectionDao.query.filter(fr"id = $collectionId").delete.transact(xa).void
-  //     }
-  //   } yield {
-  //     Either.fromOption(
-  //       deleted,
-  //       NF(s"Collection $collectionId not found")
-  //     )
-  //   }
-  // }
+  def deleteCollection(rawCollectionId: String): F[Either[NF, Unit]] = {
+    val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
+    try {
+      for {
+        queryResult <- PGStacQueries.deleteCollection(collectionId).attempt.transact(xa)
+      } yield {
+        queryResult.leftMap { _ => NF(s"Collection ID $collectionId not found") }
+      }
+    }
+  }
 
   val collectionEndpoints =
     new CollectionEndpoints[F](enableTransactions, apiConfig.path)

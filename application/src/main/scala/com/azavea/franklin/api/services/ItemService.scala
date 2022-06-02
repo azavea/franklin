@@ -1,12 +1,7 @@
 package com.azavea.franklin.api.services
 
-import cats.Applicative
-import cats.data.NonEmptyList
-import cats.effect._
-import cats.syntax.all._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.ItemEndpoints
-import com.azavea.franklin.api.implicits._
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.error.{
@@ -20,6 +15,11 @@ import com.azavea.franklin.extensions.validation._
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import com.azavea.stac4s.{`application/json`, StacItem, StacLink}
+
+import cats.Applicative
+import cats.data.NonEmptyList
+import cats.effect._
+import cats.syntax.all._
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -39,6 +39,7 @@ import sttp.tapir.server.http4s._
 
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
+
 
 case class AddItemLinks(apiConfig: ApiConfig) {
 

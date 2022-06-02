@@ -19,6 +19,11 @@ case class Link(
 
 object Link {
 
+  implicit val decodeMethod: Decoder[Method] = Decoder.decodeString.emap { str =>
+    val parsed: Either[ParseFailure, Method] = Method.fromString(str)
+    parsed.leftMap(_ => "Failed to parse method string")
+  }
+
   implicit val encStacLink: Encoder[Link] = Encoder.forProduct6(
     "href",
     "rel",
@@ -28,10 +33,5 @@ object Link {
     "body"
   )(link => (link.href, link.rel, link._type, link.title, link.method.map(_.name), link.body))
 
-  implicit val decodeMethod: Decoder[Method] = Decoder.decodeString.emap { str =>
-    val parsed: Either[ParseFailure, Method] = Method.fromString(str)
-    parsed.leftMap(_ => "Failed to parse method string")
-  }
-
-  implicit val decoderLink = deriveDecoder[Link]
+  implicit val linkDecoder: Decoder[Link] = deriveDecoder[Link]
 }

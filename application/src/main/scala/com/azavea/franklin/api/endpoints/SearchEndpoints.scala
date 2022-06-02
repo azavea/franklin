@@ -1,11 +1,12 @@
 package com.azavea.franklin.api.endpoints
 
+import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.database._
-import com.azavea.franklin.datamodel.{PaginationToken, SearchParameters}
+import com.azavea.franklin.datamodel.{PaginationToken, SearchParameters, StacSearchCollection}
 import com.azavea.franklin.commands.ApiConfig
-import com.azavea.stac4s.{Bbox, TemporalExtent}
 
+import com.azavea.stac4s.{Bbox, TemporalExtent}
 import cats.effect._
 import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
@@ -16,7 +17,6 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe._
 
 class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
 
@@ -97,19 +97,19 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
   val searchPostInput: EndpointInput[SearchParameters] =
     jsonBody[SearchParameters]
 
-  val searchGet: Endpoint[SearchParameters, Unit, Json, Fs2Streams[F]] =
+  val searchGet: Endpoint[SearchParameters, Unit, StacSearchCollection, Fs2Streams[F]] =
     base
       .get
       .in(searchParameters)
-      .out(jsonBody[Json])
+      .out(jsonBody[StacSearchCollection])
       .description("Search endpoint for all collections")
       .name("search-get")
 
-  val searchPost: Endpoint[SearchParameters, Unit, Json, Fs2Streams[F]] =
+  val searchPost: Endpoint[SearchParameters, Unit, StacSearchCollection, Fs2Streams[F]] =
     base
       .post
       .in(searchPostInput)
-      .out(jsonBody[Json])
+      .out(jsonBody[StacSearchCollection])
       .description("Search endpoint using POST for all collections")
       .name("search-post")
 

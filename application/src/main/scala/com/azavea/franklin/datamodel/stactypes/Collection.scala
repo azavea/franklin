@@ -1,8 +1,9 @@
 package com.azavea.franklin.datamodel.stactypes
 
+import com.azavea.franklin.datamodel.Link
 import com.azavea.stac4s._
 
-import com.azavea.stac4s.{StacCollection, StacLink}
+import com.azavea.stac4s.{StacCollection}
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.semiauto._
@@ -11,7 +12,7 @@ import io.circe.generic.semiauto._
 case class Collection(
   id: String,
   description: String,
-  links: List[StacLink],
+  links: List[Link],
   stacExtensions: Option[List[String]],
   title: Option[String],
   _type: String,
@@ -72,7 +73,7 @@ object Collection {
       for {
         id <- c.downField("id").as[String]
         description <- c.downField("description").as[String]
-        links <- c.downField("links").as[List[StacLink]]
+        links <- c.downField("links").as[List[Link]]
         stacExtensions <- c.downField("stac_extensions").as[Option[List[String]]]
         title <- c.downField("title").as[Option[String]]
         _type <- c.downField("type").as[String]

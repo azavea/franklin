@@ -1,6 +1,6 @@
 package com.azavea.franklin.api.endpoints
 
-import cats.effect.Concurrent
+import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.datamodel.IfMatchMode
 import com.azavea.franklin.datamodel.PaginationToken
@@ -11,7 +11,9 @@ import com.azavea.franklin.error.{
   NotFound,
   ValidationError
 }
+
 import com.azavea.stac4s.StacItem
+import cats.effect.Concurrent
 import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.{Codec => _, _}
 import sttp.capabilities.fs2.Fs2Streams
@@ -20,7 +22,7 @@ import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe._
+
 
 class ItemEndpoints[F[_]: Concurrent](
     defaultLimit: NonNegInt,
