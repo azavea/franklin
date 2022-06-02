@@ -17,6 +17,6 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     docker-compose \
         -f docker-compose.yml \
         run --rm pypgstac \
-        bash -c "pypgstac pgready && python /opt/src/loadtestdata.py"
+        bash -c "pypgstac pgready && python /opt/src/bin/loadtestdata.py"
 
 fi
