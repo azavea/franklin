@@ -5,6 +5,7 @@ import cats.data.NonEmptyList
 import cats.effect._
 import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.ItemEndpoints
+import com.azavea.franklin.api.util.UpdateItemLinks
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
@@ -38,22 +39,6 @@ import sttp.tapir.server.http4s._
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 
-case class AddItemLinks(apiConfig: ApiConfig) {
-
-  def createSelfLink(item: StacItem): StacLink =
-    StacLink(
-      s"${apiConfig.apiHost}/collections/${item.collection.get}/items/${item.id}",
-      StacLinkType.Self,
-      Some(`application/json`),
-      None
-    )
-
-  def apply(item: StacItem): StacItem = {
-    val prunedLinks = item.links.filter { link => link.rel != StacLinkType.Self }
-    item.copy(links = prunedLinks :+ createSelfLink(item))
-  }
-}
-
 class ItemService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
@@ -69,7 +54,7 @@ class ItemService[F[_]: Concurrent](
   val apiHost            = apiConfig.apiHost
   val defaultLimit       = apiConfig.defaultLimit
   val enableTransactions = apiConfig.enableTransactions
-  val addItemLinks       = AddItemLinks(apiConfig)
+  val updateItemLinks    = UpdateItemLinks(apiConfig)
 
   def listItems(
       rawCollectionId: String,
@@ -102,7 +87,7 @@ class ItemService[F[_]: Concurrent](
     } yield {
       itemResults match {
         case Some(item) => {
-          val itemWithLinks = addItemLinks(item)
+          val itemWithLinks = updateItemLinks(item)
           Right((itemWithLinks, itemWithLinks.##.toString))
         }
         case None => Left(NF(s"Item $itemId in collection $collectionId not found"))

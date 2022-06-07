@@ -1,28 +1,24 @@
-package com.azavea.franklin.api.services
+package com.azavea.franklin.api.util
 
 import cats.effect._
 import cats.syntax.all._
-import com.azavea.franklin.api.endpoints.SearchEndpoints
+import com.azavea.franklin.api.endpoints.ItemEndpoints
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
 import com.azavea.stac4s._
+import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
-import eu.timepit.refined.types.string.NonEmptyString
+import io.chrisdavenport.log4cats.Logger
 import io.circe._
-import io.circe.optics.JsonPath._
 import io.circe.syntax._
-import org.http4s._
-import org.http4s.dsl.Http4sDsl
+import org.http4s.Method
 import sttp.tapir.server.http4s._
 
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
-
-case class UpdateSearchResults(params: SearchParameters, host: String) {
+case class UpdateSearchLinks(params: SearchParameters, host: String) {
 
   sealed trait PageLinkType
   case object NextLink extends PageLinkType
@@ -118,60 +114,4 @@ case class UpdateSearchResults(params: SearchParameters, host: String) {
   def POST(searchResults: StacSearchCollection): StacSearchCollection = {
     addLinks(searchResults, SearchPOST)
   }
-}
-
-class SearchService[F[_]: Concurrent](
-    apiConfig: ApiConfig,
-    xa: Transactor[F]
-)(
-    implicit contextShift: ContextShift[F],
-    timerF: Timer[F],
-    serverOptions: Http4sServerOptions[F]
-) extends Http4sDsl[F] {
-
-  implicit val MySpecialPrinter = Printer(true, "")
-
-  val searchEndpoints = new SearchEndpoints[F](apiConfig)
-  val defaultLimit    = apiConfig.defaultLimit
-
-  def search(params: SearchParameters): F[Either[Unit, StacSearchCollection]] = {
-    val limit         = params.limit getOrElse defaultLimit
-    val updatedParams = params.copy(limit = Some(limit))
-    for {
-      searchResults <- PGStacQueries.search(updatedParams).attempt.transact(xa)
-    } yield {
-      searchResults
-        .map({ sr =>
-          val feats = sr.features
-            .map({ item =>
-              val links = item.links
-                .map(itemLink => {
-                  val href =
-                    if (itemLink.href.endsWith(".json")) itemLink.href.dropRight(5)
-                    else itemLink.href
-                  itemLink.copy(href=apiConfig.apiHost + "/" + href)
-                })
-              item.copy(links=links)
-            })
-          sr.copy(features = feats)
-        }).leftMap(_ => ())
-    }
-  }
-
-  val searchRouteGet =
-    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)({
-      case searchParameters =>
-        search(searchParameters)
-          .map(_.map(UpdateSearchResults(searchParameters, apiConfig.apiHost).GET))
-    })
-
-  val searchRoutePost =
-    Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({
-      case searchParameters =>
-        search(searchParameters)
-          .map(_.map(UpdateSearchResults(searchParameters, apiConfig.apiHost).POST))
-    })
-
-  val routes: HttpRoutes[F] =
-    searchRouteGet <+> searchRoutePost
 }

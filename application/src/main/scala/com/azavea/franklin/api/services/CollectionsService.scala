@@ -5,6 +5,7 @@ import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
+import com.azavea.franklin.api.util.UpdateCollectionLinks
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel.{Collection, CollectionsResponse, Link}
@@ -21,31 +22,11 @@ import io.circe.syntax._
 import monocle.syntax.all._
 import org.http4s.dsl.Http4sDsl
 import software.amazon.awssdk.core.internal.retry.SdkDefaultRetrySetting.Standard
-import sttp.client.{NothingT, SttpBackend}
 import sttp.tapir.server.http4s._
 
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
-
-case class AddCollectionLinks(apiConfig: ApiConfig) {
-
-  val _collectionId = root.id.string
-
-  def createSelfLink(collection: Collection): Link = {
-    Link(
-      s"${apiConfig.apiHost}/collections/${collection.id}",
-      StacLinkType.Self,
-      Some(`application/json`),
-      None
-    )
-  }
-
-  def apply(collection: Collection) = {
-    val selfLink = createSelfLink(collection)
-    collection.copy(links = collection.links :+ selfLink)
-  }
-}
 
 class CollectionsService[F[_]: Concurrent](
     xa: Transactor[F],
@@ -54,18 +35,17 @@ class CollectionsService[F[_]: Concurrent](
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
     serverOptions: Http4sServerOptions[F],
-    backend: SttpBackend[F, Nothing, NothingT],
     logger: Logger[F]
 ) extends Http4sDsl[F] {
 
-  val apiHost            = apiConfig.apiHost
-  val enableTransactions = apiConfig.enableTransactions
-  val addCollectionLinks = AddCollectionLinks(apiConfig)
+  val apiHost               = apiConfig.apiHost
+  val enableTransactions    = apiConfig.enableTransactions
+  val updateCollectionLinks = UpdateCollectionLinks(apiConfig)
 
   def listCollections(): F[Either[Unit, CollectionsResponse]] = {
     for {
       collections <- PGStacQueries.listCollections().transact(xa)
-      collectionsWithLinks = collections.map(addCollectionLinks(_))
+      collectionsWithLinks = collections.map(updateCollectionLinks(_))
     } yield {
       val childLinks: List[Link] = collectionsWithLinks.map({ coll: Collection =>
         Link(
@@ -85,10 +65,9 @@ class CollectionsService[F[_]: Concurrent](
       collection <- PGStacQueries
         .getCollection(collectionId)
         .transact(xa)
-      //collectionWithLinks = collections.map(addCollectionLinks(_))
     } yield {
       Either.fromOption(
-        collection,
+        collection.map(updateCollectionLinks(_)),
         //collectionWithLinks.map(_.dropNullValues),
         NF(s"Collection $collectionId not found")
       )
