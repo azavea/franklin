@@ -3,8 +3,7 @@ package com.azavea.franklin.api.endpoints
 import cats.effect.Concurrent
 import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
-import com.azavea.franklin.datamodel.CollectionsResponse
-import com.azavea.franklin.datamodel.stactypes.Collection
+import com.azavea.franklin.datamodel.{Collection, CollectionsResponse}
 import com.azavea.franklin.error.NotFound
 import io.circe._
 import sttp.capabilities.fs2.Fs2Streams

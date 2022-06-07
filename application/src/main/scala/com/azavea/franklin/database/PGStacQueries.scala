@@ -3,9 +3,12 @@ package com.azavea.franklin.database
 import cats.data.OptionT
 import cats.syntax.foldable._
 import cats.syntax.list._
-import com.azavea.franklin.datamodel.StacSearchCollection
-import com.azavea.franklin.datamodel.stactypes.Collection
-import com.azavea.franklin.datamodel.{BulkExtent, SearchParameters}
+import com.azavea.franklin.datamodel.{
+  BulkExtent,
+  Collection,
+  SearchParameters,
+  StacSearchCollection
+}
 import com.azavea.stac4s._
 import com.azavea.stac4s.extensions.periodic.PeriodicExtent
 import com.azavea.stac4s.syntax._

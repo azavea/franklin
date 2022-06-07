@@ -1,6 +1,5 @@
-package com.azavea.franklin.datamodel.stactypes
+package com.azavea.franklin.datamodel
 
-import com.azavea.franklin.datamodel.Link
 import com.azavea.stac4s.{StacCollection}
 import com.azavea.stac4s._
 import io.circe._

@@ -1,6 +1,5 @@
 package com.azavea.franklin.datamodel
 
-import com.azavea.franklin.datamodel.stactypes.Collection
 import io.circe._
 import io.circe.parser._
 import io.circe.syntax._

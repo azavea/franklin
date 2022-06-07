@@ -1,8 +1,7 @@
 package com.azavea.franklin.database
 
 import cats.syntax.all._
-import com.azavea.franklin.datamodel.StacSearchCollection
-import com.azavea.franklin.datamodel.stactypes.Collection
+import com.azavea.franklin.datamodel.{Collection, StacSearchCollection}
 import com.azavea.stac4s.StacItem
 import doobie._
 import doobie.postgres.circe.jsonb.implicits._

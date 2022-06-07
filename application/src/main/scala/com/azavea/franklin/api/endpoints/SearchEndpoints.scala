@@ -5,8 +5,13 @@ import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database._
-import com.azavea.franklin.datamodel.{PaginationToken, SearchParameters, StacSearchCollection, Sorter}
-import com.azavea.stac4s.{Bbox, TemporalExtent}
+import com.azavea.franklin.datamodel.{
+  PaginationToken,
+  SearchParameters,
+  StacSearchCollection,
+  TemporalExtent
+}
+import com.azavea.stac4s.Bbox
 import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}

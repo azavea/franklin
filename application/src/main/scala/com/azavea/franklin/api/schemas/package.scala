@@ -4,11 +4,9 @@ import cats.data.NonEmptyList
 import cats.syntax.either._
 import cats.syntax.invariant._
 import cats.syntax.traverse._
-import com.azavea.franklin.database.{temporalExtentFromString, temporalExtentToString}
-import com.azavea.franklin.datamodel.IfMatchMode
-import com.azavea.franklin.datamodel.PaginationToken
+import com.azavea.franklin.datamodel.{IfMatchMode, PaginationToken, TemporalExtent, TimeInterval}
 import com.azavea.franklin.error.InvalidPatch
-import com.azavea.stac4s._
+import com.azavea.stac4s.{TemporalExtent => _, _}
 import eu.timepit.refined.types.string.NonEmptyString
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
@@ -53,16 +51,19 @@ package object schemas {
   implicit val schemaForStacItem: Schema[StacItem]         = Schema(schemaForCirceJson.schemaType)
   implicit val schemaForInvalidPatch: Schema[InvalidPatch] = Schema(schemaForCirceJson.schemaType)
 
-  def decode(s: String): DecodeResult[TemporalExtent] = {
-    temporalExtentFromString(s) match {
-      case Left(e)  => DecodeResult.Mismatch("valid timestamp", e)
-      case Right(v) => DecodeResult.Value(v)
+  def decodeTemporalExtent(s: String): DecodeResult[TemporalExtent] = {
+    val intervals: List[Option[TimeInterval]] =
+      s.split(",").map(TimeInterval.fromString(_).toOption).toList
+    if (intervals contains None) {
+      DecodeResult.Mismatch("Invalid timestamp", s)
+    } else {
+      DecodeResult.Value(TemporalExtent(intervals.flatten))
     }
   }
 
   // or, using the type alias for codecs in the TextPlain format and String as the raw value:
   implicit val teCodec: PlainCodec[TemporalExtent] = Codec.string
-    .mapDecode(decode)(temporalExtentToString)
+    .mapDecode(decodeTemporalExtent)(_.toString)
 
   def bboxFromString(s: String): DecodeResult[Bbox] = {
     val numberList = s.split(",").map(d => Try(d.toDouble).toEither)

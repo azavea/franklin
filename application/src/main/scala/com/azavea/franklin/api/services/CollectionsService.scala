@@ -7,8 +7,7 @@ import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
-import com.azavea.franklin.datamodel.stactypes.Collection
-import com.azavea.franklin.datamodel.{CollectionsResponse, Link}
+import com.azavea.franklin.datamodel.{Collection, CollectionsResponse, Link}
 import com.azavea.franklin.error.{NotFound => NF}
 import com.azavea.stac4s._
 import doobie._

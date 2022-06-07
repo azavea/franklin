@@ -2,8 +2,7 @@ package com.azavea.franklin.datamodel
 
 import cats.syntax.all._
 import com.azavea.franklin.api.schemas.bboxToString
-import com.azavea.franklin.database.temporalExtentToString
-import com.azavea.stac4s.{Bbox, TemporalExtent}
+import com.azavea.stac4s.Bbox
 import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
 import geotrellis.vector.io.json.GeometryFormats._
@@ -59,7 +58,7 @@ final case class SearchParameters(
   def asQueryParameters: String = {
     val bboxQP = bbox map { box => s"bbox=${bboxToString(box)}" }
     val datetimeQP = datetime map { tempExtent =>
-      s"datetime=${SearchParameters.encodeString(temporalExtentToString(tempExtent))}"
+      s"datetime=${SearchParameters.encodeString(tempExtent.toString)}"
     }
     val intersectsQP = intersects map { intersectingGeom =>
       val geojsonString: String = intersectingGeom.asJson.noSpaces

@@ -1,9 +1,11 @@
 package com.azavea.franklin.api
 
 import cats.data.{NonEmptyList, Validated}
+import com.azavea.franklin.datamodel._
 import io.circe.syntax._
 import io.circe.{CursorOp, Decoder, DecodingFailure, Encoder, Json, ParsingFailure}
 import sttp.tapir.Codec.JsonCodec
+import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.SchemaType._
 import sttp.tapir._
 
@@ -59,6 +61,21 @@ package object endpoints {
     )
     new Exception(errMessage.asJson.spaces2)
   }
+
+// def decodeTemporalExtent(s: String): DecodeResult[TemporalExtent] = {
+//   val intervals: List[Option[TimeInterval]] =
+//     s.split(",").map(TimeInterval.fromString(_).toOption).toList
+//   if (intervals.contains(None)) {
+//     DecodeResult.Missing
+//   } else {
+//     DecodeResult.Value(TemporalExtent(intervals.flatten))
+//   }
+// }
+
+// def encodeTemporalExtent(id: TemporalExtent): String = id.toString
+
+// implicit val temporalExtentCodec: Codec[String, TemporalExtent, TextPlain] =
+//   Codec.string.mapDecode(decodeTemporalExtent)(encodeTemporalExtent)
 
   private def circeCodec[T: Encoder: Decoder: Schema]: JsonCodec[T] =
     sttp.tapir.Codec.json[T] { s =>

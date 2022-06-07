@@ -1,6 +1,5 @@
 package com.azavea.franklin.datamodel
 
-//import com.azavea.franklin.datamodel.stactypes.Item
 import com.azavea.stac4s.StacItem
 import io.circe._
 import io.circe.parser._
