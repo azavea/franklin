@@ -43,21 +43,7 @@ class SearchService[F[_]: Concurrent](
     for {
       searchResults <- PGStacQueries.search(updatedParams).attempt.transact(xa)
     } yield {
-      searchResults
-        .map({ sr =>
-          val feats = sr.features
-            .map({ item =>
-              val links = item.links
-                .map(itemLink => {
-                  val href =
-                    if (itemLink.href.endsWith(".json")) itemLink.href.dropRight(5)
-                    else itemLink.href
-                  itemLink.copy(href=apiConfig.apiHost + "/" + href)
-                })
-              item.copy(links=links)
-            })
-          sr.copy(features = feats)
-        }).leftMap(_ => ())
+      searchResults.leftMap(_ => ())
     }
   }
 

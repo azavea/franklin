@@ -8,6 +8,7 @@ import com.azavea.franklin.database._
 import com.azavea.franklin.datamodel.{
   PaginationToken,
   SearchParameters,
+  Sorter,
   StacSearchCollection,
   TemporalExtent
 }

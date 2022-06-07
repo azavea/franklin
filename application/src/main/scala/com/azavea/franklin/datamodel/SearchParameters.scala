@@ -16,29 +16,29 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 final case class Sorter(
-  field: String,
-  direction: String
+    field: String,
+    direction: String
 ) {
+
   def toQP =
     if (direction == "asc") s"+${field}"
     else s"-${field}"
 }
 
 object Sorter {
+
   def fromString(s: String): Sorter =
     if (s.startsWith(("-"))) {
       Sorter(s.drop(1), "desc")
     } else if (s.startsWith("+")) {
       Sorter(s.drop(1), "asc")
     } else {
-      Sorter(s,"asc")
+      Sorter(s, "asc")
     }
 
   implicit val sorterDecoder: Decoder[Sorter] = deriveDecoder[Sorter]
   implicit val sorterEncoder: Encoder[Sorter] = deriveEncoder[Sorter]
 }
-
-
 
 // https://github.com/radiantearth/stac-api-spec/tree/master/item-search#query-parameter-table
 final case class SearchParameters(
@@ -76,7 +76,7 @@ final case class SearchParameters(
     val filterLangQP = filterLang map { fl =>
       s"""filter_lang=${SearchParameters.encodeString(fl)}"""
     }
-    val tokenQP = token map { t => s"""token=${t}""" }
+    val tokenQP  = token map { t => s"""token=${t}""" }
     val sortbyQP = sortby map { t => s"sortby=${t.map(_.toQP).mkString(",")}" }
 
     List(
@@ -130,7 +130,7 @@ object SearchParameters {
           case Left(_)      => c.downField("filter-lang").as[Option[String]]
           case r @ Right(_) => r
         }
-        token <- c.downField("token").as[Option[String]]
+        token  <- c.downField("token").as[Option[String]]
         sortby <- c.downField("sortby").as[Option[List[Sorter]]]
       } yield {
 

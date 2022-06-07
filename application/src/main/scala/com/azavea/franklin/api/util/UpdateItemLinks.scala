@@ -17,6 +17,15 @@ import io.circe._
 
 case class UpdateItemLinks(apiConfig: ApiConfig) {
 
+  def updateLinkHrefs(link: StacLink): StacLink = {
+    val href =
+      if (!link.href.startsWith("http") && link.href.endsWith(".json"))
+        s"${apiConfig.apiHost}/${link.href.dropRight(5)}"
+      else
+        link.href
+    link.copy(href = href)
+  }
+
   def createSelfLink(item: StacItem): StacLink =
     StacLink(
       s"${apiConfig.apiHost}/collections/${item.collection.get}/items/${item.id}",
@@ -26,7 +35,9 @@ case class UpdateItemLinks(apiConfig: ApiConfig) {
     )
 
   def apply(item: StacItem): StacItem = {
-    val prunedLinks = item.links.filter { link => link.rel != StacLinkType.Self }
+    val prunedLinks = item.links
+      .filter { link => link.rel != StacLinkType.Self }
+      .map(updateLinkHrefs)
     item.copy(links = prunedLinks :+ createSelfLink(item))
   }
 }
