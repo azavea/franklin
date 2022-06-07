@@ -18,7 +18,9 @@ import io.circe.syntax._
 import org.http4s.Method
 import sttp.tapir.server.http4s._
 
-case class UpdateSearchLinks(params: SearchParameters, host: String) {
+case class UpdateSearchLinks(params: SearchParameters, apiConfig: ApiConfig) {
+
+  val updateItemLinks = UpdateItemLinks(apiConfig)
 
   sealed trait PageLinkType
   case object NextLink extends PageLinkType
@@ -45,9 +47,9 @@ case class UpdateSearchLinks(params: SearchParameters, host: String) {
       case SearchGET =>
         val queryParams = updatedParams.asQueryParameters
         val queryString = if (queryParams.length > 0) "?" + queryParams else ""
-        host + "/search" + queryString
+        apiConfig.apiHost + "/search" + queryString
       case SearchPOST =>
-        host + "/search"
+        apiConfig.apiHost + "/search"
     }
 
     Link(
@@ -66,7 +68,7 @@ case class UpdateSearchLinks(params: SearchParameters, host: String) {
         val queryParams = params.asQueryParameters
         val queryString = if (queryParams.length > 0) "?" + queryParams else ""
         Link(
-          host + "/search" + queryString,
+          apiConfig.apiHost + "/search" + queryString,
           StacLinkType.Self,
           Some(`application/json`),
           None,
@@ -74,7 +76,7 @@ case class UpdateSearchLinks(params: SearchParameters, host: String) {
         )
       case SearchPOST =>
         Link(
-          host + "/search",
+          apiConfig.apiHost + "/search",
           StacLinkType.Self,
           Some(`application/json`),
           None,
@@ -86,7 +88,7 @@ case class UpdateSearchLinks(params: SearchParameters, host: String) {
 
   def constructRootLink: Link = {
     Link(
-      host,
+      apiConfig.apiHost,
       StacLinkType.StacRoot,
       Some(`application/json`),
       None,
@@ -102,8 +104,10 @@ case class UpdateSearchLinks(params: SearchParameters, host: String) {
     val prevPageLink = searchResults.prev.map { constructPageLink(_, PrevLink, searchMethod) }
     val selfLink     = constructSelfLink(searchMethod)
     val rootLink     = constructRootLink
-    searchResults.copy(links =
-      searchResults.links ++ List(nextPageLink, prevPageLink, selfLink.some, rootLink.some).flatten
+    searchResults.copy(
+      links =
+        searchResults.links ++ List(nextPageLink, prevPageLink, selfLink.some, rootLink.some).flatten,
+      features = searchResults.features.map(updateItemLinks(_))
     )
   }
 
