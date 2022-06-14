@@ -37,28 +37,27 @@ class SearchService[F[_]: Concurrent](
   val searchEndpoints = new SearchEndpoints[F](apiConfig)
   val defaultLimit    = apiConfig.defaultLimit
 
-  def search(params: SearchParameters): F[Either[Unit, StacSearchCollection]] = {
+  def search(params: SearchParameters, method: Method): F[Either[Unit, StacSearchCollection]] = {
     val limit         = params.limit getOrElse defaultLimit
     val updatedParams = params.copy(limit = Some(limit))
     for {
-      searchResults <- PGStacQueries.search(updatedParams).attempt.transact(xa)
+      searchResults <- PGStacQueries.search(updatedParams, method, apiConfig).attempt.transact(xa)
     } yield {
-      searchResults.leftMap(_ => ())
+      searchResults
+        .leftMap(_ => ())
     }
   }
 
   val searchRouteGet =
     Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)({
       case searchParameters =>
-        search(searchParameters)
-          .map(_.map(UpdateSearchLinks(searchParameters, apiConfig).GET))
+        search(searchParameters, Method.GET)
     })
 
   val searchRoutePost =
     Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({
       case searchParameters =>
-        search(searchParameters)
-          .map(_.map(UpdateSearchLinks(searchParameters, apiConfig).POST))
+        search(searchParameters, Method.POST)
     })
 
   val routes: HttpRoutes[F] =

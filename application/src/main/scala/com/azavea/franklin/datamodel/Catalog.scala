@@ -1,19 +1,18 @@
 package com.azavea.franklin.datamodel
 
-import com.azavea.stac4s.StacLink
 import com.azavea.stac4s.StacLinkType
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 
-case class LandingPage(
+case class Catalog(
     stacVersion: String,
     stacExtensions: List[String],
-    title: Option[String],
     id: NonEmptyString,
+    title: Option[String],
     description: NonEmptyString,
     links: List[Link],
-    conformsTo: List[NonEmptyString]
+    conformsTo: Option[List[NonEmptyString]]
 ) {
 
   lazy val dataLinks = links.filter(_.rel == StacLinkType.Data)
@@ -22,28 +21,28 @@ case class LandingPage(
     links.filter(l => (l.rel == StacLinkType.ServiceDesc || l.rel == StacLinkType.Conformance))
 }
 
-object LandingPage {
+object Catalog {
 
-  implicit val landingPageEncoder: Encoder[LandingPage] = Encoder.forProduct8(
+  implicit val catalogEncoder: Encoder[Catalog] = Encoder.forProduct8(
     "type",
     "stac_version",
     "stac_extensions",
-    "title",
     "id",
+    "title",
     "description",
     "links",
     "conformsTo"
-  )(landingPage =>
+  )(catalog =>
     (
       "Catalog",
-      landingPage.stacVersion,
-      landingPage.stacExtensions,
-      landingPage.title,
-      landingPage.id,
-      landingPage.description,
-      landingPage.links,
-      landingPage.conformsTo
+      catalog.stacVersion,
+      catalog.stacExtensions,
+      catalog.id,
+      catalog.title,
+      catalog.description,
+      catalog.links,
+      catalog.conformsTo
     )
   )
-  implicit val landingPageDecoder = deriveDecoder[LandingPage]
+  implicit val catalogDecoder = deriveDecoder[Catalog]
 }

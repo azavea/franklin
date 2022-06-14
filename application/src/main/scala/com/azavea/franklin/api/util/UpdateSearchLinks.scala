@@ -86,15 +86,14 @@ case class UpdateSearchLinks(params: SearchParameters, apiConfig: ApiConfig) {
     }
   }
 
-  def constructRootLink: Link = {
+  def constructRootLink: Link =
     Link(
-      apiConfig.apiHost,
+      apiConfig.apiHost.value,
       StacLinkType.StacRoot,
       Some(`application/json`),
       None,
       Some(Method.GET)
     )
-  }
 
   def addLinks(
       searchResults: StacSearchCollection,

@@ -8,7 +8,7 @@ import com.azavea.franklin.api._
 import com.azavea.franklin.api.endpoints._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database._
-import com.azavea.franklin.datamodel.{LandingPage, Link, Conformance => FranklinConformance}
+import com.azavea.franklin.datamodel.{Catalog, Link, Conformance => FranklinConformance}
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import doobie._
@@ -64,15 +64,48 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson",
-    "https://api.stacspec.org/v1.0.0-beta.5/core",
-    "https://api.stacspec.org/v1.0.0-beta.5/collections",
-    "https://api.stacspec.org/v1.0.0-beta.5/ogcapi-features",
-    "https://api.stacspec.org/v1.0.0-beta.5/item-search",
-    "https://api.stacspec.org/v1.0.0-beta.5/item-search#context",
-    "https://api.stacspec.org/v1.0.0-beta.5/item-search#query"
+    "https://api.stacspec.org/v1.0.0-rc.1/core",
+    "https://api.stacspec.org/v1.0.0-rc.1/collections",
+    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#context",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#fields",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#filter:basic-cql",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#filter:cql-json",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#filter:cql-text",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#filter:filter",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#filter:item-search-filter",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#query",
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#sort",
+    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features",
+    // filter
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#filter",
+    "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter",
+    "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter",
+    "http://www.opengis.net/spec/cql2/1.0/conf/cql2-text",
+    "http://www.opengis.net/spec/cql2/1.0/conf/cql2-json",
+    "http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2",
+    "http://www.opengis.net/spec/cql2/1.0/conf/advanced-comparison-operators",
+    "http://www.opengis.net/spec/cql2/1.0/conf/basic-spatial-operators",
+    "http://www.opengis.net/spec/cql2/1.0/conf/spatial-operators",
+    "http://www.opengis.net/spec/cql2/1.0/conf/temporal-operators",
+    "http://www.opengis.net/spec/cql2/1.0/conf/functions",
+    "http://www.opengis.net/spec/cql2/1.0/conf/arithmetic",
+    "http://www.opengis.net/spec/cql2/1.0/conf/array-operators",
+    "http://www.opengis.net/spec/cql2/1.0/conf/property-property",
+    "http://www.opengis.net/spec/cql2/1.0/conf/accent-case-insensitive-comparison",
+    // context
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#context",
+    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features#context",
+    // sort
+    "https://api.stacspec.org/v1.0.0-rc.1/item-search#sort",
+    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features#sort",
+    // transaction
+    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features/extensions/transaction",
+
   ) `combine` (if (apiConfig.enableTransactions)
                  List[NonEmptyString](
-                   "https://api.stacspec.org/v1.0.0-beta.5/ogcapi-features/extensions/transaction"
+                   "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features/extensions/transaction"
                  )
                else List.empty[NonEmptyString])
 
@@ -86,14 +119,14 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     val title: NonEmptyString = "Welcome to Franklin"
     val description: NonEmptyString =
       "An OGC API - Features, Tiles, and STAC Server"
-    val landingPage = LandingPage(
+    val landingPage = Catalog(
       "1.0.0",
-      Nil,
-      Some(title),
+      List(),
       "Franklin STAC API",
+      Some(title),
       description,
       links,
-      conformances
+      conformances.some
     ).asJson.deepDropNullValues
 
     Applicative[F].pure(Either.right[Unit, Json](landingPage))

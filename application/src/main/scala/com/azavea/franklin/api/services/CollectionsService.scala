@@ -44,10 +44,9 @@ class CollectionsService[F[_]: Concurrent](
 
   def listCollections(): F[Either[Unit, CollectionsResponse]] = {
     for {
-      collections <- PGStacQueries.listCollections().transact(xa)
-      collectionsWithLinks = collections.map(updateCollectionLinks(_))
+      collections <- PGStacQueries.listCollections(apiConfig).transact(xa)
     } yield {
-      val childLinks: List[Link] = collectionsWithLinks.map({ coll: Collection =>
+      val childLinks: List[Link] = collections.map({ coll: Collection =>
         Link(
           s"${apiConfig.apiHost}/collections/${coll.id}",
           StacLinkType.Child,
@@ -63,12 +62,11 @@ class CollectionsService[F[_]: Concurrent](
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       collection <- PGStacQueries
-        .getCollection(collectionId)
+        .getCollection(collectionId, apiConfig)
         .transact(xa)
     } yield {
       Either.fromOption(
-        collection.map(updateCollectionLinks(_)),
-        //collectionWithLinks.map(_.dropNullValues),
+        collection,
         NF(s"Collection $collectionId not found")
       )
     }

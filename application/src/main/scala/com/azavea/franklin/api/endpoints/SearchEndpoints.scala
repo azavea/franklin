@@ -6,14 +6,12 @@ import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database._
 import com.azavea.franklin.datamodel.{
-  PaginationToken,
   SearchParameters,
-  Sorter,
+  SortDefinition,
   StacSearchCollection,
   TemporalExtent
 }
 import com.azavea.stac4s.Bbox
-import eu.timepit.refined.types.numeric.NonNegInt
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
 import io.circe.{Decoder, Encoder, Json}
@@ -30,21 +28,18 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
   implicit val searchParametersValidator: Validator[SearchParameters] =
     Validator.pass[SearchParameters]
 
-  val nextToken: EndpointInput.Query[Option[PaginationToken]] =
-    query[Option[PaginationToken]]("next")
-
   val searchParameters: EndpointInput[SearchParameters] =
     query[Option[Bbox]]("bbox")
       .and(query[Option[TemporalExtent]]("datetime"))
       .and(query[Option[Geometry]]("intersects"))
       .and(query[Option[List[String]]]("collections"))
       .and(query[Option[List[String]]]("ids"))
-      .and(query[Option[NonNegInt]]("limit"))
+      .and(query[Option[Int]]("limit"))
       .and(query[Option[Json]]("query"))
       .and(query[Option[Json]]("filter"))
       .and(query[Option[String]]("filter_lang"))
       .and(query[Option[String]]("token"))
-      .and(query[Option[String]]("sortby"))
+      .and(query[Option[List[String]]]("sortby"))
       .map(
         (tup: (
             Option[Bbox],
@@ -52,12 +47,12 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
             Option[Geometry],
             Option[List[String]],
             Option[List[String]],
-            Option[NonNegInt],
+            Option[Int],
             Option[Json],
             Option[Json],
             Option[String],
             Option[String],
-            Option[String]
+            Option[List[String]]
         )) => {
           val (
             bbox,
@@ -85,7 +80,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
             filter,
             filterLang,
             token,
-            sortby.map(_.split(",").map(Sorter.fromString).toList)
+            sortby.map(_.map(SortDefinition.fromQP).toList)
           )
         }
       )(sp =>
@@ -100,7 +95,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
           sp.filter,
           sp.filterLang,
           sp.token,
-          sp.sortby.map(lst => lst.map(_.toQP).mkString(","))
+          sp.sortby.map(lst => lst.map(_.toQP))
         )
       )
 

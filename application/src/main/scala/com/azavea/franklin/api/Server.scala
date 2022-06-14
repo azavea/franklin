@@ -1,7 +1,5 @@
 package com.azavea.franklin.api
 
-import cats.effect._
-import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.{
   CollectionEndpoints,
   ItemEndpoints,
@@ -11,7 +9,11 @@ import com.azavea.franklin.api.endpoints.{
 import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 import com.azavea.franklin.api.services._
 import com.azavea.franklin.commands._
-import com.azavea.stac4s.{`application/json`, StacLink, StacLinkType}
+import com.azavea.franklin.datamodel.Link
+
+import cats.effect._
+import cats.syntax.all._
+import com.azavea.stac4s.{`application/json`, StacLinkType}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
@@ -83,11 +85,12 @@ $$$$
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
   ) = {
-    val rootLink = StacLink(
+    val rootLink = Link(
       apiConfig.apiHost,
       StacLinkType.StacRoot,
-      Some(`application/json`),
-      Some("Welcome to Franklin")
+      `application/json`.some,
+      "Welcome to Franklin".some,
+      Method.GET.some
     )
     implicit val logger = Slf4jLogger.getLogger[IO]
     AsyncHttpClientCatsBackend.resource[IO]() flatMap { implicit backend =>

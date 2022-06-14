@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.syntax.either._
 import cats.syntax.invariant._
 import cats.syntax.traverse._
-import com.azavea.franklin.datamodel.{IfMatchMode, PaginationToken, TemporalExtent, TimeInterval}
+import com.azavea.franklin.datamodel.{IfMatchMode, TemporalExtent, TimeInterval}
 import com.azavea.franklin.error.InvalidPatch
 import com.azavea.stac4s.{TemporalExtent => _, _}
 import eu.timepit.refined.types.string.NonEmptyString
@@ -92,6 +92,7 @@ package object schemas {
 
   def commaSeparatedStrings(s: String): DecodeResult[List[String]] =
     DecodeResult.Value(s.split(",").toList)
+
   def listToCSV(collections: List[String]): String = collections.mkString(",")
 
   implicit val csvListCodec: PlainCodec[List[String]] =
@@ -107,9 +108,6 @@ package object schemas {
 
   implicit val codecStacItem: Codec.JsonCodec[StacItem] =
     jsonCodec.mapDecode(decStacItem)(encStacItem)
-
-  implicit val codecPaginationToken: Codec.PlainCodec[PaginationToken] =
-    Codec.string.mapDecode(PaginationToken.decPaginationToken)(PaginationToken.encPaginationToken)
 
   implicit val schemaForStacLink: Schema[StacLinkType] =
     Schema.schemaForString.map(s => s.asJson.as[StacLinkType].toOption)(_.repr)

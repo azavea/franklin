@@ -1,6 +1,10 @@
 package com.azavea.franklin.database
 
+import com.azavea.franklin.commands.ApiConfig
+import com.azavea.franklin.api.util._
+
 import cats.data.OptionT
+import cats.syntax.option._
 import cats.syntax.foldable._
 import cats.syntax.list._
 import com.azavea.franklin.datamodel.{
@@ -20,6 +24,7 @@ import doobie.refined.implicits._
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.syntax._
+import org.http4s.Method
 
 import java.time.Instant
 
@@ -42,15 +47,17 @@ object PGStacQueries extends CirceJsonbMeta {
       .query[Unit]
       .unique
 
-  def getCollection(collectionId: String): ConnectionIO[Option[Collection]] =
+  def getCollection(collectionId: String, apiConfig: ApiConfig): ConnectionIO[Option[Collection]] =
     fr"SELECT content FROM collections WHERE id = $collectionId"
       .query[Collection]
       .option
+      .map({ maybeColl => maybeColl.map(UpdateCollectionLinks(apiConfig).apply) })
 
-  def listCollections(): ConnectionIO[List[Collection]] =
+  def listCollections(apiConfig: ApiConfig): ConnectionIO[List[Collection]] =
     fr"SELECT content FROM collections"
       .query[Collection]
       .to[List]
+      .map({ collList => collList.map(UpdateCollectionLinks(apiConfig).apply) })
 
   // Items
 
@@ -69,22 +76,33 @@ object PGStacQueries extends CirceJsonbMeta {
       .query[Unit]
       .unique
 
-  def getItem(collectionId: String, itemId: String): ConnectionIO[Option[StacItem]] = {
+  def getItem(collectionId: String, itemId: String, apiConfig: ApiConfig): ConnectionIO[Option[StacItem]] = {
     val params = SearchParameters.getItemById(collectionId, itemId)
-    search(params).map({ results => results.features.headOption })
+    search(params, Method.GET, apiConfig)
+      .map({ results => results.features.headOption })
   }
 
-  def listItems(collectionId: String, limit: Int): ConnectionIO[List[StacItem]] =
-    fr"SELECT content FROM items WHERE collection = $collectionId LIMIT $limit"
-      .query[StacItem]
-      .to[List]
+  def listItems(collectionId: String, limit: Int, token: Option[String], apiConfig: ApiConfig): ConnectionIO[StacSearchCollection] = {
+    val params = SearchParameters.getItemsByCollection(collectionId, limit.some, token)
+    search(params, Method.GET, apiConfig)
+      .map(_.copy(context = None))
+  }
 
   // Search
-
-  def search(params: SearchParameters): ConnectionIO[StacSearchCollection] = {
+  def search(params: SearchParameters, method: Method, apiConfig: ApiConfig): ConnectionIO[StacSearchCollection] = {
     val req = params.asJson.deepDropNullValues
     fr"SELECT search($req::jsonb)"
       .query[StacSearchCollection]
       .unique
+      .map({ res =>
+        method match {
+          case Method.GET  =>
+            UpdateSearchLinks(params, apiConfig).GET(res)
+          case Method.POST =>
+            UpdateSearchLinks(params, apiConfig).POST(res)
+          case _           =>
+            throw new IllegalArgumentException("Only GET and POST methods are supported as arguments to search")
+        }
+      })
   }
 }

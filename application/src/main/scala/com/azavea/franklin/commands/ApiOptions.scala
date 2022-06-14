@@ -4,7 +4,6 @@ import cats.data.Validated
 import cats.syntax.all._
 import com.monovore.decline.Opts
 import com.monovore.decline.refined._
-import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
 
 import scala.language.postfixOps
@@ -55,14 +54,14 @@ trait ApiOptions {
       "Scheme must be either 'http' or 'https'"
     )(s => (s == "http" || s == "https"))
 
-  private val defaultLimitDefault = NonNegInt(30)
+  private val defaultLimitDefault = 30
 
   private val defaultLimitHelp =
     s"Default limit for items returned in paginated responses. Default: '$defaultLimitDefault'."
 
   private val defaultLimit = Opts
-    .option[NonNegInt]("default-limit", help = defaultLimitHelp) orElse Opts
-    .env[NonNegInt]("API_DEFAULT_LIMIT", help = defaultLimitHelp) withDefault (defaultLimitDefault)
+    .option[Int]("default-limit", help = defaultLimitHelp) orElse Opts
+    .env[Int]("API_DEFAULT_LIMIT", help = defaultLimitHelp) withDefault (defaultLimitDefault)
 
   private val enableTransactionsHelp =
     "Whether to respond to transaction requests, like adding or updating items. Default: 'false'."

@@ -1,9 +1,7 @@
 package com.azavea.franklin.api.services
 
-import cats.Applicative
-import cats.data.NonEmptyList
-import cats.effect._
-import cats.syntax.all._
+import com.azavea.franklin.api.util.UpdateSearchLinks
+
 import com.azavea.franklin.api.endpoints.ItemEndpoints
 import com.azavea.franklin.api.util.UpdateItemLinks
 import com.azavea.franklin.commands.ApiConfig
@@ -16,14 +14,17 @@ import com.azavea.franklin.error.{
   NotFound => NF,
   ValidationError
 }
-import com.azavea.stac4s.StacLinkType
+
+import cats.Applicative
+import cats.data.NonEmptyList
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.stac4s._
-import com.azavea.stac4s.{`application/json`, StacItem, StacLink}
+import com.azavea.stac4s.{`application/json`, StacItem}
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
-import eu.timepit.refined.types.numeric.NonNegInt
 import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.optics.JsonPath._
@@ -42,7 +43,7 @@ import java.nio.charset.StandardCharsets
 class ItemService[F[_]: Concurrent](
     xa: Transactor[F],
     apiConfig: ApiConfig,
-    rootLink: StacLink
+    rootLink: Link
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
@@ -59,19 +60,15 @@ class ItemService[F[_]: Concurrent](
   def listItems(
       rawCollectionId: String,
       token: Option[String],
-      limit: Option[NonNegInt]
-  ): F[Either[Unit, Json]] = {
+      limit: Option[Int]
+  ): F[Either[Unit, StacSearchCollection]] = {
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
       items <- PGStacQueries
-        .listItems(collectionId, limit.map(_.value).getOrElse(defaultLimit))
+        .listItems(collectionId, limit.getOrElse(defaultLimit), token, apiConfig)
         .transact(xa)
     } yield {
-      val response = ItemsResponse(
-        items.toList,
-        List()
-      )
-      Either.right(response.asJson)
+      Either.right(items)
     }
   }
 
@@ -83,14 +80,13 @@ class ItemService[F[_]: Concurrent](
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
 
     for {
-      itemResults <- PGStacQueries.getItem(collectionId, itemId).transact(xa)
+      itemResults <- PGStacQueries.getItem(collectionId, itemId, apiConfig).transact(xa)
     } yield {
       itemResults match {
-        case Some(item) => {
-          val itemWithLinks = updateItemLinks(item)
-          Right((itemWithLinks, itemWithLinks.##.toString))
-        }
-        case None => Left(NF(s"Item $itemId in collection $collectionId not found"))
+        case Some(item) =>
+          Either.right((item, item.##.toString))
+        case None =>
+          Left(NF(s"Item $itemId in collection $collectionId not found"))
       }
     }
   }
@@ -118,7 +114,7 @@ class ItemService[F[_]: Concurrent](
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val updatedItem  = newItem.copy(id = itemId, collection = Some(collectionId))
     PGStacQueries
-      .getItem(collectionId, itemId)
+      .getItem(collectionId, itemId, apiConfig)
       .transact(xa)
       .flatMap({ oldItem =>
         if (etag.matches(oldItem.##.toString())) {
@@ -162,7 +158,7 @@ class ItemService[F[_]: Concurrent](
     val itemId       = URLDecoder.decode(rawItemId, StandardCharsets.UTF_8.toString)
     val collectionId = URLDecoder.decode(rawCollectionId, StandardCharsets.UTF_8.toString)
     for {
-      dbItem <- PGStacQueries.getItem(collectionId, itemId).transact(xa)
+      dbItem <- PGStacQueries.getItem(collectionId, itemId, apiConfig).transact(xa)
       merged     = dbItem.map(_.asJson.deepMerge(jsonPatch).deepDropNullValues)
       rehydrated = merged.flatMap(_.as[StacItem].toOption)
       _ <- rehydrated match {
@@ -207,8 +203,9 @@ class ItemService[F[_]: Concurrent](
   )
 
   val routesList: NonEmptyList[HttpRoutes[F]] = NonEmptyList.of(
-    Http4sServerInterpreter.toRoutes(itemEndpoints.itemsList)({ query =>
-      Function.tupled(listItems _)(query)
+    Http4sServerInterpreter.toRoutes(itemEndpoints.itemsList)({
+      case (rawCollectionId, token, limit) =>
+        listItems(rawCollectionId, token, limit)
     }),
     Http4sServerInterpreter.toRoutes(itemEndpoints.itemsUnique)({
       case (collectionId, itemId) => getItemUnique(collectionId, itemId)

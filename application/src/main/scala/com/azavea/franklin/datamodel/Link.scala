@@ -1,7 +1,7 @@
 package com.azavea.franklin.datamodel
 
 import cats.syntax.either._
-import com.azavea.stac4s.{StacLinkType, StacMediaType}
+import com.azavea.stac4s.{StacLink, StacLinkType, StacMediaType}
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, Json}
 import org.http4s.{Method, ParseFailure, ParseResult}
@@ -15,7 +15,9 @@ case class Link(
     title: Option[String] = None,
     method: Option[Method] = None,
     body: Option[Json] = None
-)
+) {
+  def toStacLink: StacLink = StacLink(href, rel, _type, title)
+}
 
 object Link {
 

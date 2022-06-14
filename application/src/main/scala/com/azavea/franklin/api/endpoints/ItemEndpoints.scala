@@ -4,7 +4,6 @@ import cats.effect.Concurrent
 import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.datamodel.IfMatchMode
-import com.azavea.franklin.datamodel.PaginationToken
 import com.azavea.franklin.error.{
   CrudError,
   InvalidPatch,
@@ -13,7 +12,6 @@ import com.azavea.franklin.error.{
   ValidationError
 }
 import com.azavea.stac4s.StacItem
-import eu.timepit.refined.types.numeric.NonNegInt
 import io.circe.{Codec => _, _}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.model.StatusCode
@@ -21,9 +19,10 @@ import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
+import com.azavea.franklin.datamodel.StacSearchCollection
 
 class ItemEndpoints[F[_]: Concurrent](
-    defaultLimit: NonNegInt,
+    defaultLimit: Int,
     enableTransactions: Boolean,
     pathPrefix: Option[String]
 ) {
@@ -33,9 +32,9 @@ class ItemEndpoints[F[_]: Concurrent](
   val base = endpoint.in(basePath)
 
   val itemsList: Endpoint[
-    (String, Option[String], Option[NonNegInt]),
+    (String, Option[String], Option[Int]),
     Unit,
-    Json,
+    StacSearchCollection,
     Fs2Streams[F]
   ] =
     base.get
@@ -46,10 +45,10 @@ class ItemEndpoints[F[_]: Concurrent](
           .description("Token to retrieve the next page of items")
       )
       .in(
-        query[Option[NonNegInt]]("limit")
+        query[Option[Int]]("limit")
           .description(s"How many items to return. Defaults to ${defaultLimit}")
       )
-      .out(jsonBody[Json])
+      .out(jsonBody[StacSearchCollection])
       .description("A feature collection of collection items")
       .name("items")
 

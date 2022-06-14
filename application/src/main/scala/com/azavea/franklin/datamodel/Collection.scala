@@ -1,6 +1,6 @@
 package com.azavea.franklin.datamodel
 
-import com.azavea.stac4s.{StacCollection}
+import com.azavea.stac4s.StacCollection
 import com.azavea.stac4s._
 import io.circe._
 import io.circe.generic.semiauto._

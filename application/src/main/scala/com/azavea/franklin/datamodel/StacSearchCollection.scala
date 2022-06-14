@@ -5,7 +5,7 @@ import io.circe._
 import io.circe.syntax._
 
 case class StacSearchCollection(
-    context: Context,
+    context: Option[Context],
     features: List[StacItem],
     links: List[Link] = List(),
     next: Option[String] = None,
@@ -34,13 +34,13 @@ object StacSearchCollection {
 
     final def apply(c: HCursor): Decoder.Result[StacSearchCollection] =
       for {
-        metadata <- c.downField("context").as[Context]
+        context  <- c.downField("context").as[Option[Context]]
         features <- c.downField("features").as[List[StacItem]]
         links    <- c.downField("links").as[Option[List[Link]]]
         next     <- c.downField("next").as[Option[String]]
         prev     <- c.downField("prev").as[Option[String]]
       } yield {
-        new StacSearchCollection(metadata, features, links.getOrElse(List()), next, prev)
+        new StacSearchCollection(context, features, links.getOrElse(List()), next, prev)
       }
   }
 }
