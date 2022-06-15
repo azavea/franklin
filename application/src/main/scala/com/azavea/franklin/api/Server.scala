@@ -85,13 +85,6 @@ $$$$
       apiConfig: ApiConfig,
       dbConfig: DatabaseConfig
   ) = {
-    val rootLink = Link(
-      apiConfig.apiHost,
-      StacLinkType.StacRoot,
-      `application/json`.some,
-      "Welcome to Franklin".some,
-      Method.GET.some
-    )
     implicit val logger = Slf4jLogger.getLogger[IO]
     AsyncHttpClientCatsBackend.resource[IO]() flatMap { implicit backend =>
       for {
@@ -121,7 +114,7 @@ $$$$
         docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
         searchRoutes      = new SearchService[IO](apiConfig, xa).routes
         collectionRoutes  = new CollectionsService[IO](xa, apiConfig).routes
-        itemRoutes        = new ItemService[IO](xa, apiConfig, rootLink).routes
+        itemRoutes        = new ItemService[IO](xa, apiConfig).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
           new AccessLoggingMiddleware(

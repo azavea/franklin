@@ -3,7 +3,6 @@ package com.azavea.franklin.api.services
 import cats.effect._
 import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.SearchEndpoints
-import com.azavea.franklin.api.util.UpdateSearchLinks
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
@@ -35,30 +34,19 @@ class SearchService[F[_]: Concurrent](
   implicit val MySpecialPrinter = Printer(true, "")
 
   val searchEndpoints = new SearchEndpoints[F](apiConfig)
-  val defaultLimit    = apiConfig.defaultLimit
 
-  def search(params: SearchParameters, method: Method): F[Either[Unit, StacSearchCollection]] = {
-    val limit         = params.limit getOrElse defaultLimit
-    val updatedParams = params.copy(limit = Some(limit))
+  def search(params: SearchParameters, method: Method): F[Either[Unit, StacSearchCollection]] =
     for {
-      searchResults <- PGStacQueries.search(updatedParams, method, apiConfig).attempt.transact(xa)
+      searchResults <- PGStacQueries.search(params, method, apiConfig).attempt.transact(xa)
     } yield {
-      searchResults
-        .leftMap(_ => ())
+      searchResults.leftMap(_ => ())
     }
-  }
 
   val searchRouteGet =
-    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)({
-      case searchParameters =>
-        search(searchParameters, Method.GET)
-    })
+    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)(search(_, Method.GET))
 
   val searchRoutePost =
-    Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({
-      case searchParameters =>
-        search(searchParameters, Method.POST)
-    })
+    Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)(search(_, Method.POST))
 
   val routes: HttpRoutes[F] =
     searchRouteGet <+> searchRoutePost

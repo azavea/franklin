@@ -90,8 +90,9 @@ object PGStacQueries extends CirceJsonbMeta {
 
   // Search
   def search(params: SearchParameters, method: Method, apiConfig: ApiConfig): ConnectionIO[StacSearchCollection] = {
-    val req = params.asJson.deepDropNullValues
-    fr"SELECT search($req::jsonb)"
+    val defaultLimit = params.limit.orElse(apiConfig.defaultLimit.some)
+    val updatedParams = params.copy(limit = defaultLimit).asJson.deepDropNullValues
+    fr"SELECT search($updatedParams::jsonb)"
       .query[StacSearchCollection]
       .unique
       .map({ res =>

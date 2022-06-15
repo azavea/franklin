@@ -3,7 +3,6 @@ package com.azavea.franklin.api.services
 import com.azavea.franklin.api.util.UpdateSearchLinks
 
 import com.azavea.franklin.api.endpoints.ItemEndpoints
-import com.azavea.franklin.api.util.UpdateItemLinks
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
@@ -42,8 +41,7 @@ import java.nio.charset.StandardCharsets
 
 class ItemService[F[_]: Concurrent](
     xa: Transactor[F],
-    apiConfig: ApiConfig,
-    rootLink: Link
+    apiConfig: ApiConfig
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
@@ -55,7 +53,6 @@ class ItemService[F[_]: Concurrent](
   val apiHost            = apiConfig.apiHost
   val defaultLimit       = apiConfig.defaultLimit
   val enableTransactions = apiConfig.enableTransactions
-  val updateItemLinks    = UpdateItemLinks(apiConfig)
 
   def listItems(
       rawCollectionId: String,

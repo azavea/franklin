@@ -5,7 +5,6 @@ import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
-import com.azavea.franklin.api.util.UpdateCollectionLinks
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel.{Collection, CollectionsResponse, Link}
@@ -40,7 +39,6 @@ class CollectionsService[F[_]: Concurrent](
 
   val apiHost               = apiConfig.apiHost
   val enableTransactions    = apiConfig.enableTransactions
-  val updateCollectionLinks = UpdateCollectionLinks(apiConfig)
 
   def listCollections(): F[Either[Unit, CollectionsResponse]] = {
     for {
