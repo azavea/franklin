@@ -10,19 +10,18 @@ case class Collection(
     id: String,
     description: String,
     links: List[Link],
+    stacVersion: String,
     stacExtensions: Option[List[String]],
     title: Option[String],
     _type: String,
-    assets: Map[String, Asset],
+    assets: Option[Map[String, Asset]],
     license: String,
     extent: Extent,
     keywords: Option[List[String]],
     providers: Option[List[Provider]],
     summaries: Option[Json],
     extraFields: JsonObject = ().asJsonObject
-) {
-  val stacVersion: String = "1.0.0"
-}
+)
 
 object Collection {
 
@@ -31,10 +30,11 @@ object Collection {
   implicit val encCollection: Encoder[Collection] = new Encoder[Collection] {
 
     def apply(collection: Collection): Json = {
-      val baseEncoder: Encoder[Collection] = Encoder.forProduct13(
+      val baseEncoder: Encoder[Collection] = Encoder.forProduct14(
         "id",
         "description",
         "links",
+        "stac_version",
         "stac_extensions",
         "stac_version",
         "title",
@@ -50,6 +50,7 @@ object Collection {
           coll.id,
           coll.description,
           coll.links,
+          coll.stacVersion,
           coll.stacExtensions,
           coll.stacVersion,
           coll.title,
@@ -74,10 +75,11 @@ object Collection {
         id             <- c.downField("id").as[String]
         description    <- c.downField("description").as[String]
         links          <- c.downField("links").as[List[Link]]
+        stacVersion    <- c.downField("stac_version").as[String]
         stacExtensions <- c.downField("stac_extensions").as[Option[List[String]]]
         title          <- c.downField("title").as[Option[String]]
         _type          <- c.downField("type").as[String]
-        assets         <- c.downField("assets").as[Map[String, Asset]]
+        assets         <- c.downField("assets").as[Option[Map[String, Asset]]]
         license        <- c.downField("license").as[String]
         extent         <- c.downField("extent").as[Extent]
         keywords       <- c.downField("keywords").as[Option[List[String]]]
@@ -89,6 +91,7 @@ object Collection {
           id,
           description,
           links,
+          stacVersion,
           stacExtensions,
           title,
           _type,

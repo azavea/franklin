@@ -48,7 +48,6 @@ case class UpdateItemLinks(apiConfig: ApiConfig) {
     val prunedLinks = item.links
       .filter { link => link.rel != StacLinkType.Self }
       .map(updateLinkHrefs)
-    println(prunedLinks ++ List(createSelfLink(item), constructRootLink))
     item.copy(links = prunedLinks ++ List(createSelfLink(item), constructRootLink))
   }
 }

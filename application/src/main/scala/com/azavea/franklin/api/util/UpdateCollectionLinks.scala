@@ -20,6 +20,14 @@ case class UpdateCollectionLinks(apiConfig: ApiConfig) {
     )
   }
 
+  def createItemsLink(collection: Collection): Link = Link(
+    s"${apiConfig.apiHost}/collections/${collection.id}/items",
+      StacLinkType.Items,
+      `application/json`.some,
+      None,
+      Method.GET.some
+  )
+
   def constructRootLink: Link =
     Link(
       apiConfig.apiHost.value,
@@ -29,6 +37,8 @@ case class UpdateCollectionLinks(apiConfig: ApiConfig) {
       Some(Method.GET)
     )
 
-  def apply(collection: Collection): Collection =
-    collection.copy(links = collection.links ++ List(createSelfLink(collection), constructRootLink))
+  def apply(collection: Collection): Collection = {
+    val newLinks = List(createSelfLink(collection), createItemsLink(collection), constructRootLink)
+    collection.copy(links = collection.links ++ newLinks)
+  }
 }

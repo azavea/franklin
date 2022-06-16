@@ -8,8 +8,8 @@ from pypgstac.db import PgstacDB  # type: ignore
 from pypgstac.load import Loader, Methods  # type: ignore
 
 DATA_DIR = os.path.join(Path(os.path.dirname(__file__)).parent, "data-files")
-collection = os.path.join(DATA_DIR, "naip/collection.json")
-items = os.path.join(DATA_DIR, "naip/items")
+collection = os.path.join(DATA_DIR, "joplin/collection.json")
+items = os.path.join(DATA_DIR, "joplin/items")
 
 dbhost = os.getenv("PGHOST") or "pgstac"
 dbname = os.getenv("PGDATABASE") or "pgstac"
