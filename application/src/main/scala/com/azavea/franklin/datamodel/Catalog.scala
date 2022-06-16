@@ -1,18 +1,17 @@
 package com.azavea.franklin.datamodel
 
 import com.azavea.stac4s.StacLinkType
-import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.Encoder
 import io.circe.generic.semiauto._
 
 case class Catalog(
     stacVersion: String,
     stacExtensions: List[String],
-    id: NonEmptyString,
+    id: String,
     title: Option[String],
-    description: NonEmptyString,
+    description: String,
     links: List[Link],
-    conformsTo: Option[List[NonEmptyString]]
+    conformsTo: Option[List[String]]
 ) {
 
   lazy val dataLinks = links.filter(_.rel == StacLinkType.Data)

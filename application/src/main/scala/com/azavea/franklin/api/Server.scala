@@ -9,7 +9,8 @@ import com.azavea.franklin.api.endpoints.{
 import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 import com.azavea.franklin.api.services._
 import com.azavea.franklin.commands._
-import com.azavea.franklin.datamodel.Link
+import com.azavea.franklin.datamodel._
+import com.azavea.franklin.datamodel.hierarchy._
 
 import cats.effect._
 import cats.syntax.all._
@@ -86,6 +87,26 @@ $$$$
       dbConfig: DatabaseConfig
   ) = {
     implicit val logger = Slf4jLogger.getLogger[IO]
+    val hierarchy = RootNode(
+      List(
+        CollectionNode("naip"),
+        CollectionNode("joplin"),
+        CatalogNode("naip-test", None, "A test of catalogs",
+          List(
+            CatalogNode("sub-naip", None, "A more serious test", List(), List())
+          ),
+          List(ItemPath("joplin", "fe916452-ba6f-4631-9154-c249924a122d"))
+      )),
+      List(ItemPath("naip", "al_m_3008506_nw_16_060_20191118_20200114"), ItemPath("joplin", "fe916452-ba6f-4631-9154-c249924a122d"))
+    )
+    import io.circe._
+    import io.circe.syntax._
+    println(hierarchy.asJson.noSpaces)
+    println("ROUNDTRIP")
+    println(hierarchy.asJson.as[StacHierarchy])
+    val updatedPaths = hierarchy.updatePaths()
+    val catalogSearch = updatedPaths.findCatalog(List("naip-test", "sub-naip"))
+    assert(!catalogSearch.isEmpty)
     AsyncHttpClientCatsBackend.resource[IO]() flatMap { implicit backend =>
       for {
         connectionEc  <- ExecutionContexts.fixedThreadPool[IO](2)

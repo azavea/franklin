@@ -13,8 +13,6 @@ import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import doobie._
 import doobie.implicits._
-import eu.timepit.refined.auto._
-import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s._
@@ -60,7 +58,7 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     )
   )
 
-  private val conformances: List[NonEmptyString] = List[NonEmptyString](
+  private val conformances: List[String] = List[String](
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson",
@@ -104,10 +102,10 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
     "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features/extensions/transaction",
 
   ) `combine` (if (apiConfig.enableTransactions)
-                 List[NonEmptyString](
+                 List[String](
                    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features/extensions/transaction"
                  )
-               else List.empty[NonEmptyString])
+               else List.empty[String])
 
   def conformancePage: F[Either[Unit, FranklinConformance]] = {
     val conformance = FranklinConformance(conformances)
@@ -116,8 +114,8 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
   }
 
   def landingPage: F[Either[Unit, Json]] = {
-    val title: NonEmptyString = "Welcome to Franklin"
-    val description: NonEmptyString =
+    val title: String = "Welcome to Franklin"
+    val description: String =
       "An OGC API - Features, Tiles, and STAC Server"
     val landingPage = Catalog(
       "1.0.0",

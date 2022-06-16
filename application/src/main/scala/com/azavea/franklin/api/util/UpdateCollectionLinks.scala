@@ -30,7 +30,7 @@ case class UpdateCollectionLinks(apiConfig: ApiConfig) {
 
   def constructRootLink: Link =
     Link(
-      apiConfig.apiHost.value,
+      apiConfig.apiHost,
       StacLinkType.StacRoot,
       Some(`application/json`),
       None,

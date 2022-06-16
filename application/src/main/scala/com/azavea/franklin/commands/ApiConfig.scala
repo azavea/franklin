@@ -1,7 +1,6 @@
 package com.azavea.franklin.commands
 
 import eu.timepit.refined.types.numeric.PosInt
-import eu.timepit.refined.types.string.NonEmptyString
 
 case class ApiConfig(
     publicPort: PosInt,
@@ -13,15 +12,15 @@ case class ApiConfig(
     enableTransactions: Boolean
 ) {
 
-  def getHost(port: PosInt, host: String, scheme: String, path: String): NonEmptyString = {
+  def getHost(port: PosInt, host: String, scheme: String, path: String): String = {
     (port.value, scheme) match {
-      case (443, "https") => NonEmptyString.unsafeFrom(s"$scheme://$host$path")
-      case (80, "http")   => NonEmptyString.unsafeFrom(s"$scheme://$host$path")
-      case _              => NonEmptyString.unsafeFrom(s"$scheme://$host:$port$path")
+      case (443, "https") => s"$scheme://$host$path"
+      case (80, "http")   => s"$scheme://$host$path"
+      case _              => s"$scheme://$host:$port$path"
     }
   }
 
-  val apiHost: NonEmptyString =
+  val apiHost: String =
     getHost(publicPort, host, scheme, path map { s =>
       s"/${s.stripPrefix("/").stripSuffix("/")}"
     } getOrElse "")
