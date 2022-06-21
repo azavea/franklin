@@ -27,7 +27,11 @@ package object hierarchy {
   implicit lazy val itemPathDecoder: Decoder[ItemPath] = deriveDecoder
 
   implicit lazy val rootNodeEncoder: Encoder[RootNode] = deriveEncoder
-  implicit lazy val rootNodeDecoder: Decoder[RootNode] = deriveDecoder
+  implicit lazy val rootNodeDecoder: Decoder[RootNode] = {
+    val rawRootNodeDecoder: Decoder[RootNode] = deriveDecoder
+    rawRootNodeDecoder
+      .map(_.updatePaths().asInstanceOf[RootNode])
+  }
 
   implicit lazy val collectionNodeEncoder: Encoder[CollectionNode] = deriveEncoder
   implicit lazy val collectionNodeDecoder: Decoder[CollectionNode] = deriveDecoder

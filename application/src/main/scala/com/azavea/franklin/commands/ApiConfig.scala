@@ -1,6 +1,7 @@
 package com.azavea.franklin.commands
 
 import eu.timepit.refined.types.numeric.PosInt
+import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
 
 case class ApiConfig(
     publicPort: PosInt,
@@ -9,7 +10,8 @@ case class ApiConfig(
     path: Option[String],
     scheme: String,
     defaultLimit: Int,
-    enableTransactions: Boolean
+    enableTransactions: Boolean,
+    stacHierarchy: StacHierarchy
 ) {
 
   def getHost(port: PosInt, host: String, scheme: String, path: String): String = {

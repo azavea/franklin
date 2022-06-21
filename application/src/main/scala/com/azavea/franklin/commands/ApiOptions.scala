@@ -1,13 +1,18 @@
 package com.azavea.franklin.commands
 
+import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
+
 import cats.data.Validated
 import cats.syntax.all._
+import io.circe.parser.decode
 import com.monovore.decline.Opts
 import com.monovore.decline.refined._
 import eu.timepit.refined.types.numeric.PosInt
 
 import scala.language.postfixOps
 import scala.util.Try
+import scala.io.Source
+
 
 trait ApiOptions {
 
@@ -80,6 +85,35 @@ trait ApiOptions {
         .toValidatedNel
     } withDefault (false)
 
+  private val stacHierarchyHelp =
+    "Path to JSON file which defines a STAC Hierarchy. Defaults to the empty StacHierarchy."
+
+  private def parseHierarchyFromPath(path: String): Either[io.circe.Error, StacHierarchy] = {
+    val bufferedSource = Source.fromFile(path)
+    var hierarchy: Either[io.circe.Error, StacHierarchy] = null
+    for (jsonString <- bufferedSource.getLines) {
+      hierarchy = decode[StacHierarchy](jsonString)
+    }
+    bufferedSource.close
+    hierarchy
+  }
+
+  private val stacHierarchy = Opts
+    .option[String]("stac-hierarchy", help = stacHierarchyHelp)
+    .mapValidated { path =>
+      Validated
+        .fromEither(parseHierarchyFromPath(path))
+        .leftMap(_ => s"Unable to parse a StacHierarchy at $path")
+        .toValidatedNel
+    } orElse Opts
+    .env[String]("API_STAC_HIERARCHY", help = stacHierarchyHelp)
+    .mapValidated { path =>
+      Validated
+        .fromEither(parseHierarchyFromPath(path))
+        .leftMap(_ => s"Unable to parse a StacHierarchy at $path")
+        .toValidatedNel
+    } withDefault (StacHierarchy.empty)
+
   val apiConfig: Opts[ApiConfig] = (
     externalPort,
     internalPort,
@@ -87,6 +121,7 @@ trait ApiOptions {
     apiPath,
     apiScheme,
     defaultLimit,
-    enableTransactions
-  ) mapN ApiConfig
+    enableTransactions,
+    stacHierarchy
+  ) mapN ApiConfig.apply
 }

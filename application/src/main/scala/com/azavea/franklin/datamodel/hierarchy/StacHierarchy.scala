@@ -9,7 +9,7 @@ import com.azavea.stac4s.StacLinkType
 
 final case class ItemPath(collectionId: String, itemId: String)
 
-sealed trait StacHierarchy {
+sealed trait StacHierarchy { self =>
   val children: List[StacHierarchy]
   val items: List[ItemPath]
   def childLink(apiHost: String): Link
@@ -49,6 +49,10 @@ sealed trait StacHierarchy {
   }
 }
 
+object StacHierarchy {
+  def empty: StacHierarchy = RootNode(List(), List()).asInstanceOf[StacHierarchy]
+}
+
 
 final case class RootNode(children: List[StacHierarchy], items: List[ItemPath]) extends StacHierarchy {
   def childLink(apiHost: String): Link =
@@ -68,6 +72,11 @@ final case class RootNode(children: List[StacHierarchy], items: List[ItemPath]) 
     assert(newPath.isEmpty)
     this.copy(children=newChildren)
   }
+}
+
+object RootNode {
+  def apply(children: List[StacHierarchy], items: List[ItemPath]): RootNode =
+    new RootNode(children, items).updatePaths().asInstanceOf[RootNode]
 }
 
 
