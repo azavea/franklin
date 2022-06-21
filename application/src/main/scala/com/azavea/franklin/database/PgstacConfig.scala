@@ -38,11 +38,6 @@ object PgstacConfig {
     )
   }
 
-  println(s"jdbcUrl $jdbcUrl")
-  println(s"dbuser $dbUser")
-  println(s"dbpass $dbPassword")
-  println(s"jdbcdriver $jdbcDriver")
-
   val hikariConfig = new HikariConfig()
   hikariConfig.setPoolName("pgstac-pool")
   hikariConfig.setMaximumPoolSize(dbMaximumPoolSize)

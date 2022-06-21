@@ -31,7 +31,6 @@ import java.time.Instant
 object PGStacQueries extends CirceJsonbMeta {
 
   // Collections
-
   def createCollection(collection: Collection): ConnectionIO[Unit] =
     sql"SELECT create_collection($collection::jsonb);"
       .query[Unit]
@@ -60,7 +59,6 @@ object PGStacQueries extends CirceJsonbMeta {
       .map({ collList => collList.map(UpdateCollectionLinks(apiConfig).apply) })
 
   // Items
-
   def createItem(item: StacItem): ConnectionIO[Unit] =
     sql"SELECT create_item($item::jsonb);"
       .query[Unit]

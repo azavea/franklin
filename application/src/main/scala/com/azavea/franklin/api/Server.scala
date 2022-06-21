@@ -1,6 +1,7 @@
 package com.azavea.franklin.api
 
 import com.azavea.franklin.api.endpoints.{
+  CatalogEndpoints,
   CollectionEndpoints,
   ItemEndpoints,
   LandingPageEndpoints,
@@ -105,21 +106,25 @@ $$$$
           apiConfig.enableTransactions,
           apiConfig.path
         )
-        searchEndpoints = new SearchEndpoints[IO](apiConfig).endpoints
+        searchEndpoints = new SearchEndpoints[IO](apiConfig)
+        catalogEndpoints = new CatalogEndpoints[IO](apiConfig.path)
         landingPage     = new LandingPageEndpoints[IO](apiConfig.path)
-        allEndpoints = collectionEndpoints.endpoints ++
+        allEndpoints =
+          collectionEndpoints.endpoints ++
+          catalogEndpoints.endpoints ++
           itemEndpoints.endpoints ++
-          searchEndpoints ++
+          searchEndpoints.endpoints ++
           landingPage.endpoints
         docs              = OpenAPIDocsInterpreter.toOpenAPI(allEndpoints, "Franklin", "0.0.1")
         docRoutes         = new SwaggerHttp4s(docs.toYaml, "open-api", "spec.yaml").routes[IO]
+        collectionRoutes  = new CollectionService[IO](apiConfig, xa).routes
+        catalogRoutes     = new CatalogService[IO](apiConfig).routes
+        itemRoutes        = new ItemService[IO](apiConfig, xa).routes
         searchRoutes      = new SearchService[IO](apiConfig, xa).routes
-        collectionRoutes  = new CollectionsService[IO](xa, apiConfig).routes
-        itemRoutes        = new ItemService[IO](xa, apiConfig).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router = CORS(
           new AccessLoggingMiddleware(
-            collectionRoutes <+> itemRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
+            collectionRoutes <+> catalogRoutes <+> itemRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
             logger
           ).withLogging(true)
         ).orNotFound
@@ -143,8 +148,6 @@ $$$$
 
     applicationCommand.parse(args, env = sys.env) map {
       case RunServer(apiConfig, dbConfig) =>
-        println(s"apiconfig $apiConfig")
-        println(s"dbConfig $dbConfig")
         createServer(apiConfig, dbConfig)
           .use(_ => IO.never)
           .as(ExitCode.Success)

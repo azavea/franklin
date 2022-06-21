@@ -27,9 +27,9 @@ import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-class CollectionsService[F[_]: Concurrent](
-    xa: Transactor[F],
-    apiConfig: ApiConfig
+class CollectionService[F[_]: Concurrent](
+    apiConfig: ApiConfig,
+    xa: Transactor[F]
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],

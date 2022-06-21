@@ -4,6 +4,7 @@ import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel.Catalog
+import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
 import com.azavea.franklin.error.{NotFound => NF}
 
 import cats.data.EitherT
@@ -30,13 +31,13 @@ import java.util.UUID
 import com.azavea.franklin.api.endpoints.CatalogEndpoints
 
 class CatalogService[F[_]: Concurrent](
-    apiConfig: ApiConfig
+  apiConfig: ApiConfig
 )(
-    implicit async: Async[F],
-    contextShift: ContextShift[F],
-    timer: Timer[F],
-    serverOptions: Http4sServerOptions[F],
-    logger: Logger[F]
+  implicit async: Async[F],
+  contextShift: ContextShift[F],
+  timer: Timer[F],
+  serverOptions: Http4sServerOptions[F],
+  logger: Logger[F]
 ) extends Http4sDsl[F] {
 
   val apiHost               = apiConfig.apiHost
@@ -46,11 +47,13 @@ class CatalogService[F[_]: Concurrent](
   def getCatalogUnique(raw_catalog_path: List[String]): F[Either[NF, Catalog]] = {
     val catalog_path = raw_catalog_path
       .map(URLDecoder.decode(_, StandardCharsets.UTF_8.toString))
+
+    val catalog = stacHierarchy
+      .findCatalog(catalog_path)
+      .map(_.createCatalog(apiHost))
     
-    async.pure(Either.fromOption({
-        stacHierarchy.findCatalog(catalog_path)
-        ???
-      },
+    async.pure(Either.fromOption(
+      catalog,
       NF(s"No catalog found at path ${catalog_path.mkString("/")}")
     ))
   }

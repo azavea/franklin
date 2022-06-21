@@ -35,7 +35,6 @@ case object DatabaseConfig {
       dbName: String
   ) extends DatabaseConfig {
     val jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
-    println(s"JDBC!! $jdbcUrl")
 
     def getTransactor(dryRun: Boolean)(implicit contextShift: ContextShift[IO]) = {
       Transactor.strategy.set(

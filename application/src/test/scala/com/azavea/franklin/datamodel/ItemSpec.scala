@@ -21,8 +21,6 @@ class ItemSpec extends AnyFlatSpec {
       case Left(err)  => throw err
     }
     encoded shouldBe ('right)
-    println(roundTrip)
-    println(parsed)
     roundTrip should be(parsed)
   }
 }

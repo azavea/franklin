@@ -10,6 +10,7 @@ services:
       - PGDATABASE=postgis
       - PGUSER=franklin
       - PGPASSWORD=franklin
+      - API_STAC_HIERARCHY=data-files/hierarchy_example.json
     ports:
       - "9090:9090"
     volumes:

@@ -1,14 +1,16 @@
 package com.azavea.franklin.api.services
 
-import cats._
-import cats.effect._
-import cats.syntax.all._
 import com.azavea.franklin
 import com.azavea.franklin.api._
 import com.azavea.franklin.api.endpoints._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database._
 import com.azavea.franklin.datamodel.{Catalog, Link, Conformance => FranklinConformance}
+import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
+
+import cats._
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import doobie._
@@ -19,11 +21,17 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
-class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
-    implicit contextShift: ContextShift[F],
-    timer: Timer[F],
-    serverOptions: Http4sServerOptions[F]
+
+class LandingPageService[F[_]: Concurrent](
+  apiConfig: ApiConfig
+)(
+  implicit contextShift: ContextShift[F],
+  timer: Timer[F],
+  serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
+
+  val apiHost = apiConfig.apiHost
+  val stacHierarchy = apiConfig.stacHierarchy
 
   val links = List(
     Link(
@@ -56,7 +64,7 @@ class LandingPageService[F[_]: Concurrent](apiConfig: ApiConfig)(
       Some(`application/geo+json`),
       Some("STAC Search API")
     )
-  )
+  ) ++ stacHierarchy.childLinks(apiHost) ++ stacHierarchy.itemLinks(apiHost)
 
   private val conformances: List[String] = List[String](
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",

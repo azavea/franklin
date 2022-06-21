@@ -92,6 +92,7 @@ lazy val applicationDependencies = Seq(
   "com.github.julien-truffaut"   %% "monocle-macro"                  % Versions.MonocleVersion,
   "com.google.guava"             % "guava"                           % Versions.GuavaVersion,
   "com.lightbend"                %% "emoji"                          % Versions.EmojiVersion,
+  "com.lihaoyi"                  %% "os-lib"                         % Versions.OsLib,
   "com.monovore"                 %% "decline-refined"                % Versions.DeclineVersion,
   "com.monovore"                 %% "decline"                        % Versions.DeclineVersion,
   "com.propensive"               %% "magnolia"                       % Versions.MagnoliaVersion,

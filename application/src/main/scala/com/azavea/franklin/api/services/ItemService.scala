@@ -40,8 +40,8 @@ import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 
 class ItemService[F[_]: Concurrent](
-    xa: Transactor[F],
-    apiConfig: ApiConfig
+    apiConfig: ApiConfig,
+    xa: Transactor[F]
 )(
     implicit contextShift: ContextShift[F],
     timer: Timer[F],
