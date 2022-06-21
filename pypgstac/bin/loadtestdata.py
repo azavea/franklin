@@ -43,14 +43,14 @@ with db.connect() as conn:
 loader = Loader(db)
 
 print("Loading collections...")
-# Load naip collection
+# Load joplin collection
 loader.load_collections(
     str(collection),
     insert_mode=Methods.upsert,
 )
 
 print("Loading items...")
-# Load naip items
+# Load joplin items
 item_path_list = Path(items).glob("*.json")
 for item_path in item_path_list:
     loader.load_items(

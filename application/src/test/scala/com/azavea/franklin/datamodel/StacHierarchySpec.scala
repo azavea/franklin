@@ -26,7 +26,7 @@ class StacHierarchySpec extends AnyFlatSpec {
           ),
           List(ItemPath("joplin", "fe916452-ba6f-4631-9154-c249924a122d"))
       )),
-      List(ItemPath("naip", "al_m_3008506_nw_16_060_20191118_20200114"), ItemPath("joplin", "fe916452-ba6f-4631-9154-c249924a122d"))
+      List(ItemPath("joplin", "al_m_3008506_nw_16_060_20191118_20200114"), ItemPath("joplin", "fe916452-ba6f-4631-9154-c249924a122d"))
     )
   
   "A hierarchy" should "roundtrip serialize and deserialize" in {
