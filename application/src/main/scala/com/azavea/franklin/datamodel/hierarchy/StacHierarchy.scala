@@ -7,8 +7,6 @@ import com.azavea.stac4s.`application/json`
 import com.azavea.stac4s.StacLinkType
 
 
-final case class ItemPath(collectionId: String, itemId: String)
-
 sealed trait StacHierarchy { self =>
   val children: List[StacHierarchy]
   val items: List[ItemPath]
