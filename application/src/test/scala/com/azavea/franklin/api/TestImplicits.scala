@@ -7,7 +7,7 @@ import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.services.{CollectionItemsService, CollectionsService, SearchService}
 import doobie.Transactor
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
 trait TestImplicits[F[_]] {
