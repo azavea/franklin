@@ -50,8 +50,9 @@ import scala.concurrent.duration._
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import cats.effect.Temporal
 
-class TileService[F[_]: Async: Concurrent: Parallel: Logger: Timer: ContextShift](
+class TileService[F[_]: Async: Concurrent: Parallel: Logger: Temporal: ContextShift](
     serverHost: NonEmptyString,
     enableTiles: Boolean,
     path: Option[String],
