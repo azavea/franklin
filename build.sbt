@@ -5,6 +5,7 @@ lazy val commonSettings = Seq(
   name := "franklin",
   version := "0.0.1-SNAPSHOT",
   scalaVersion := "2.12.15",
+  Compile / run / mainClass := Some("com.azavea.franklin.api.Server"),
   ThisBuild / scapegoatVersion := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
   scalacOptions ~= filterConsoleScalacOptions,

@@ -15,7 +15,7 @@ services:
       - "9090:9090"
     volumes:
       - ./:/opt/src/
-    command: sbt application/run serve --db-host=pgstac
+    command: sbt "project application" "run serve"
   pgstac:
     container_name: pgstac
     image: ghcr.io/stac-utils/pgstac:v0.6.3

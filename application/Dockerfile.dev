@@ -13,4 +13,4 @@ USER franklin
 WORKDIR /opt/src
 
 
-ENTRYPOINT ["sbt", "run", "serve", "--db-host=pgstac"]
+CMD ["./sbt", '"project application"', '"run serve --db-host=pgstac"']
