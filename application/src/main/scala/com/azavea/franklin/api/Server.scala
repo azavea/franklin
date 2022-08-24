@@ -9,6 +9,7 @@ import com.azavea.franklin.api.endpoints.{
 }
 import com.azavea.franklin.api.middleware.AccessLoggingMiddleware
 import com.azavea.franklin.api.services._
+import com.azavea.franklin.api.util.SwaggerHttp4s
 import com.azavea.franklin.commands._
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.datamodel.hierarchy._
@@ -34,7 +35,6 @@ import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.openapi.circe.yaml._
-import sttp.tapir.swagger.http4s.SwaggerHttp4s
 
 import scala.concurrent.ExecutionContext
 
@@ -122,12 +122,15 @@ $$$$
         itemRoutes        = new ItemService[IO](apiConfig, xa).routes
         searchRoutes      = new SearchService[IO](apiConfig, xa).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
-        router = CORS(
-          new AccessLoggingMiddleware(
-            collectionRoutes <+> catalogRoutes <+> itemRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
-            logger
-          ).withLogging(true)
-        ).orNotFound
+        router            = CORS.policy
+                              .withAllowOriginAll
+                              .withAllowCredentials(false)
+                              .apply(
+                                new AccessLoggingMiddleware(
+                                  collectionRoutes <+> catalogRoutes <+> itemRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
+                                  logger
+                                ).withLogging(true)
+                              ).orNotFound
         serverBuilderBlocker <- Blocker[IO]
         server <- {
           BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)

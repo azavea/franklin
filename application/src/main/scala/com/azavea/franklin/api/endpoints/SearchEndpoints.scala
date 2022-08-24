@@ -1,10 +1,12 @@
 package com.azavea.franklin.api.endpoints
 
+import cats.syntax.either._
 import cats.effect._
 import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database._
+import com.azavea.franklin.error.ValidationError
 import com.azavea.franklin.datamodel.{
   SearchParameters,
   SortDefinition,
@@ -12,14 +14,20 @@ import com.azavea.franklin.datamodel.{
   TemporalExtent
 }
 import com.azavea.stac4s.Bbox
+import com.azavea.stac4s.meta.ForeignImplicits._
 import geotrellis.vector.Geometry
 import geotrellis.vector.{io => _, _}
 import io.circe.{Decoder, Encoder, Json}
 import org.http4s.Request
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.model.{Header, MediaType}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
+import sttp.model.StatusCode.BadRequest
+
+import java.time.{Instant, OffsetDateTime}
+
 
 class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
 
@@ -30,7 +38,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
 
   val searchParameters: EndpointInput[SearchParameters] =
     query[Option[Bbox]]("bbox")
-      .and(query[Option[TemporalExtent]]("datetime"))
+      .and(query[Option[String]]("datetime"))
       .and(query[Option[Geometry]]("intersects"))
       .and(query[Option[List[String]]]("collections"))
       .and(query[Option[List[String]]]("ids"))
@@ -43,7 +51,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
       .map(
         (tup: (
             Option[Bbox],
-            Option[TemporalExtent],
+            Option[String],
             Option[Geometry],
             Option[List[String]],
             Option[List[String]],
@@ -56,7 +64,7 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
         )) => {
           val (
             bbox,
-            temporalExtent,
+            datetime,
             intersects,
             collections,
             ids,
@@ -67,11 +75,26 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
             token,
             sortby
           ) = tup
+
+          def stringToRFC3339: String => Either[Throwable, Instant] =
+            (s: String) => Either.catchNonFatal(OffsetDateTime.parse(s, RFC3339formatter).toInstant)
+          val formattedDT = datetime.map({ str =>
+            val parsed = str.split("/").map({
+              case ("" | "..") => ".."
+              case other =>
+                stringToRFC3339(other) match {
+                  case Right(res) => res.toString
+                  case Left(err) => err.toString
+                }
+            })
+            if (parsed.length > 1 && str.endsWith("/") ) "bad datetime filter"
+            else parsed.mkString("/")
+          })
           // query is empty here because entering query extension fields in url params is
           // completely insane
           SearchParameters(
             bbox,
-            temporalExtent,
+            formattedDT,
             intersects,
             collections getOrElse Nil,
             ids getOrElse Nil,
@@ -102,17 +125,37 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
   val searchPostInput: EndpointInput[SearchParameters] =
     jsonBody[SearchParameters]
 
-  val searchGet: Endpoint[SearchParameters, Unit, StacSearchCollection, Fs2Streams[F]] =
+  val searchGet: Endpoint[SearchParameters, ValidationError, StacSearchCollection, Fs2Streams[F]] =
     base.get
       .in(searchParameters)
       .out(jsonBody[StacSearchCollection])
+      .out(header(Header.contentType(MediaType("application", "geo+json"))))
+      .errorOut(
+        oneOf(
+          statusMapping(
+            BadRequest,
+            jsonBody[ValidationError]
+              .description("Something was wrong with the body of the request")
+          )
+        )
+      )
       .description("Search endpoint for all collections")
       .name("search-get")
 
-  val searchPost: Endpoint[SearchParameters, Unit, StacSearchCollection, Fs2Streams[F]] =
+  val searchPost: Endpoint[SearchParameters, ValidationError, StacSearchCollection, Fs2Streams[F]] =
     base.post
       .in(searchPostInput)
       .out(jsonBody[StacSearchCollection])
+      .out(header(Header.contentType(MediaType("application", "geo+json"))))
+      .errorOut(
+        oneOf(
+          statusMapping(
+            BadRequest,
+            jsonBody[ValidationError]
+              .description("Something was wrong with the body of the request")
+          )
+        )
+      )
       .description("Search endpoint using POST for all collections")
       .name("search-post")
 

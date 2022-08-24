@@ -75,6 +75,8 @@ lazy val applicationSettings = commonSettings ++ Seq(
     case n if n.endsWith(".SF") || n.endsWith(".RSA") || n.endsWith(".DSA") =>
       MergeStrategy.discard
     case "META-INF/MANIFEST.MF" => MergeStrategy.discard
+    case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
+      MergeStrategy.singleOrError
     case _                      => MergeStrategy.first
   }
 )

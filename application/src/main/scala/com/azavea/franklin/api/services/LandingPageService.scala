@@ -38,12 +38,24 @@ class LandingPageService[F[_]: Concurrent](
       apiConfig.apiHost,
       StacLinkType.Self,
       Some(`application/json`),
-      Some("Franklin Powered Catalog")
+      Some("Franklin Powered STAC Catalog")
+    ),
+    Link(
+      apiConfig.apiHost,
+      StacLinkType.StacRoot,
+      Some(`application/json`),
+      Some("Franklin Powered STAC Catalog")
     ),
     Link(
       apiConfig.apiHost + "/open-api/spec.yaml",
       StacLinkType.ServiceDesc,
       Some(VendorMediaType("application/vnd.oai.openapi+json;version=3.0")),
+      Some("Open API 3 Documentation")
+    ),
+    Link(
+      apiConfig.apiHost + "/open-api",
+      StacLinkType.ServiceDoc,
+      Some(`text/html`),
       Some("Open API 3 Documentation")
     ),
     Link(

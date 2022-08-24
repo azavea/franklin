@@ -72,9 +72,9 @@ package object schemas {
       case Some(Left(error)) => DecodeResult.Error("invalid bbox", error)
       case _ => {
         numberList.flatMap(_.toOption).toList match {
-          case xmin :: ymin :: zmin :: xmax :: ymax :: zmax :: _ =>
+          case xmin :: ymin :: zmin :: xmax :: ymax :: zmax :: Nil =>
             DecodeResult.Value(ThreeDimBbox(xmin, ymin, zmin, xmax, ymax, zmax))
-          case xmin :: ymin :: xmax :: ymax :: _ =>
+          case xmin :: ymin :: xmax :: ymax :: Nil =>
             DecodeResult.Value(TwoDimBbox(xmin, ymin, xmax, ymax))
           case _ => DecodeResult.Mismatch("must be 4 or 6 numbers separated by commas", s)
         }
