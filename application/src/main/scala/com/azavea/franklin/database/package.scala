@@ -43,11 +43,11 @@ package object database extends CirceJsonbMeta with GeotrellisWktMeta {
       }
     })
 
-  implicit val encoderTimeInterval: Encoder[Temporal] =
-    Encoder.encodeString.contramap[Temporal] { temporal => temporal.toString }
+  implicit val encoderTimeInterval: Encoder[TimeInterval] =
+    Encoder.encodeString.contramap[TimeInterval] { interval => interval.toString }
 
-  implicit val decoderTimeInterval: Decoder[Temporal] =
-    Decoder.decodeString.emap { str => Temporal.fromString(str) }
+  implicit val decoderTimeInterval: Decoder[TimeInterval] =
+    Decoder.decodeString.emap { str => TimeInterval.fromString(str) }
 
   implicit class bboxToTwoDim(bbox: Bbox) {
 
