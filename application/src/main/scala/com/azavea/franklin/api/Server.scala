@@ -123,9 +123,7 @@ $$$$
         searchRoutes      = new SearchService[IO](apiConfig, xa).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
         router            = CORS.policy
-                              .withAllowOriginAll
-                              .withAllowCredentials(false)
-                              .apply(
+                              .withAllowOriginAll(
                                 new AccessLoggingMiddleware(
                                   collectionRoutes <+> catalogRoutes <+> itemRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
                                   logger
