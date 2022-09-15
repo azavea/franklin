@@ -1,7 +1,7 @@
 package com.azavea.franklin.commands
 
-import eu.timepit.refined.types.numeric.PosInt
 import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
+import eu.timepit.refined.types.numeric.PosInt
 
 case class ApiConfig(
     publicPort: PosInt,

@@ -1,5 +1,7 @@
 package com.azavea.franklin.api
 
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.{
   CatalogEndpoints,
   CollectionEndpoints,
@@ -13,9 +15,6 @@ import com.azavea.franklin.api.util.SwaggerHttp4s
 import com.azavea.franklin.commands._
 import com.azavea.franklin.datamodel._
 import com.azavea.franklin.datamodel.hierarchy._
-
-import cats.effect._
-import cats.syntax.all._
 import com.azavea.stac4s.{`application/json`, StacLinkType}
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import doobie.hikari.HikariTransactor
@@ -106,11 +105,10 @@ $$$$
           apiConfig.enableTransactions,
           apiConfig.path
         )
-        searchEndpoints = new SearchEndpoints[IO](apiConfig)
+        searchEndpoints  = new SearchEndpoints[IO](apiConfig)
         catalogEndpoints = new CatalogEndpoints[IO](apiConfig.path)
-        landingPage     = new LandingPageEndpoints[IO](apiConfig.path)
-        allEndpoints =
-          collectionEndpoints.endpoints ++
+        landingPage      = new LandingPageEndpoints[IO](apiConfig.path)
+        allEndpoints = collectionEndpoints.endpoints ++
           catalogEndpoints.endpoints ++
           itemEndpoints.endpoints ++
           searchEndpoints.endpoints ++
@@ -122,13 +120,14 @@ $$$$
         itemRoutes        = new ItemService[IO](apiConfig, xa).routes
         searchRoutes      = new SearchService[IO](apiConfig, xa).routes
         landingPageRoutes = new LandingPageService[IO](apiConfig).routes
-        router            = CORS.policy
-                              .withAllowOriginAll(
-                                new AccessLoggingMiddleware(
-                                  collectionRoutes <+> catalogRoutes <+> itemRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
-                                  logger
-                                ).withLogging(true)
-                              ).orNotFound
+        router = CORS.policy
+          .withAllowOriginAll(
+            new AccessLoggingMiddleware(
+              collectionRoutes <+> catalogRoutes <+> itemRoutes <+> searchRoutes <+> landingPageRoutes <+> docRoutes,
+              logger
+            ).withLogging(true)
+          )
+          .orNotFound
         serverBuilderBlocker <- Blocker[IO]
         server <- {
           BlazeServerBuilder[IO](serverBuilderBlocker.blockingContext)

@@ -21,7 +21,6 @@ import org.http4s.dsl._
 import org.http4s.headers.`Content-Type`
 import sttp.tapir.server.http4s._
 
-
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -36,14 +35,17 @@ class SearchService[F[_]: Concurrent](
 
   implicit val MySpecialPrinter = Printer(true, "")
 
-
   val mediaType: MediaType = new MediaType("application", "geo+json")
-  val contentType = `Content-Type`(mediaType)
+  val contentType          = `Content-Type`(mediaType)
 
   val searchEndpoints = new SearchEndpoints[F](apiConfig)
 
-  def search(params: SearchParameters, method: Method): F[Either[ValidationError, StacSearchCollection]] = {
-    SearchParameters.validate(params)
+  def search(
+      params: SearchParameters,
+      method: Method
+  ): F[Either[ValidationError, StacSearchCollection]] = {
+    SearchParameters
+      .validate(params)
       .map({ err => Concurrent[F].pure(Either.left[ValidationError, StacSearchCollection](err)) })
       .getOrElse {
         for {

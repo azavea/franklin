@@ -1,12 +1,10 @@
 package com.azavea.franklin.api.util
 
+import cats.syntax.option._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.datamodel.{Collection, Link}
-
-import cats.syntax.option._
 import com.azavea.stac4s._
 import org.http4s.Method
-
 
 case class UpdateCollectionLinks(apiConfig: ApiConfig) {
 
@@ -22,10 +20,10 @@ case class UpdateCollectionLinks(apiConfig: ApiConfig) {
 
   def createItemsLink(collection: Collection): Link = Link(
     s"${apiConfig.apiHost}/collections/${collection.id}/items",
-      StacLinkType.Items,
-      `application/json`.some,
-      None,
-      Method.GET.some
+    StacLinkType.Items,
+    `application/json`.some,
+    None,
+    Method.GET.some
   )
 
   def constructRootLink: Link =

@@ -8,8 +8,9 @@ import org.http4s.headers.Location
 import org.http4s.headers.`Content-Type`
 import sttp.tapir.swagger.http4s._
 
-import java.util.Properties
 import scala.concurrent.ExecutionContext
+
+import java.util.Properties
 
 /** Tapir exposes no way to adjust headers on these endpoints, so this is a slightly modified
   * version of some code provided in tapir 0.17.
@@ -20,9 +21,11 @@ class SwaggerHttp4s(
     yamlName: String = "docs.yaml",
     redirectQuery: Map[String, Seq[String]] = Map.empty
 ) {
+
   private val swaggerVersion = {
     val p = new Properties()
-    val pomProperties = getClass.getResourceAsStream("/META-INF/maven/org.webjars/swagger-ui/pom.properties")
+    val pomProperties =
+      getClass.getResourceAsStream("/META-INF/maven/org.webjars/swagger-ui/pom.properties")
     try p.load(pomProperties)
     finally pomProperties.close()
     p.getProperty("version")
@@ -33,7 +36,7 @@ class SwaggerHttp4s(
     import dsl._
 
     val mediaType: MediaType = new MediaType("application", "vnd.oai.openapi+json;version=3.0")
-    val contentType = `Content-Type`(mediaType)
+    val contentType          = `Content-Type`(mediaType)
 
     HttpRoutes.of[F] {
       case path @ GET -> Root / `contextPath` =>

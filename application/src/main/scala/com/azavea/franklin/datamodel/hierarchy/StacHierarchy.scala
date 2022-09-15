@@ -1,11 +1,9 @@
 package com.azavea.franklin.datamodel.hierarchy
 
-import com.azavea.franklin.datamodel._
-
 import cats.syntax.option._
-import com.azavea.stac4s.`application/json`
+import com.azavea.franklin.datamodel._
 import com.azavea.stac4s.StacLinkType
-
+import com.azavea.stac4s.`application/json`
 
 trait StacHierarchy { self =>
   val children: List[StacHierarchy]
@@ -17,6 +15,7 @@ trait StacHierarchy { self =>
   def childLinks(apiHost: String): List[Link] = children.map(_.childLink(apiHost))
 
   def updatePath(newPath: List[String], newChildren: List[StacHierarchy]): StacHierarchy
+
   // Recursively update paths on tree
   def updatePaths(previousPaths: List[String] = List.empty[String]): StacHierarchy = {
     val newPath = previousPaths :+ _id
@@ -45,13 +44,12 @@ trait StacHierarchy { self =>
 
   def itemLinks(apiHost: String): List[Link] = items.map { itemPath =>
     Link(
-      href=s"${apiHost}/collections/${itemPath.collectionId}/items/${itemPath.itemId}",
-      rel=StacLinkType.Item,
-      _type=`application/json`.some
+      href = s"${apiHost}/collections/${itemPath.collectionId}/items/${itemPath.itemId}",
+      rel = StacLinkType.Item,
+      _type = `application/json`.some
     )
   }
 }
-
 
 object StacHierarchy {
   def empty: StacHierarchy = RootNode(List(), List()).asInstanceOf[StacHierarchy]

@@ -37,8 +37,8 @@ class CollectionService[F[_]: Concurrent](
     logger: Logger[F]
 ) extends Http4sDsl[F] {
 
-  val apiHost               = apiConfig.apiHost
-  val enableTransactions    = apiConfig.enableTransactions
+  val apiHost            = apiConfig.apiHost
+  val enableTransactions = apiConfig.enableTransactions
 
   def listCollections(): F[Either[Unit, CollectionsResponse]] = {
     for {

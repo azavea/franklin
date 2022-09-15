@@ -1,13 +1,12 @@
 package com.azavea.franklin.datamodel.hierarchy
 
-import com.azavea.franklin.datamodel._
-
 import cats.syntax.option._
-import com.azavea.stac4s.`application/json`
+import com.azavea.franklin.datamodel._
 import com.azavea.stac4s.StacLinkType
+import com.azavea.stac4s.`application/json`
 
-
-final case class RootNode(children: List[StacHierarchy], items: List[ItemPath]) extends StacHierarchy {
+final case class RootNode(children: List[StacHierarchy], items: List[ItemPath])
+    extends StacHierarchy {
 
   def childLink(apiHost: String): Link =
     throw new Exception("No child link should be constructed for RootNode instances")
@@ -26,12 +25,12 @@ final case class RootNode(children: List[StacHierarchy], items: List[ItemPath]) 
 
   def updatePath(newPath: List[String], newChildren: List[StacHierarchy]): StacHierarchy = {
     assert(newPath.isEmpty)
-    this.copy(children=newChildren)
+    this.copy(children = newChildren)
   }
 }
 
-
 object RootNode {
+
   def apply(children: List[StacHierarchy], items: List[ItemPath]): RootNode =
     new RootNode(children, items)
       .updatePaths()

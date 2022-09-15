@@ -1,12 +1,11 @@
 package com.azavea.franklin.database
 
-import com.azavea.franklin.commands.ApiConfig
-import com.azavea.franklin.api.util._
-
 import cats.data.OptionT
-import cats.syntax.option._
 import cats.syntax.foldable._
 import cats.syntax.list._
+import cats.syntax.option._
+import com.azavea.franklin.api.util._
+import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.datamodel.{
   BulkExtent,
   Collection,
@@ -74,21 +73,34 @@ object PGStacQueries extends CirceJsonbMeta {
       .query[Unit]
       .unique
 
-  def getItem(collectionId: String, itemId: String, apiConfig: ApiConfig): ConnectionIO[Option[StacItem]] = {
+  def getItem(
+      collectionId: String,
+      itemId: String,
+      apiConfig: ApiConfig
+  ): ConnectionIO[Option[StacItem]] = {
     val params = SearchParameters.getItemById(collectionId, itemId)
     search(params, Method.GET, apiConfig)
       .map({ results => results.features.headOption })
   }
 
-  def listItems(collectionId: String, limit: Int, token: Option[String], apiConfig: ApiConfig): ConnectionIO[StacSearchCollection] = {
+  def listItems(
+      collectionId: String,
+      limit: Int,
+      token: Option[String],
+      apiConfig: ApiConfig
+  ): ConnectionIO[StacSearchCollection] = {
     val params = SearchParameters.getItemsByCollection(collectionId, limit.some, token)
     search(params, Method.GET, apiConfig)
       .map(_.copy(context = None))
   }
 
   // Search
-  def search(params: SearchParameters, method: Method, apiConfig: ApiConfig): ConnectionIO[StacSearchCollection] = {
-    val defaultLimit = params.limit.orElse(apiConfig.defaultLimit.some)
+  def search(
+      params: SearchParameters,
+      method: Method,
+      apiConfig: ApiConfig
+  ): ConnectionIO[StacSearchCollection] = {
+    val defaultLimit  = params.limit.orElse(apiConfig.defaultLimit.some)
     val updatedParams = params.copy(limit = defaultLimit).asJson.deepDropNullValues
 
     fr"SELECT search($updatedParams::jsonb)"
@@ -96,12 +108,14 @@ object PGStacQueries extends CirceJsonbMeta {
       .unique
       .map({ res =>
         method match {
-          case Method.GET  =>
+          case Method.GET =>
             UpdateSearchLinks(params, apiConfig).GET(res)
           case Method.POST =>
             UpdateSearchLinks(params, apiConfig).POST(res)
-          case _           =>
-            throw new IllegalArgumentException("Only GET and POST methods are supported as arguments to search")
+          case _ =>
+            throw new IllegalArgumentException(
+              "Only GET and POST methods are supported as arguments to search"
+            )
         }
       })
   }

@@ -1,18 +1,18 @@
 package com.azavea.franklin.api.endpoints
 
-import cats.syntax.either._
 import cats.effect._
+import cats.syntax.either._
 import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database._
-import com.azavea.franklin.error.ValidationError
 import com.azavea.franklin.datamodel.{
   SearchParameters,
   SortDefinition,
   StacSearchCollection,
   TemporalExtent
 }
+import com.azavea.franklin.error.ValidationError
 import com.azavea.stac4s.Bbox
 import com.azavea.stac4s.meta.ForeignImplicits._
 import geotrellis.vector.Geometry
@@ -20,14 +20,13 @@ import geotrellis.vector.{io => _, _}
 import io.circe.{Decoder, Encoder, Json}
 import org.http4s.Request
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.model.StatusCode.BadRequest
 import sttp.model.{Header, MediaType}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
-import sttp.model.StatusCode.BadRequest
 
 import java.time.{Instant, OffsetDateTime}
-
 
 class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
 
@@ -79,15 +78,17 @@ class SearchEndpoints[F[_]: Concurrent](apiConfig: ApiConfig) {
           def stringToRFC3339: String => Either[Throwable, Instant] =
             (s: String) => Either.catchNonFatal(OffsetDateTime.parse(s, RFC3339formatter).toInstant)
           val formattedDT = datetime.map({ str =>
-            val parsed = str.split("/").map({
-              case ("" | "..") => ".."
-              case other =>
-                stringToRFC3339(other) match {
-                  case Right(res) => res.toString
-                  case Left(err) => err.toString
-                }
-            })
-            if (parsed.length > 1 && str.endsWith("/") ) "bad datetime filter"
+            val parsed = str
+              .split("/")
+              .map({
+                case ("" | "..") => ".."
+                case other =>
+                  stringToRFC3339(other) match {
+                    case Right(res) => res.toString
+                    case Left(err)  => err.toString
+                  }
+              })
+            if (parsed.length > 1 && str.endsWith("/")) "bad datetime filter"
             else parsed.mkString("/")
           })
           // query is empty here because entering query extension fields in url params is

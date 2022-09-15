@@ -1,16 +1,16 @@
 package com.azavea.franklin.api.services
 
+import cats.data.EitherT
+import cats.effect._
+import cats.effect.concurrent.Ref
+import cats.syntax.all._
+import com.azavea.franklin.api.endpoints.CatalogEndpoints
 import com.azavea.franklin.api.endpoints.CollectionEndpoints
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel.Catalog
 import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
 import com.azavea.franklin.error.{NotFound => NF}
-
-import cats.data.EitherT
-import cats.effect._
-import cats.effect.concurrent.Ref
-import cats.syntax.all._
 import com.azavea.stac4s._
 import doobie._
 import doobie.implicits._
@@ -28,21 +28,20 @@ import sttp.tapir.server.http4s._
 import java.net.{URLDecoder, URLEncoder}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
-import com.azavea.franklin.api.endpoints.CatalogEndpoints
 
 class CatalogService[F[_]: Concurrent](
-  apiConfig: ApiConfig
+    apiConfig: ApiConfig
 )(
-  implicit async: Async[F],
-  contextShift: ContextShift[F],
-  timer: Timer[F],
-  serverOptions: Http4sServerOptions[F],
-  logger: Logger[F]
+    implicit async: Async[F],
+    contextShift: ContextShift[F],
+    timer: Timer[F],
+    serverOptions: Http4sServerOptions[F],
+    logger: Logger[F]
 ) extends Http4sDsl[F] {
 
-  val apiHost               = apiConfig.apiHost
-  val stacHierarchy         = apiConfig.stacHierarchy
-  val enableTransactions    = apiConfig.enableTransactions
+  val apiHost            = apiConfig.apiHost
+  val stacHierarchy      = apiConfig.stacHierarchy
+  val enableTransactions = apiConfig.enableTransactions
 
   def getCatalogUnique(raw_catalog_path: List[String]): F[Either[NF, Catalog]] = {
     val catalog_path = raw_catalog_path
@@ -51,11 +50,13 @@ class CatalogService[F[_]: Concurrent](
     val catalog = stacHierarchy
       .findCatalog(catalog_path)
       .map(_.createCatalog(apiHost))
-    
-    async.pure(Either.fromOption(
-      catalog,
-      NF(s"No catalog found at path ${catalog_path.mkString("/")}")
-    ))
+
+    async.pure(
+      Either.fromOption(
+        catalog,
+        NF(s"No catalog found at path ${catalog_path.mkString("/")}")
+      )
+    )
   }
 
   val catalogEndpoints =

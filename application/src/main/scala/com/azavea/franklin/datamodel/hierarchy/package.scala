@@ -2,11 +2,11 @@ package com.azavea.franklin.datamodel
 
 import cats.syntax.functor._
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto._
-
+import io.circe.syntax._
 
 package object hierarchy {
+
   implicit def stacHierarchyEncoder: Encoder[StacHierarchy] =
     Encoder.instance {
       case root @ RootNode(_, _) =>
@@ -16,6 +16,7 @@ package object hierarchy {
       case collection @ CatalogNode(_, _, _, _, _, _) =>
         collection.asJson
     }
+
   implicit def stacHierarchyDecoder: Decoder[StacHierarchy] =
     List[Decoder[StacHierarchy]](
       Decoder[CatalogNode].widen,
@@ -27,6 +28,7 @@ package object hierarchy {
   implicit lazy val itemPathDecoder: Decoder[ItemPath] = deriveDecoder
 
   implicit lazy val rootNodeEncoder: Encoder[RootNode] = deriveEncoder
+
   implicit lazy val rootNodeDecoder: Decoder[RootNode] = {
     val rawRootNodeDecoder: Decoder[RootNode] = deriveDecoder
     rawRootNodeDecoder

@@ -1,8 +1,11 @@
 package com.azavea.franklin.api.services
 
-import com.azavea.franklin.api.util.UpdateSearchLinks
-
+import cats.Applicative
+import cats.data.NonEmptyList
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.ItemEndpoints
+import com.azavea.franklin.api.util.UpdateSearchLinks
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
@@ -13,11 +16,6 @@ import com.azavea.franklin.error.{
   NotFound => NF,
   ValidationError
 }
-
-import cats.Applicative
-import cats.data.NonEmptyList
-import cats.effect._
-import cats.syntax.all._
 import com.azavea.stac4s._
 import com.azavea.stac4s.{`application/json`, StacItem}
 import doobie._

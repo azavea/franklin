@@ -3,7 +3,6 @@ package com.azavea.franklin.datamodel
 import io.circe._
 import io.circe.generic.semiauto._
 
-
 final case class SortDefinition(
     field: String,
     direction: String

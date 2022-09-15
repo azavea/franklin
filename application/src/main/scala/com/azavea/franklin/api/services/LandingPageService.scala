@@ -1,16 +1,15 @@
 package com.azavea.franklin.api.services
 
+import cats._
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.franklin
 import com.azavea.franklin.api._
 import com.azavea.franklin.api.endpoints._
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database._
-import com.azavea.franklin.datamodel.{Catalog, Link, Conformance => FranklinConformance}
 import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
-
-import cats._
-import cats.effect._
-import cats.syntax.all._
+import com.azavea.franklin.datamodel.{Catalog, Link, Conformance => FranklinConformance}
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s._
 import doobie._
@@ -21,16 +20,15 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
 
-
 class LandingPageService[F[_]: Concurrent](
-  apiConfig: ApiConfig
+    apiConfig: ApiConfig
 )(
-  implicit contextShift: ContextShift[F],
-  timer: Timer[F],
-  serverOptions: Http4sServerOptions[F]
+    implicit contextShift: ContextShift[F],
+    timer: Timer[F],
+    serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
-  val apiHost = apiConfig.apiHost
+  val apiHost       = apiConfig.apiHost
   val stacHierarchy = apiConfig.stacHierarchy
 
   val links = List(
@@ -119,8 +117,7 @@ class LandingPageService[F[_]: Concurrent](
     "https://api.stacspec.org/v1.0.0-rc.1/item-search#sort",
     "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features#sort",
     // transaction
-    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features/extensions/transaction",
-
+    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features/extensions/transaction"
   ) `combine` (if (apiConfig.enableTransactions)
                  List[String](
                    "https://api.stacspec.org/v1.0.0-rc.1/ogcapi-features/extensions/transaction"

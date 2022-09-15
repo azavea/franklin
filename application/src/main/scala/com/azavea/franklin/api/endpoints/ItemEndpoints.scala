@@ -4,6 +4,7 @@ import cats.effect.Concurrent
 import com.azavea.franklin.api.FranklinJsonPrinter._
 import com.azavea.franklin.api.schemas._
 import com.azavea.franklin.datamodel.IfMatchMode
+import com.azavea.franklin.datamodel.StacSearchCollection
 import com.azavea.franklin.error.{
   CrudError,
   InvalidPatch,
@@ -19,7 +20,6 @@ import sttp.model.StatusCode.{NotFound => NF, BadRequest, PreconditionFailed}
 import sttp.tapir._
 import sttp.tapir.codec.refined._
 import sttp.tapir.generic.auto._
-import com.azavea.franklin.datamodel.StacSearchCollection
 
 class ItemEndpoints[F[_]: Concurrent](
     defaultLimit: Int,

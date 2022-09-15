@@ -1,19 +1,17 @@
 package com.azavea.franklin.commands
 
-import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
-
 import cats.data.Validated
 import cats.syntax.all._
-import eu.timepit.refined.types.numeric.PosInt
-import io.circe.parser.decode
+import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
 import com.monovore.decline.Opts
 import com.monovore.decline.refined._
-import os.{GlobSyntax, /}
+import eu.timepit.refined.types.numeric.PosInt
+import io.circe.parser.decode
+import os.{/, GlobSyntax}
 
+import scala.io.Source
 import scala.language.postfixOps
 import scala.util.Try
-import scala.io.Source
-
 
 trait ApiOptions {
 
@@ -90,8 +88,8 @@ trait ApiOptions {
     "Path to JSON file which defines a STAC Hierarchy. Defaults to the empty StacHierarchy."
 
   private def parseHierarchyFromPath(path: String): Either[io.circe.Error, StacHierarchy] = {
-    val wd = os.pwd
-    val jsonString = os.read(wd / os.RelPath(path.split("/"), ups=1))
+    val wd         = os.pwd
+    val jsonString = os.read(wd / os.RelPath(path.split("/"), ups = 1))
     decode[StacHierarchy](jsonString)
   }
 

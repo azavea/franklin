@@ -1,12 +1,11 @@
 package com.azavea.franklin.api.util
 
+import cats.effect._
+import cats.syntax.all._
 import com.azavea.franklin.api.endpoints.ItemEndpoints
 import com.azavea.franklin.commands.ApiConfig
 import com.azavea.franklin.database.PGStacQueries
 import com.azavea.franklin.datamodel._
-
-import cats.effect._
-import cats.syntax.all._
 import com.azavea.stac4s._
 import doobie._
 import doobie.implicits._
