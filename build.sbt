@@ -77,13 +77,13 @@ lazy val applicationSettings = commonSettings ++ Seq(
     case "META-INF/MANIFEST.MF" => MergeStrategy.discard
     case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
       MergeStrategy.singleOrError
-    case _                      => MergeStrategy.first
+    case _ => MergeStrategy.first
   }
 )
 
 lazy val applicationDependencies = Seq(
-  "org.scalactic" %% "scalactic" % "3.2.12",
-  "org.scalatest" %% "scalatest" % "3.2.12" % "test",
+  "org.scalactic"                %% "scalactic"                      % "3.2.12",
+  "org.scalatest"                %% "scalatest"                      % "3.2.12" % "test",
   "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
