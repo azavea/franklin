@@ -44,7 +44,7 @@ trait StacHierarchy { self =>
         .flatMap(found =>
           Try(relativePath.tail).toOption match {
             case Some(tail) => found.findCatalog(tail)
-            case None => None
+            case None       => None
           }
         )
     }
