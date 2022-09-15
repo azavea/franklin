@@ -8,11 +8,9 @@ fi
 
 function usage() {
     echo -n \
-         "Usage: $(basename "$0") [flyway command]
+         "Usage: $(basename "$0")
 
-Runs app-backend migrations via flywaydb CLI
-
-Available flyway commands are migrate|clean|info|validate|undo|baseline|repair
+Runs pgstac migrations
 
 "
 }
