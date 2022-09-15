@@ -133,7 +133,6 @@ lazy val applicationDependencies = Seq(
   "net.postgis"                  % "postgis-geometry"                % Versions.Postgis,
   "net.postgis"                  % "postgis-jdbc"                    % Versions.Postgis,
   "org.asynchttpclient"          % "async-http-client"               % Versions.AsyncHttpClientVersion,
-  "org.flywaydb"                 % "flyway-core"                     % Versions.Flyway,
   "org.http4s"                   %% "http4s-blaze-server"            % Versions.Http4sVersion,
   "org.http4s"                   %% "http4s-blaze-server"            % Versions.Http4sVersion,
   "org.http4s"                   %% "http4s-circe"                   % Versions.Http4sVersion % Test,
