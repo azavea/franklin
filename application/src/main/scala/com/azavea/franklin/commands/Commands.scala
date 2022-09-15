@@ -9,7 +9,6 @@ import com.zaxxer.hikari.HikariDataSource
 import doobie.Transactor
 import doobie.free.connection.{rollback, setAutoCommit, unit}
 import doobie.util.transactor.Strategy
-import org.flywaydb.core.Flyway
 import sttp.client.{NothingT, SttpBackend}
 
 object Commands {
