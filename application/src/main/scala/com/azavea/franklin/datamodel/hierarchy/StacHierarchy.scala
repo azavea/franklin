@@ -5,6 +5,8 @@ import com.azavea.franklin.datamodel._
 import com.azavea.stac4s.StacLinkType
 import com.azavea.stac4s.`application/json`
 
+import scala.util.Try
+
 trait StacHierarchy { self =>
   val children: List[StacHierarchy]
   val items: List[ItemPath]
@@ -39,7 +41,12 @@ trait StacHierarchy { self =>
     } else {
       children
         .find(child => child.path == path :+ relativePath.head)
-        .flatMap(found => found.findCatalog(relativePath.tail))
+        .flatMap(found =>
+          Try(relativePath.tail).toOption match {
+            case Some(tail) => found.findCatalog(tail)
+            case None => None
+          }
+        )
     }
 
   def itemLinks(apiHost: String): List[Link] = items.map { itemPath =>

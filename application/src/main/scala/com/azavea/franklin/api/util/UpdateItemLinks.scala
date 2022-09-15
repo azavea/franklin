@@ -26,13 +26,16 @@ case class UpdateItemLinks(apiConfig: ApiConfig) {
     link.copy(href = href)
   }
 
-  def createSelfLink(item: StacItem): StacLink =
+  def createSelfLink(item: StacItem): StacLink = {
+    val collection =
+      item.collection.getOrElse(throw new IllegalStateException("Item must have collection!"))
     StacLink(
-      s"${apiConfig.apiHost}/collections/${item.collection.get}/items/${item.id}",
+      s"${apiConfig.apiHost}/collections/${collection}/items/${item.id}",
       StacLinkType.Self,
       Some(`application/json`),
       None
     )
+  }
 
   def constructRootLink: StacLink = {
     StacLink(

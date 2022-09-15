@@ -28,7 +28,7 @@ trait DatabaseOptions {
   private val databaseHost = (Opts.option[String]("db-host", help = databaseHostHelp) orElse Opts
     .env[String]("DB_HOST", help = databaseHostHelp)) withDefault ("pgstac")
 
-  private val databaseNameHelp = s"Database name to connect to. Default: 'postgis'."
+  private val databaseNameHelp = "Database name to connect to. Default: 'postgis'."
 
   private val databaseName = (Opts.option[String]("db-name", help = databaseNameHelp) orElse Opts
     .env[String]("DB_NAME", help = databaseNameHelp)) withDefault ("postgis")

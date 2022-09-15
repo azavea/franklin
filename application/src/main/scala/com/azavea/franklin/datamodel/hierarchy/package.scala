@@ -17,6 +17,7 @@ package object hierarchy {
         collection.asJson
     }
 
+  @SuppressWarnings(Array("UnsafeTraversableMethods"))
   implicit def stacHierarchyDecoder: Decoder[StacHierarchy] =
     List[Decoder[StacHierarchy]](
       Decoder[CatalogNode].widen,
