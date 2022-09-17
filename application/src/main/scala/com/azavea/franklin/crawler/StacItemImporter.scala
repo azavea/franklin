@@ -2,7 +2,7 @@ package com.azavea.franklin.crawler
 
 import cats.data.EitherT
 import cats.data.NonEmptyList
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.syntax.all._
 import com.azavea.franklin.database.{getItemsBulkExtent, StacCollectionDao, StacItemDao}
 import com.azavea.stac4s._

@@ -18,7 +18,6 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import sttp.tapir.server.http4s._
-import cats.effect.Temporal
 
 class SearchService[F[_]: Concurrent](
     apiConfig: ApiConfig,
@@ -28,7 +27,7 @@ class SearchService[F[_]: Concurrent](
     rootLink: StacLink
 )(
     implicit contextShift: ContextShift[F],
-    timerF: Temporal[F],
+    timerF: Timer[F],
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 

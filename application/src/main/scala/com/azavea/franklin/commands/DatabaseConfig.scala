@@ -1,6 +1,8 @@
 package com.azavea.franklin.api.commands
 
 import cats.effect.Async
+import cats.effect.Blocker
+import cats.effect.ContextShift
 import cats.effect.IO
 import cats.effect.Resource
 import com.zaxxer.hikari.HikariConfig
@@ -34,7 +36,7 @@ case object DatabaseConfig {
   ) extends DatabaseConfig {
     val jdbcUrl = s"jdbc:postgresql://$dbHost:$dbPort/$dbName"
 
-    def getTransactor(dryRun: Boolean) = {
+    def getTransactor(dryRun: Boolean)(implicit contextShift: ContextShift[IO]) = {
       Transactor.strategy.set(
         Transactor.fromDriverManager[IO](
           driver,
@@ -62,7 +64,7 @@ case object DatabaseConfig {
       jdbcUrl: String
   ) extends DatabaseConfig {
 
-    def getTransactor(dryRun: Boolean): Transactor[IO] = {
+    def getTransactor(dryRun: Boolean)(implicit contextShift: ContextShift[IO]): Transactor[IO] = {
       val blockingEc = ExecutionContext.fromExecutor(
         Executors.newCachedThreadPool(
           new ThreadFactory {

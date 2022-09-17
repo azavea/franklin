@@ -53,7 +53,7 @@ trait DatabaseOptions {
     help = databaseConnectionStringHelp
   ) orElse Opts.env[String]("DB_CONNECTION_STRING", help = databaseConnectionStringHelp)
 
-  def databaseConfig: Opts[DatabaseConfig] =
+  def databaseConfig(implicit contextShift: ContextShift[IO]): Opts[DatabaseConfig] =
     ((connectionString map { DatabaseConfig.FromConnectionString }) orElse (
       databaseUser,
       databasePassword,
