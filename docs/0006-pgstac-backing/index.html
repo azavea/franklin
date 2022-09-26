@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>0006-pgstac-backing · Franklin</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="# 5. PGStac Backing"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="0006-pgstac-backing · Franklin"/><meta property="og:type" content="website"/><meta property="og:url" content="https://azavea.github.io/franklin/"/><meta property="og:description" content="# 5. PGStac Backing"/><meta property="og:image" content="https://azavea.github.io/franklin/img/franklin-logo-tagline.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://azavea.github.io/franklin/img/franklin-logo-tagline.svg"/><link rel="shortcut icon" href="/franklin/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script>
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-970854-35', 'auto');
+              ga('send', 'pageview');
+            </script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed:400,700&amp;display=swap"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/franklin/js/scrollSpy.js"></script><link rel="stylesheet" href="/franklin/css/main.css"/><script src="/franklin/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/franklin/"><img class="logo" src="/franklin/img/header.png" alt="Franklin"/></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/franklin/docs/introduction" target="_self">Getting Started</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">0006-pgstac-backing</h1></header><article><div><span><h1><a class="anchor" aria-hidden="true" id="5-pgstac-backing"></a><a href="#5-pgstac-backing" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>5. PGStac Backing</h1>
+<p>Date: 2022-07-15</p>
+<h2><a class="anchor" aria-hidden="true" id="status"></a><a href="#status" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Status</h2>
+<p>Accepted</p>
+<h2><a class="anchor" aria-hidden="true" id="context"></a><a href="#context" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Context</h2>
+<p>Prior to upcoming release 2.0.0, Franklin maintenance depended on lock-step
+database migrations and code updates. This fact had a few unfortunate consequences;
+perhaps most notably: increased development costs when keeping up with the
+fast-moving STAC API specification, application complexity, and a lack of
+attention to the details of database performance.</p>
+<p>Recent work at Azavea with <a href="https://github.com/stac-utils/stac-fastapi">stac-fastapi</a>
+and <a href="https://github.com/stac-utils/pgstac">pgstac</a> has provided an alternative
+model of STAC API development. On this model, the application server is a
+very thin layer on top of a database that comes pre-baked with the tables,
+functions, and indices which optimally support stac-api operations. One
+upshot of this shift in strategies is dramatically simplified database
+interaction and a far smaller code footprint which requires maintenance. In
+place of directly managing database behavior through a complex ORM or DAO,
+pgstac enables extremely terse and readable SQL function calls which handle
+all the details inside the database.</p>
+<h2><a class="anchor" aria-hidden="true" id="tile-serving"></a><a href="#tile-serving" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Tile Serving</h2>
+<p>One cost of this update is the loss of Franklin's tiling support. As the database
+provided by pgstac doesn't concern itself with tiles, this is not something
+which can be trivially implemented. It will either require running supplementary
+migrations on top of pgstac's provided database or else separating concerns around
+tiling and previewing of assets from those concerns related to the stac-api
+itself.</p>
+<h2><a class="anchor" aria-hidden="true" id="decision"></a><a href="#decision" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Decision</h2>
+<p>Franklin will replace its 1.X database and related logic with pgstac. The initial
+push will be a considerable effort but the long-term benefits in terms of maintainability,
+consistency with the stac-api specification, amount of code, and database performance
+far outweigh the upfront investment. Additionally, by leveraging the considerable
+efforts behind pgstac, we have the opportunity to help settle questions of 'best
+practice' related to the creation of stac services and to work within a larger community
+of STAC practitioners towards a stac-api &quot;backend&quot; (in the form of a postgres
+database) which other languages and frameworks can use to quickly implement a
+stac-api server.</p>
+<h2><a class="anchor" aria-hidden="true" id="consequences"></a><a href="#consequences" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Consequences</h2>
+<p>Several tasks come out of this decision. We'll need to:</p>
+<ul>
+<li>update the CHANGELOG</li>
+<li>rewrite the entire database project around pgstac interaction</li>
+<li>update relevant models with stac-api specification 1.0 changes</li>
+<li>modify endpoints as necessary (e.g. removing those for tiling)</li>
+<li>fix or ammend the deployment as necessary</li>
+<li>cut a 2.0 release</li>
+</ul>
+</span></div></article></div><div class="docs-prevnext"></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#status">Status</a></li><li><a href="#context">Context</a></li><li><a href="#tile-serving">Tile Serving</a></li><li><a href="#decision">Decision</a></li><li><a href="#consequences">Consequences</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/franklin/" class="nav-home"><img src="/franklin/img/footer.png" alt="Franklin" width="66" height="58"/></a><div><h5>Other Projects</h5><a href="https://rasterfoundry.azavea.com">Raster Foundry</a><a href="https://rastervision.io">Raster Vision</a><a href="https://geotrellis.io">GeoTrellis</a></div><div><h5>Contribute</h5><a href="https://github.com/azavea/franklin">GitHub</a></div><div></div></section><a href="https://www.azavea.com/blog/" target="_blank" rel="noreferrer noopener" class="fbOpenSource"><img src="/franklin/img/azavea_white_solo.svg" alt="Azavea" width="170" height="45"/></a><section class="copyright">Copyright © 2022 Azavea</section></footer></div></body></html>

@@ -69,10 +69,8 @@
 <h2><a class="anchor" aria-hidden="true" id="how-do-i-get-it"></a><a href="#how-do-i-get-it" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How do I get it?</h2>
 <p><code>franklin</code> publishes <a href="https://quay.io/repository/azavea/franklin?tab=tags">docker</a> containers at available publicly that can be deployed anywhere that docker can be deployed. To run the container you need to supply a postgres database for <code>franklin</code> to connect to.</p>
 <h2><a class="anchor" aria-hidden="true" id="running-franklin"></a><a href="#running-franklin" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Running <code>franklin</code></h2>
-<p><code>franklin</code> consists of three commands:</p>
+<p>Running <code>franklin</code> requires only one command:</p>
 <ul>
-<li><code>import</code> to take an existing catalog and add it to the database</li>
-<li><code>migrate</code> to run migrations to set up the database</li>
 <li><code>serve</code> to start the API server</li>
 </ul>
 <h3><a class="anchor" aria-hidden="true" id="database-configuration"></a><a href="#database-configuration" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Database configuration</h3>
@@ -92,40 +90,13 @@
 <h3><a class="anchor" aria-hidden="true" id="example-commands"></a><a href="#example-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Example commands</h3>
 <p>The following examples show how to get started with <code>franklin</code> by importing a local catalog.</p>
 <h4><a class="anchor" aria-hidden="true" id="starting-a-database"></a><a href="#starting-a-database" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Starting a database</h4>
-<p>The first step is to find a database to connect to. If you already have a Postgres instance with PostGIS installed you can skip this step. If you do not have a database, don't worry - it's easy to get one started usind docker.</p>
-<p>Azavea maintains <a href="https://quay.io/repository/azavea/postgis?tab=tags">images</a> with PostGIS installed that are convenient to use for development. In this case we will start a container with Postgres 11 and PostGIS 2.5 installed.</p>
-<pre><code class="hljs css language-bash">docker run -d -p 5432:5432 \
-  --name franklin-database \
-  -e POSTGRES_PASSWORD=franklinsecret \
-  -e POSTGRES_USER=benjamin \
-  -e POSTGRES_DB=franklin \
-  quay.io/azavea/postgis:3-postgres12.2-slim
+<p>The first step is to find a database to connect to. This is handled for us by pgstac. Bringing up a new pgstac database can be done through docker-compose. No migrations are necessary. The bare pgstac image includes them already.</p>
+<pre><code class="hljs css language-bash">docker-compose up pgstac
 </code></pre>
-<p>This starts a database (<code>franklin-database</code>) in the background. If you want to see that it is still running you can use the <code>docker ps</code> command. If you want to stop it at some point you can use the command <code>docker stop franklin-database</code> and that will stop the container.</p>
-<h4><a class="anchor" aria-hidden="true" id="running-migrations"></a><a href="#running-migrations" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Running migrations</h4>
-<p>After starting the database you need to run migrations against it so that we can import data and start the web service. Migrations are a way to configure the database with the tables, extensions, and indices to ensure that the web service and importer can function properly. Running migrations will often be the first step involved any time that you wish to upgrade <code>franklin</code> as well. To run migrations use the following command:</p>
-<pre><code class="hljs css language-bash">docker run \
-  --link franklin-database:franklin-database \
-  quay.io/azavea/franklin:latest \
-  migrate \
-  --db-user benjamin \
-  --db-name franklin \
-  --db-password franklinsecret \
-  --db-host franklin-database
-</code></pre>
-<p>After this command the database should have a few additional tables to store geospatial data.</p>
+<p>This starts a database container (<code>pgstac</code>) in the background. If you want to see that it is still running you can use the <code>docker ps</code> command. If you want to stop it at some point you can use the command <code>docker stop pgstac</code>.</p>
 <h4><a class="anchor" aria-hidden="true" id="importing-data"></a><a href="#importing-data" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Importing data</h4>
-<p>Racecars need fuel to run and <code>franklin</code> needs data to be really useful. The <code>import</code> command allows you to import any static STAC collections or catalogs into <code>franklin</code> to serve dynamically. The following command will need adjusting depending on where the data you want to import resides. This particular example assumes that there is a local catalog ready to be imported.</p>
-<pre><code class="hljs css language-bash">docker run \
-  --link franklin-database:franklin-database \
-  -v <span class="hljs-variable">$HOME</span>/projects/franklin/data/:/opt/data/ \
-  quay.io/azavea/franklin:latest \
-  import-catalog \
-  --db-user benjamin \
-  --db-name franklin \
-  --db-password franklinsecret \
-  --db-host franklin-database \
-  --catalog-root /opt/data/catalog.json
+<p>Cars need fuel to run and <code>franklin</code> needs data to be useful. Pgstac comes with a small python library aimed at simplifying data imports. The example import provided with this library for development purposes loads a collection of NOAA imagery centered on Joplin, Missouri with the id &quot;joplin&quot;. To carry out the example import, run <code>scripts/ingest_data</code> while the <code>pgstac</code> container is running</p>
+<pre><code class="hljs css language-bash">./scripts/ingest_data
 </code></pre>
 <h4><a class="anchor" aria-hidden="true" id="running-the-service"></a><a href="#running-the-service" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Running the service</h4>
 <p>At this point you are ready to run the service. To start the service on the default port <code>9090</code> you can run the <code>serve</code> command using <code>docker run</code>:</p>
