@@ -24,7 +24,7 @@ object Versions {
   val Http4sVersion          = "0.21.33"
   val JtsVersion             = "1.18.1"
   val LogbackVersion         = "1.2.5"
-  val Log4CatsVersion        = "1.1.1"
+  val Log4CatsVersion        = "1.7.0"
   val MagnoliaVersion        = "0.17.0"
   val MonocleVersion         = "2.1.0"
   val OsLib                  = "0.8.0"
