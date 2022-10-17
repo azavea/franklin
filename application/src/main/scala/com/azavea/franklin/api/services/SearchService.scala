@@ -2,73 +2,67 @@ package com.azavea.franklin.api.services
 
 import cats.effect._
 import cats.syntax.all._
-import com.azavea.franklin.api.commands.ApiConfig
 import com.azavea.franklin.api.endpoints.SearchEndpoints
-import com.azavea.franklin.api.implicits._
-import com.azavea.franklin.database.{SearchFilters, StacItemDao}
-import com.azavea.franklin.datamodel.{Context, SearchMethod, StacSearchCollection}
-import com.azavea.stac4s.StacLink
+import com.azavea.franklin.commands.ApiConfig
+import com.azavea.franklin.database.PGStacQueries
+import com.azavea.franklin.datamodel._
+import com.azavea.franklin.error.ValidationError
+import com.azavea.stac4s._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
+import io.circe.optics.JsonPath._
 import io.circe.syntax._
 import org.http4s._
-import org.http4s.dsl.Http4sDsl
+import org.http4s.dsl._
+import org.http4s.headers.`Content-Type`
 import sttp.tapir.server.http4s._
+
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class SearchService[F[_]: Concurrent](
     apiConfig: ApiConfig,
-    defaultLimit: NonNegInt,
-    enableTiles: Boolean,
-    xa: Transactor[F],
-    rootLink: StacLink
+    xa: Transactor[F]
 )(
     implicit contextShift: ContextShift[F],
     timerF: Timer[F],
     serverOptions: Http4sServerOptions[F]
 ) extends Http4sDsl[F] {
 
-  val searchEndpoints = new SearchEndpoints[F](apiConfig.path)
+  implicit val MySpecialPrinter = Printer(true, "")
 
-  def search(searchFilters: SearchFilters, searchMethod: SearchMethod): F[Either[Unit, Json]] = {
-    val limit = searchFilters.limit getOrElse defaultLimit
-    for {
-      itemsFib <- Concurrent[F].start {
-        (StacItemDao.query
-          .filter(searchFilters)
-          .list(limit.value) flatMap { items =>
-          StacItemDao.getSearchLinks(items, limit, searchFilters, apiConfig.apiHost, searchMethod) map {
-            (items, _)
-          }
-        }).transact(xa)
-      }
-      countFib <- Concurrent[F].start {
-        StacItemDao.getSearchContext(searchFilters).transact(xa)
-      }
-      ((items, links), count) <- (itemsFib, countFib).tupled.join
-    } yield {
-      val withApiHost  = items map { _.updateLinksWithHost(apiConfig) }
-      val searchResult = StacSearchCollection(Context(items.length, count), withApiHost, links)
-      val updatedFeatures = searchResult.features
-        .map { item =>
-          ((item.collection, enableTiles) match {
-            case (Some(collectionId), true) =>
-              item.addTilesLink(apiConfig.apiHost, collectionId, item.id)
-            case _ => item
-          }).addRootLink(rootLink)
+  val mediaType: MediaType = new MediaType("application", "geo+json")
+  val contentType          = `Content-Type`(mediaType)
+
+  val searchEndpoints = new SearchEndpoints[F](apiConfig)
+
+  def search(
+      params: SearchParameters,
+      method: Method
+  ): F[Either[ValidationError, StacSearchCollection]] = {
+    SearchParameters
+      .validate(params)
+      .map({ err => Concurrent[F].pure(Either.left[ValidationError, StacSearchCollection](err)) })
+      .getOrElse {
+        for {
+          searchResults <- PGStacQueries.search(params, method, apiConfig).attempt.transact(xa)
+        } yield {
+          searchResults
+            .leftMap(_ => ValidationError("Search parameters invalid"))
         }
-
-      Either.right(searchResult.copy(features = updatedFeatures).asJson)
-    }
+      }
   }
 
+  val searchRouteGet =
+    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)(search(_, Method.GET))
+
+  val searchRoutePost =
+    Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)(search(_, Method.POST))
+
   val routes: HttpRoutes[F] =
-    Http4sServerInterpreter.toRoutes(searchEndpoints.searchGet)(searchFilters =>
-      search(searchFilters, SearchMethod.Get)
-    ) <+> Http4sServerInterpreter.toRoutes(searchEndpoints.searchPost)({
-      case searchFilters => search(searchFilters, SearchMethod.Post)
-    })
+    searchRouteGet <+> searchRoutePost
 }

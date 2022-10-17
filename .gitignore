@@ -140,3 +140,9 @@ npm-debug.log
 debug.log
 main.bundle.js.map
 data/*
+
+# copilot related artifacts
+copilot/
+
+# metals
+**/metals.sbt

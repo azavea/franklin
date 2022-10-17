@@ -4,7 +4,8 @@ lazy val commonSettings = Seq(
   organization := "com.azavea",
   name := "franklin",
   version := "0.0.1-SNAPSHOT",
-  scalaVersion := "2.12.14",
+  scalaVersion := "2.12.15",
+  Compile / run / mainClass := Some("com.azavea.franklin.api.Server"),
   ThisBuild / scapegoatVersion := Versions.ScapegoatVersion,
   autoCompilerPlugins := true,
   scalacOptions ~= filterConsoleScalacOptions,
@@ -29,7 +30,7 @@ lazy val commonSettings = Seq(
     "-Ypartial-unification",
     "-Yrangepos"
   ),
-  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.1" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.13.2" cross CrossVersion.full),
   addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
   addCompilerPlugin(
     "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full
@@ -42,22 +43,18 @@ lazy val commonSettings = Seq(
     "org.slf4j",
     "slf4j-simple"
   ),
-  unusedCompileDependenciesFilter -= moduleFilter(
-    "ch.qos.logback",
-    "logback-classic"
-  ),
   excludeDependencies ++= Seq(
     "log4j"     % "log4j",
     "org.slf4j" % "slf4j-log4j12",
     "org.slf4j" % "slf4j-nop"
   ),
-  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.27" cross CrossVersion.full),
+  addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.5.8" cross CrossVersion.full),
   addCompilerPlugin(scalafixSemanticdb)
 )
 
 // Enable a basic import sorter -- rules are defined in .scalafix.conf
 ThisBuild / scalafixDependencies +=
-  "com.nequissimus" %% "sort-imports" % "0.5.5"
+  "com.nequissimus" %% "sort-imports" % "0.6.1"
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
@@ -78,12 +75,15 @@ lazy val applicationSettings = commonSettings ++ Seq(
     case n if n.endsWith(".SF") || n.endsWith(".RSA") || n.endsWith(".DSA") =>
       MergeStrategy.discard
     case "META-INF/MANIFEST.MF" => MergeStrategy.discard
-    case _                      => MergeStrategy.first
+    case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
+      MergeStrategy.singleOrError
+    case _ => MergeStrategy.first
   }
 )
 
 lazy val applicationDependencies = Seq(
-  "ch.qos.logback"               % "logback-classic"                 % Versions.LogbackVersion,
+  "org.scalactic"                %% "scalactic"                      % "3.2.12",
+  "org.scalatest"                %% "scalatest"                      % "3.2.12" % "test",
   "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
   "com.amazonaws"                % "aws-java-sdk-s3"                 % Versions.AWSVersion,
@@ -91,13 +91,11 @@ lazy val applicationDependencies = Seq(
   "com.azavea.stac4s"            %% "core"                           % Versions.Stac4SVersion,
   "com.azavea.stac4s"            %% "testing"                        % Versions.Stac4SVersion % Test,
   "com.chuusai"                  %% "shapeless"                      % Versions.ShapelessVersion,
-  "com.github.cb372"             %% "scalacache-caffeine"            % Versions.ScalacacheVersion,
-  "com.github.cb372"             %% "scalacache-cats-effect"         % Versions.ScalacacheVersion,
-  "com.github.cb372"             %% "scalacache-core"                % Versions.ScalacacheVersion,
   "com.github.julien-truffaut"   %% "monocle-core"                   % Versions.MonocleVersion,
   "com.github.julien-truffaut"   %% "monocle-macro"                  % Versions.MonocleVersion,
   "com.google.guava"             % "guava"                           % Versions.GuavaVersion,
   "com.lightbend"                %% "emoji"                          % Versions.EmojiVersion,
+  "com.lihaoyi"                  %% "os-lib"                         % Versions.OsLib,
   "com.monovore"                 %% "decline-refined"                % Versions.DeclineVersion,
   "com.monovore"                 %% "decline"                        % Versions.DeclineVersion,
   "com.propensive"               %% "magnolia"                       % Versions.MagnoliaVersion,
@@ -131,10 +129,10 @@ lazy val applicationDependencies = Seq(
   "io.circe"                     %% "circe-parser"                   % Versions.CirceVersion,
   "io.circe"                     %% "circe-refined"                  % Versions.CirceVersion,
   "io.circe"                     %% "circe-testing"                  % Versions.CirceVersion % Test,
+  "io.circe"                     %% "circe-optics"                   % Versions.CirceVersion,
   "net.postgis"                  % "postgis-geometry"                % Versions.Postgis,
   "net.postgis"                  % "postgis-jdbc"                    % Versions.Postgis,
   "org.asynchttpclient"          % "async-http-client"               % Versions.AsyncHttpClientVersion,
-  "org.flywaydb"                 % "flyway-core"                     % Versions.Flyway,
   "org.http4s"                   %% "http4s-blaze-server"            % Versions.Http4sVersion,
   "org.http4s"                   %% "http4s-blaze-server"            % Versions.Http4sVersion,
   "org.http4s"                   %% "http4s-circe"                   % Versions.Http4sVersion % Test,
@@ -148,6 +146,7 @@ lazy val applicationDependencies = Seq(
   "org.locationtech.geotrellis"  %% "geotrellis-vector"              % Versions.GeoTrellisVersion,
   "org.locationtech.jts"         % "jts-core"                        % Versions.JtsVersion,
   "org.scalacheck"               %% "scalacheck"                     % Versions.ScalacheckVersion % Test,
+  "org.scala-lang"               % "scala-reflect"                   % "2.12.15",
   "org.slf4j"                    % "slf4j-api"                       % Versions.Slf4jVersion,
   "org.slf4j"                    % "slf4j-simple"                    % Versions.Slf4jVersion,
   "org.specs2"                   %% "specs2-core"                    % Versions.Specs2Version % Test,

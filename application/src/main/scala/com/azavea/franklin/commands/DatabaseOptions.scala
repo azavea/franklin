@@ -1,4 +1,4 @@
-package com.azavea.franklin.api.commands
+package com.azavea.franklin.commands
 
 import cats.effect._
 import cats.syntax.all._
@@ -26,12 +26,12 @@ trait DatabaseOptions {
   private val databaseHostHelp = "Database host to connect to."
 
   private val databaseHost = (Opts.option[String]("db-host", help = databaseHostHelp) orElse Opts
-    .env[String]("DB_HOST", help = databaseHostHelp)) withDefault ("database.service.internal")
+    .env[String]("DB_HOST", help = databaseHostHelp)) withDefault ("pgstac")
 
-  private val databaseNameHelp = s"Database name to connect to. Default: '$databaseOptionDefault'."
+  private val databaseNameHelp = "Database name to connect to. Default: 'postgis'."
 
   private val databaseName = (Opts.option[String]("db-name", help = databaseNameHelp) orElse Opts
-    .env[String]("DB_NAME", help = databaseNameHelp)) withDefault (databaseOptionDefault)
+    .env[String]("DB_NAME", help = databaseNameHelp)) withDefault ("postgis")
 
   private val databasePasswordHelp = s"Database password to use. Default: '$databaseOptionDefault'."
 
@@ -52,7 +52,7 @@ trait DatabaseOptions {
       databaseHost,
       databasePort,
       databaseName
-    ) mapN DatabaseConfig).validate(
+    ) mapN DatabaseConfig.FromComponents).validate(
       e":boom: Unable to connect to database - please ensure database is configured and listening at entered port"
     ) { config =>
       val xa =
