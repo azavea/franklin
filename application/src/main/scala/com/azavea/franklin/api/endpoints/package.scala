@@ -1,9 +1,11 @@
 package com.azavea.franklin.api
 
 import cats.data.{NonEmptyList, Validated}
+import com.azavea.franklin.datamodel._
 import io.circe.syntax._
 import io.circe.{CursorOp, Decoder, DecodingFailure, Encoder, Json, ParsingFailure}
 import sttp.tapir.Codec.JsonCodec
+import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.SchemaType._
 import sttp.tapir._
 
