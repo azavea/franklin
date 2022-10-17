@@ -16,7 +16,7 @@ import com.azavea.stac4s.syntax._
 import com.azavea.stac4s.{StacItem, StacLink, StacLinkType}
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.string.NonEmptyString
-import org.typelevel.log4cats.Logger
+import io.chrisdavenport.log4cats.Logger
 import io.circe.Encoder
 import io.circe.Json
 import io.circe.schema.Schema

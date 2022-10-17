@@ -8,7 +8,7 @@ import com.azavea.franklin.database.{getItemsBulkExtent, StacCollectionDao, Stac
 import com.azavea.stac4s._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import sttp.client.{NothingT, SttpBackend}
 
 class StacItemImporter(val collectionId: String, val itemUris: NonEmptyList[String])(

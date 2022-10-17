@@ -36,7 +36,7 @@ import geotrellis.raster.geotiff.GeoTiffRasterSource
 import geotrellis.raster.render.ColorRamps.greyscale
 import geotrellis.raster.render.{Implicits => RenderImplicits}
 import geotrellis.raster.{io => _, _}
-import org.typelevel.log4cats.Logger
+import io.chrisdavenport.log4cats.Logger
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.HttpRoutes
