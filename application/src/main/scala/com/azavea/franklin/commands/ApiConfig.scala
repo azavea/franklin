@@ -1,7 +1,7 @@
-package com.azavea.franklin.api.commands
+package com.azavea.franklin.commands
 
-import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
-import eu.timepit.refined.types.string.NonEmptyString
+import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
+import eu.timepit.refined.types.numeric.PosInt
 
 case class ApiConfig(
     publicPort: PosInt,
@@ -9,13 +9,20 @@ case class ApiConfig(
     host: String,
     path: Option[String],
     scheme: String,
-    defaultLimit: NonNegInt,
+    defaultLimit: Int,
     enableTransactions: Boolean,
-    enableTiles: Boolean,
-    runMigrations: Boolean
+    stacHierarchy: StacHierarchy
 ) {
 
-  val apiHost: NonEmptyString =
+  def getHost(port: PosInt, host: String, scheme: String, path: String): String = {
+    (port.value, scheme) match {
+      case (443, "https") => s"$scheme://$host$path"
+      case (80, "http")   => s"$scheme://$host$path"
+      case _              => s"$scheme://$host:$port$path"
+    }
+  }
+
+  val apiHost: String =
     getHost(publicPort, host, scheme, path map { s =>
       s"/${s.stripPrefix("/").stripSuffix("/")}"
     } getOrElse "")
