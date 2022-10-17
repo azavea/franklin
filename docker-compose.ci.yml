@@ -3,8 +3,8 @@ services:
   api:
     image: "franklin:${GIT_COMMIT}"
     build:
-      context: application
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: application/Dockerfile
 
   shellcheck:
     image: koalaman/shellcheck:stable

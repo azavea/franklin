@@ -1,17 +1,63 @@
 version: '2.3'
 services:
-  database:
-    image: quay.io/azavea/postgis:3-postgres12.2-slim
+  franklin:
+    container_name: franklin-app
+    build:
+      context: .
+      dockerfile: application/Dockerfile.dev
     environment:
+      - PGHOST=pgstac
+      - PGDATABASE=postgis
+      - PGUSER=franklin
+      - PGPASSWORD=franklin
+      - API_STAC_HIERARCHY=data-files/hierarchy_example.json
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./:/opt/src/
+    command: sbt "project application" "run serve"
+  pgstac:
+    container_name: pgstac
+    image: ghcr.io/stac-utils/pgstac:v0.6.3
+    environment:
+      - PGUSER=franklin
+      - PGPASSWORD=franklin
+      - PGHOST=pgstac
+      - PGDATABASE=postgis
+
       - POSTGRES_USER=franklin
       - POSTGRES_PASSWORD=franklin
-      - POSTGRES_DB=franklin
+      - POSTGRES_DB=postgis
     ports:
       - "5432:5432"
+    volumes:
+      - franklin-pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "franklin"]
       interval: 3s
       timeout: 3s
       retries: 3
       start_period: 5s
-    command: postgres -c log_statement=all
+    command: postgres -N 500
+  pypgstac:
+    container_name: python-scripts
+    build:
+      context: .
+      dockerfile: pypgstac/Dockerfile
+    environment:
+      - PGHOST=pgstac
+      - PGPORT=5432
+      - PGDATABASE=postgis
+      - PGUSER=franklin
+      - PGPASSWORD=franklin
+    volumes:
+      - ./pypgstac/bin:/opt/src/bin
+      - ./scripts:/opt/src/scripts
+      - ./testdata:/opt/src/testdata
+      - ./data-files:/opt/src/data-files
+
+volumes:
+  franklin-pgdata:
+networks:
+  default:
+    name: franklin-dev-network
