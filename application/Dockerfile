@@ -9,7 +9,7 @@ RUN \
       -u 1000 \
       franklin
 
-COPY ./target/scala-2.12/franklin-api-assembly.jar /var/lib/franklin/
+COPY ./application/target/scala-2.12/franklin-api-assembly.jar /var/lib/franklin/
 
 USER franklin
 WORKDIR /var/lib/franklin

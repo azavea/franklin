@@ -1,10 +1,9 @@
 package com.azavea.franklin.datamodel
 
-import eu.timepit.refined.types.string.NonEmptyString
 import io.circe._
 import io.circe.generic.semiauto._
 
-case class Conformance(conformsTo: List[NonEmptyString])
+case class Conformance(conformsTo: List[String])
 
 object Conformance {
   implicit val conformanceDecoder: Decoder[Conformance] = deriveDecoder[Conformance]

@@ -24,7 +24,7 @@ then
             ;;
         *)
             echo -e "\e[32m[franklin] Starting API service\e[0m"
-            bloop run application -- serve --db-host=localhost "$@"
+            docker-compose up pgstac
             ;;
     esac
 fi

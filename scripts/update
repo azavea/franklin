@@ -19,14 +19,13 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         usage
         ;;
     *)
-        echo -e "\e[32m[franklin] Configuring bloop...\e[0m"
-        ./sbt ";bloopInstall; scalafmt; scalafmtSbt"
-        echo -e "\e[32m[franklin] Configuring npm...\e[0m"
-        npm install
-        npm run build
+        docker-compose up --remove-orphans -d pgstac
+
         echo -e "\e[32m[franklin] Running migrations...\e[0m"
-        docker-compose up -d database
         ./scripts/migrate
+
+        echo -e "\e[32m[franklin] Loading development data...\e[0m"
+        ./scripts/ingest_data
         ;;
     esac
 fi
