@@ -1,0 +1,43 @@
+#! /bin/bash
+
+set -e
+
+if [[ -n "${FRANKLIN_DEBUG}" ]]; then
+    set -x
+fi
+
+function usage() {
+    echo -ne \
+        "Usage: $(basename "${0}")
+Run linters and tests.
+"
+}
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    if [ "${1:-}" = "--help" ]; then
+        usage
+    else
+        echo "Linting Bash scripts"
+        if [[ $CI ]]; then
+            # create a dummy container which will hold a volume with our sources
+            docker create -v /usr/local/src --name sources alpine:latest /bin/true
+            # copy sources into this volume
+            docker cp scripts sources:/usr/local/src
+            # start an application container using this volume
+            docker run \
+                --volumes-from sources \
+                -w /usr/local/src \
+                koalaman/shellcheck:stable \
+                scripts/*
+        else
+            docker-compose \
+                -f docker-compose.ci.yml \
+                run --rm --no-deps shellcheck \
+                scripts/*
+        fi
+
+        echo "Executing Scala tests"
+        ./sbt ";scalafix --check;Test/scalafix --check;scalafmtCheck;Test/scalafmtCheck;scalafmtSbtCheck;scapegoat;undeclaredCompileDependenciesTest;unusedCompileDependenciesTest;test"
+
+    fi
+fi
