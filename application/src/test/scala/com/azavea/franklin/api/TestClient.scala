@@ -11,11 +11,11 @@ import io.circe.syntax._
 import org.http4s.circe.CirceEntityDecoder._
 import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.implicits._
+import org.http4s.util.CaseInsensitiveString
 import org.http4s.{Method, Request, Uri}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import org.typelevel.ci.CIString
 
 /** Why sync? Because CirceEntityDecoder requires it :sad-trombone:
   *
@@ -60,7 +60,7 @@ class TestClient[F[_]: Sync](
       )
       item <- resp.as[StacItem]
       etag <- resp.headers
-        .find(h => h.name == CIString("etag"))
+        .find(h => h.name == CaseInsensitiveString("etag"))
         .map(h => h.value.pure[F]) getOrElse {
         MonadError[F, Throwable].raiseError(new Exception("No etag in response!"))
       }

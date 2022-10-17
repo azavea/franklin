@@ -23,7 +23,6 @@ import org.specs2.{ScalaCheck, Specification}
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import org.typelevel.ci._
 
 class CollectionItemsServiceSpec
     extends Specification
@@ -155,8 +154,8 @@ class CollectionItemsServiceSpec
               val request = Request[IO](
                 method = Method.PUT,
                 Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
-                headers = Headers(Header("If-Match", (if (mode == IfMatchMode.YOLO) { "*" }
-                                                         else { s"$etag" })))Header.Rawci"If-Match"
+                headers = Headers.of(Header("If-Match", (if (mode == IfMatchMode.YOLO) { "*" }
+                                                         else { s"$etag" })))
               ).withEntity(toUpdate)
               (for {
                 response <- collectionItemsService.routes.run(request)
@@ -197,8 +196,8 @@ class CollectionItemsServiceSpec
               val request = Request[IO](
                 method = Method.PATCH,
                 Uri.unsafeFromString(s"/collections/$encodedCollectionId/items/$encodedItemId"),
-                headers = Headers(Header("If-Match", (if (mode == IfMatchMode.YOLO) { "*" }
-                                                         else { s"$etag" })))Header.Rawci"If-Match"
+                headers = Headers.of(Header("If-Match", (if (mode == IfMatchMode.YOLO) { "*" }
+                                                         else { s"$etag" })))
               ).withEntity(patch)
 
               (for {
