@@ -18,8 +18,8 @@ then
         usage
     else
         docker-compose -f "${DIR}/../docker-compose.yml" \
-                       run --rm -e PGPASSWORD=franklin \
-                       database psql -U franklin -h database
+            run --rm -e PGPASSWORD=franklin \
+            pgstac psql -U franklin -h pgstac
     fi
     exit
 fi
