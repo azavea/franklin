@@ -1,4 +1,4 @@
-package com.azavea.franklin.api.commands
+package com.azavea.franklin.commands
 
 import cats.effect.Async
 import cats.effect.Blocker
@@ -58,6 +58,7 @@ case object DatabaseConfig {
       config.setDriverClassName(driver)
       config
     }
+
   }
 
   final case class FromConnectionString(

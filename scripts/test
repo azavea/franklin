@@ -37,7 +37,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
         fi
 
         echo "Executing Scala tests"
-        ./sbt ";scalafix --check;Test/scalafix --check;scalafmtCheck;Test/scalafmtCheck;scalafmtSbtCheck;scapegoat;undeclaredCompileDependenciesTest;unusedCompileDependenciesTest;test"
+        ./sbt ";scalafix --check;Test/scalafix --check;scalafmtCheck;Test/scalafmtCheck;scalafmtSbtCheck;scapegoat;undeclaredCompileDependenciesTest;test"
 
     fi
 fi

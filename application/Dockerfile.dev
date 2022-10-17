@@ -1,0 +1,16 @@
+FROM hseeberger/scala-sbt:8u222_1.3.5_2.13.1
+
+RUN \
+      addgroup --system franklin \
+      && adduser --system --disabled-login --disabled-password \
+      --home /var/lib/franklin \
+      --shell /sbin/nologin \
+      --ingroup franklin \
+      -u 1000 \
+      franklin
+
+USER franklin
+WORKDIR /opt/src
+
+
+CMD ["./sbt", '"project application"', '"run serve --db-host=pgstac"']

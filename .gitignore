@@ -143,3 +143,6 @@ data/*
 
 # copilot related artifacts
 copilot/
+
+# metals
+**/metals.sbt
