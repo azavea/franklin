@@ -34,7 +34,7 @@ object Versions {
   val ScalacheckVersion      = "1.16.0"
   val ScapegoatVersion       = "1.4.11"
   val ShapelessVersion       = "2.3.9"
-  val Slf4jVersion           = "2.0.5"
+  val Slf4jVersion           = "2.0.6"
   val Specs2Version          = "4.19.0"
   val Stac4SVersion          = "0.8.1"
   val SttpClientVersion      = "2.3.0"
