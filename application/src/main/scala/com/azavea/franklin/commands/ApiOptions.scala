@@ -1,12 +1,15 @@
-package com.azavea.franklin.api.commands
+package com.azavea.franklin.commands
 
 import cats.data.Validated
 import cats.syntax.all._
+import com.azavea.franklin.datamodel.hierarchy.StacHierarchy
 import com.monovore.decline.Opts
 import com.monovore.decline.refined._
-import eu.timepit.refined.types.numeric.NonNegInt
 import eu.timepit.refined.types.numeric.PosInt
+import io.circe.parser.decode
+import os.{/, GlobSyntax}
 
+import scala.io.Source
 import scala.language.postfixOps
 import scala.util.Try
 
@@ -55,14 +58,14 @@ trait ApiOptions {
       "Scheme must be either 'http' or 'https'"
     )(s => (s == "http" || s == "https"))
 
-  private val defaultLimitDefault = NonNegInt(30)
+  private val defaultLimitDefault = 30
 
   private val defaultLimitHelp =
     s"Default limit for items returned in paginated responses. Default: '$defaultLimitDefault'."
 
   private val defaultLimit = Opts
-    .option[NonNegInt]("default-limit", help = defaultLimitHelp) orElse Opts
-    .env[NonNegInt]("API_DEFAULT_LIMIT", help = defaultLimitHelp) withDefault (defaultLimitDefault)
+    .option[Int]("default-limit", help = defaultLimitHelp) orElse Opts
+    .env[Int]("API_DEFAULT_LIMIT", help = defaultLimitHelp) withDefault (defaultLimitDefault)
 
   private val enableTransactionsHelp =
     "Whether to respond to transaction requests, like adding or updating items. Default: 'false'."
@@ -81,24 +84,30 @@ trait ApiOptions {
         .toValidatedNel
     } withDefault (false)
 
-  private val enableTilesHelp = "Whether to include tile endpoints. Default: 'false'."
+  private val stacHierarchyHelp =
+    "Path to JSON file which defines a STAC Hierarchy. Defaults to the empty StacHierarchy."
 
-  private val enableTiles = Opts
-    .flag(
-      "with-tiles",
-      help = enableTilesHelp
-    )
-    .orFalse orElse Opts
-    .env[String]("API_WITH_TILES", help = enableTilesHelp, metavar = "true||false")
-    .mapValidated { s =>
+  private def parseHierarchyFromPath(path: String): Either[io.circe.Error, StacHierarchy] = {
+    val wd         = os.pwd
+    val jsonString = os.read(wd / os.RelPath(path.split("/"), ups = 1))
+    decode[StacHierarchy](jsonString)
+  }
+
+  private val stacHierarchy = Opts
+    .option[String]("stac-hierarchy", help = stacHierarchyHelp)
+    .mapValidated { path =>
       Validated
-        .fromTry(Try(s.toBoolean))
-        .leftMap(_ => s"Expected to find a value that can convert to a Boolean, but got $s")
+        .fromEither(parseHierarchyFromPath(path))
+        .leftMap(_ => s"Unable to parse a StacHierarchy at $path")
         .toValidatedNel
-    } withDefault (false)
-
-  private val runMigrations =
-    Opts.flag("run-migrations", "Run migrations before the API server starts").orFalse
+    } orElse Opts
+    .env[String]("API_STAC_HIERARCHY", help = stacHierarchyHelp)
+    .mapValidated { path =>
+      Validated
+        .fromEither(parseHierarchyFromPath(path))
+        .leftMap(_ => s"Unable to parse a StacHierarchy at $path")
+        .toValidatedNel
+    } withDefault (StacHierarchy.empty)
 
   val apiConfig: Opts[ApiConfig] = (
     externalPort,
@@ -108,7 +117,6 @@ trait ApiOptions {
     apiScheme,
     defaultLimit,
     enableTransactions,
-    enableTiles,
-    runMigrations
-  ) mapN ApiConfig
+    stacHierarchy
+  ) mapN ApiConfig.apply
 }

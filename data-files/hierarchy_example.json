@@ -1,0 +1,56 @@
+{
+    "children": [
+      {
+        "collectionId": "joplin"
+      },
+      {
+        "catalogId": "joplin-test",
+        "title": null,
+        "description": "A test of catalogs",
+        "children": [
+          {
+            "catalogId": "sub-joplin",
+            "title": null,
+            "description": "A test of nested catalogs",
+            "children": [
+              {
+                "collectionId": "joplin"
+              }
+            ],
+            "items": [
+              {
+                "collectionId": "joplin",
+                "itemId": "fe916452-ba6f-4631-9154-c249924a122d"
+              }
+            ],
+            "path": [
+              "joplin-test",
+              "sub-joplin"
+            ]
+          },
+          {
+            "collectionId": "joplin"
+          }
+        ],
+        "items": [
+          {
+            "collectionId": "joplin",
+            "itemId": "fe916452-ba6f-4631-9154-c249924a122d"
+          }
+        ],
+        "path": [
+          "joplin-test"
+        ]
+      }
+    ],
+    "items": [
+      {
+        "collectionId": "joplin",
+        "itemId": "85f923a5-a81f-4acd-bc7f-96c7c915f357"
+      },
+      {
+        "collectionId": "joplin",
+        "itemId": "fe916452-ba6f-4631-9154-c249924a122d"
+      }
+    ]
+  }
