@@ -21,7 +21,7 @@ object Versions {
   val Fs2Version             = "2.5.10"
   val GeoTrellisVersion      = "3.6.0"
   val GuavaVersion           = "31.1-jre"
-  val HikariVersion          = "5.0.1"
+  val HikariVersion          = "4.0.3"
   val Http4sVersion          = "0.21.33"
   val JtsVersion             = "1.16.1"
   val LogbackVersion         = "1.2.5"
