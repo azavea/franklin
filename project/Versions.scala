@@ -28,7 +28,7 @@ object Versions {
   val MagnoliaVersion        = "0.17.0"
   val MonocleVersion         = "2.1.0"
   val OsLib                  = "0.9.1"
-  val Postgis                = "2.5.1"
+  val Postgis                = "2021.1.0"
   val PureConfig             = "0.12.1"
   val Refined                = "0.9.29"
   val ScalacheckVersion      = "1.16.0"
