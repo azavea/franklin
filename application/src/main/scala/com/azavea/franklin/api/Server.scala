@@ -26,7 +26,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits.{http4sLiteralsSyntax => _, _}
-import org.http4s.server.blaze._
+import org.http4s.blaze.server._
 import org.http4s.server.middleware._
 import org.http4s.server.{Router, Server => HTTP4sServer}
 import sttp.client.SttpBackend
