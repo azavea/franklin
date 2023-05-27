@@ -82,7 +82,7 @@ lazy val applicationSettings = commonSettings ++ Seq(
 )
 
 lazy val applicationDependencies = Seq(
-  "org.scalactic"                %% "scalactic"                      % "3.2.15",
+  "org.scalactic"                %% "scalactic"                      % "3.2.16",
   "org.scalatest"                %% "scalatest"                      % "3.2.15" % "test",
   "software.amazon.awssdk"       % "sdk-core"                        % Versions.AWSSdk2Version,
   "com.amazonaws"                % "aws-java-sdk-core"               % Versions.AWSVersion,
