@@ -6,7 +6,7 @@ object Versions {
 // The easiest fix for now is to rollback dep to the last and the most tested version,
 // which is the same as that in the GeoTrellis
 // https://github.com/locationtech/geotrellis/blob/v3.6.0/project/Dependencies.scala#L86
-  val AWSSdk2Version         = "2.20.74"
+  val AWSSdk2Version         = "2.20.83"
   val CatsEffectVersion      = "2.5.4"
   val CatsScalacheckVersion  = "0.3.1"
   val CatsVersion            = "2.9.0"
@@ -19,7 +19,7 @@ object Versions {
   val EmojiVersion           = "1.2.3"
   val Fs2Version             = "2.5.11"
   val GeoTrellisVersion      = "3.6.3"
-  val GuavaVersion           = "32.0.0-jre"
+  val GuavaVersion           = "32.0.1-jre"
   val HikariVersion          = "5.0.1"
   val Http4sVersion          = "0.21.34"
   val JtsVersion             = "1.18.1"
@@ -38,7 +38,7 @@ object Versions {
   val Specs2Version          = "4.20.0"
   val Stac4SVersion          = "0.8.1"
   val SttpClientVersion      = "2.3.0"
-  val SttpShared             = "1.3.14"
+  val SttpShared             = "1.3.15"
   val SttpModelVersion       = "1.4.26"
   val TapirVersion           = "0.17.20"
   val TapirOpenAPIVersion    = "0.17.20"
