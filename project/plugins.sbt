@@ -1,4 +1,4 @@
-addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"              % "0.1.22")
+addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"              % "0.4.4")
 addSbtPlugin("io.spray"                  % "sbt-revolver"              % "0.10.0")
 addSbtPlugin("org.scalameta"             % "sbt-scalafmt"              % "2.5.0")
 addSbtPlugin("com.sksamuel.scapegoat"    %% "sbt-scapegoat"            % "1.2.1")
