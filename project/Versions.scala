@@ -17,7 +17,7 @@ object Versions {
   val DisciplineScalatest    = "2.1.5"
   val DoobieVersion          = "0.13.4"
   val EmojiVersion           = "1.2.3"
-  val Fs2Version             = "2.5.11"
+  val Fs2Version             = "3.9.3"
   val GeoTrellisVersion      = "3.6.3"
   val GuavaVersion           = "32.1.3-jre"
   val HikariVersion          = "5.1.0"
