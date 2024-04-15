@@ -27,7 +27,7 @@ object Versions {
   val Log4CatsVersion        = "1.1.1"
   val MagnoliaVersion        = "0.17.0"
   val MonocleVersion         = "2.1.0"
-  val OsLib                  = "0.9.3"
+  val OsLib                  = "0.10.0"
   val Postgis                = "2.5.1"
   val PureConfig             = "0.12.1"
   val Refined                = "0.9.29"
