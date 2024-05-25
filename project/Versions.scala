@@ -14,7 +14,7 @@ object Versions {
   val CirceJsonSchemaVersion = "0.2.0"
   val CirceVersion           = "0.14.1"
   val DeclineVersion         = "2.2.0"
-  val DisciplineScalatest    = "2.1.5"
+  val DisciplineScalatest    = "2.3.0"
   val DoobieVersion          = "0.13.4"
   val EmojiVersion           = "1.2.3"
   val Fs2Version             = "2.5.12"
