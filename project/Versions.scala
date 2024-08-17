@@ -19,7 +19,7 @@ object Versions {
   val EmojiVersion           = "1.2.3"
   val Fs2Version             = "2.5.12"
   val GeoTrellisVersion      = "3.6.3"
-  val GuavaVersion           = "33.2.1-jre"
+  val GuavaVersion           = "33.3.0-jre"
   val HikariVersion          = "5.1.0"
   val Http4sVersion          = "0.21.34"
   val JtsVersion             = "1.18.1"
