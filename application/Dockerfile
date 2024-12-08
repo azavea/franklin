@@ -1,4 +1,6 @@
-FROM openjdk:8-jre-slim
+FROM quay.io/azavea/franklin:adf474c AS franklin
+
+FROM openjdk:11-jre-slim
 
 RUN \
       addgroup --system franklin \
@@ -9,9 +11,9 @@ RUN \
       -u 1000 \
       franklin
 
-COPY ./application/target/scala-2.12/franklin-api-assembly.jar /var/lib/franklin/
+COPY --from=franklin /var/lib/franklin/ /var/lib/franklin/
 
 USER franklin
 WORKDIR /var/lib/franklin
 
-ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-jar", "franklin-api-assembly.jar"]
+ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-jar", "franklin-api-assembly.jar"]

@@ -1,4 +1,6 @@
-FROM hseeberger/scala-sbt:8u222_1.3.5_2.13.1
+FROM quay.io/azavea/franklin:adf474c AS franklin
+
+FROM openjdk:11-jre-slim
 
 RUN \
       addgroup --system franklin \
@@ -9,8 +11,11 @@ RUN \
       -u 1000 \
       franklin
 
+COPY --from=franklin /var/lib/franklin/ /var/lib/franklin/
+
 USER franklin
-WORKDIR /opt/src
+WORKDIR /var/lib/franklin
 
+ADD ./data-files /var/lib/data-files
 
-CMD ["./sbt", '"project application"', '"run serve --db-host=pgstac"']
+ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-jar", "franklin-api-assembly.jar"]
