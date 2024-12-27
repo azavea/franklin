@@ -1,4 +1,4 @@
-version: '2.3'
+# version: '2.3'
 services:
   franklin:
     container_name: franklin-app
@@ -11,11 +11,12 @@ services:
       - PGUSER=franklin
       - PGPASSWORD=franklin
       - API_STAC_HIERARCHY=data-files/hierarchy_example.json
+      - CORS_ALLOWED_ORIGINS:*
     ports:
       - "9090:9090"
     volumes:
       - ./:/opt/src/
-    command: sbt "project application" "run serve"
+    command: serve
   pgstac:
     container_name: pgstac
     image: ghcr.io/stac-utils/pgstac:v0.6.3
