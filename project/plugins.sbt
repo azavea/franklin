@@ -7,4 +7,4 @@ addSbtPlugin("com.eed3si9n"              % "sbt-assembly"              % "0.14.9
 addSbtPlugin("com.github.cb372"          % "sbt-explicit-dependencies" % "0.3.1")
 addSbtPlugin("org.jmotor.sbt"            % "sbt-dependency-updates"    % "1.2.9")
 addSbtPlugin("org.scalameta"             % "sbt-mdoc"                  % "2.7.2")
-addSbtPlugin("ch.epfl.scala"             % "sbt-bloop"                 % "2.0.13")
+addSbtPlugin("ch.epfl.scala"             % "sbt-bloop"                 % "2.0.14")
