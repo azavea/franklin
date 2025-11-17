@@ -1,6 +1,6 @@
 // Versions
 object Versions {
-  val AsyncHttpClientVersion = "3.0.3"
+  val AsyncHttpClientVersion = "3.0.4"
   val AWSVersion             = "1.11.751"
 // There were issues with accessing S3 from the Fargate ECS instance
 // The easiest fix for now is to rollback dep to the last and the most tested version,
