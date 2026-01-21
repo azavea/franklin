@@ -21,8 +21,8 @@ import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import eu.timepit.refined.auto._
 import io.chrisdavenport.log4cats
-import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.SelfAwareStructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits.{http4sLiteralsSyntax => _, _}

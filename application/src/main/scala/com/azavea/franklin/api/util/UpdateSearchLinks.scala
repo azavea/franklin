@@ -12,7 +12,7 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
 import eu.timepit.refined.types.numeric.NonNegInt
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe._
 import io.circe.syntax._
 import org.http4s.Method

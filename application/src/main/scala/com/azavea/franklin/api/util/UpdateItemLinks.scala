@@ -11,7 +11,7 @@ import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.auto._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe._
 import org.http4s.Method
 
