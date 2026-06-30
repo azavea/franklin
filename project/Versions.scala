@@ -30,7 +30,7 @@ object Versions {
   val OsLib                  = "0.11.6"
   val Postgis                = "2.5.1"
   val PureConfig             = "0.12.1"
-  val Refined                = "0.11.3"
+  val Refined                = "0.11.4"
   val ScalacheckVersion      = "1.19.0"
   val ScapegoatVersion       = "1.4.11"
   val ShapelessVersion       = "2.3.13"
